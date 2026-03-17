@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialEra - Cart</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f6f0e8;
+      --bg-soft: #fbf7f1;
+      --panel: rgba(255,255,255,0.84);
+      --text: #1d1713;
+      --muted: #6f6257;
+      --gold: #b9925e;
+      --dark: #111111;
+      --sale: #dc2626;
+      --sale-soft: rgba(220,38,38,0.08);
+      --sale-deep: #b91c1c;
+      --shadow: 0 14px 35px rgba(32, 20, 10, 0.10);
+      --shadow-soft: 0 10px 24px rgba(32, 20, 10, 0.08);
+      --radius-xl: 30px;
+      --max: 1280px;
+    }
+
+    body {
+      font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(185, 146, 94, 0.10), transparent 30%),
+        radial-gradient(circle at top right, rgba(139, 92, 246, 0.08), transparent 26%),
+        linear-gradient(180deg, #f8f3eb 0%, #f6f0e8 55%, #f4ede4 100%);
+      color: var(--text);
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .container {
+      width: min(94%, var(--max));
+      margin: 0 auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(17, 17, 17, 0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(200, 169, 107, 0.18);
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 86px;
+      gap: 20px;
+      padding: 12px 0;
+    }
+
+    .logo {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      color: white;
+    }
+
+    .logo-mark-image {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      flex-shrink: 0;
+      border-radius: 50%;
+    }
+
+    .logo-text-wrap h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 38px;
+      font-weight: bold;
+      letter-spacing: 0.4px;
+      margin-bottom: 2px;
+      color: #f8f5f0;
+      line-height: 1;
+    }
+
+    .logo-text-wrap p {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #c8a96b;
+    }
+
+    .logo-word {
+      display: inline-flex;
+      gap: 0;
+    }
+
+    .logo-word span {
+      display: inline-block;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: #f5f1ea;
+      font-weight: bold;
+      font-size: 15px;
+      transition: color .25s ease, transform .25s ease;
+    }
+
+    nav a:hover {
+      color: #c8a96b;
+      transform: translateY(-1px);
+    }
+
+    .cart-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #c8a96b, #e0c594);
+      color: #111111;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-weight: bold;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+
+    .cart-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+      color: #111111;
+    }
+
+    .page {
+      padding: 38px 0 70px;
+    }
+
+    .page-head {
+      margin-bottom: 24px;
+    }
+
+    .page-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(17,17,17,0.06);
+      color: #7d613b;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .page-head h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(36px, 5vw, 54px);
+      margin-bottom: 10px;
+    }
+
+    .page-head p {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.7;
+    }
+
+    .cart-layout {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .cart-list-card,
+    .summary-card {
+      background: var(--panel);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(17,17,17,0.05);
+      backdrop-filter: blur(4px);
+    }
+
+    .cart-list-card {
+      padding: 24px;
+    }
+
+    .cart-item {
+      display: grid;
+      grid-template-columns: 120px 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 18px 0;
+      border-bottom: 1px solid rgba(17,17,17,0.08);
+    }
+
+    .cart-item:last-child {
+      border-bottom: none;
+    }
+
+    .cart-item-image {
+      width: 120px;
+      height: 140px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #eadcc8;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .cart-item-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .cart-item-info h3 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: var(--dark);
+    }
+
+    .cart-meta {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+
+    .meta-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .meta-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(17,17,17,0.05);
+      color: var(--dark);
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: .2px;
+    }
+
+    .price-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .cart-price-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .cart-price {
+      font-size: 22px;
+      font-weight: bold;
+      color: #8a6a42;
+    }
+
+    .cart-old-price {
+      font-size: 15px;
+      color: #8b7e71;
+      text-decoration: line-through;
+    }
+
+    .cart-sale-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: var(--sale-soft);
+      color: var(--sale-deep);
+      font-size: 12px;
+      font-weight: 800;
+      width: max-content;
+    }
+
+    .qty-controls {
+      display: inline-flex;
+      align-items: center;
+      background: #fff;
+      border: 1px solid rgba(17,17,17,0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .qty-controls button {
+      width: 42px;
+      height: 42px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 20px;
+      color: var(--dark);
+    }
+
+    .qty-controls span {
+      min-width: 48px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 15px;
+    }
+
+    .item-side {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+    }
+
+    .item-total {
+      font-size: 22px;
+      font-weight: bold;
+      color: var(--dark);
+    }
+
+    .remove-btn {
+      border: none;
+      background: #111111;
+      color: #f8f5f0;
+      padding: 11px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: transform .2s ease, background .2s ease;
+    }
+
+    .remove-btn:hover {
+      transform: translateY(-1px);
+      background: #28221d;
+    }
+
+    .summary-card {
+      padding: 28px;
+      position: sticky;
+      top: 110px;
+    }
+
+    .summary-card h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 32px;
+      margin-bottom: 18px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 0;
+      color: var(--muted);
+      border-bottom: 1px solid rgba(17,17,17,0.08);
+      font-size: 15px;
+    }
+
+    .summary-row.total {
+      color: var(--dark);
+      font-weight: bold;
+      font-size: 20px;
+      padding-top: 18px;
+      border-bottom: none;
+    }
+
+    .summary-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 22px;
+    }
+
+    .summary-actions .btn {
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      padding: 14px 20px;
+      border-radius: 999px;
+      font-weight: bold;
+      font-size: 15px;
+      transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
+      text-align: center;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #c8a96b, #e0c594);
+      color: #111111;
+      box-shadow: 0 8px 18px rgba(200, 169, 107, 0.20);
+    }
+
+    .btn-dark {
+      background: #111111;
+      color: #f8f5f0;
+    }
+
+    .btn-light {
+      background: rgba(255,255,255,0.75);
+      color: var(--dark);
+      border: 1px solid rgba(17,17,17,0.08);
+    }
+
+    .empty-cart {
+      text-align: center;
+      padding: 70px 20px;
+      color: var(--muted);
+    }
+
+    .empty-cart h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 34px;
+      margin-bottom: 12px;
+      color: var(--dark);
+    }
+
+    .empty-cart p {
+      line-height: 1.8;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    footer {
+      background: #111111;
+      color: #f1ece3;
+      text-align: center;
+      padding: 30px 20px;
+      margin-top: 34px;
+      border-top: 1px solid rgba(200,169,107,0.18);
+    }
+
+    footer p {
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1100px) {
+      .cart-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-card {
+        position: static;
+      }
+
+      .header-inner {
+        flex-direction: column;
+        justify-content: center;
+        padding: 18px 0;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .cart-item {
+        grid-template-columns: 1fr;
+      }
+
+      .cart-item-image {
+        width: 100%;
+        height: 260px;
+      }
+
+      .item-side {
+        align-items: flex-start;
+      }
+
+      .logo-text-wrap h1 {
+        font-size: 32px;
+      }
+
+      nav {
+        justify-content: center;
+      }
+
+      .cart-list-card,
+      .summary-card {
+        padding: 20px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="index.html" class="logo" aria-label="SocialEra Home">
+        <div class="logo-text-wrap">
+          <h1 class="logo-word"><span>S</span><span>o</span><span>c</span><span>i</span><span>a</span><span>l</span><span>E</span><span>r</span><span>a</span></h1>
+          <p>Social Shopping</p>
+        </div>
+        <img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
+      </a>
+
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="index.html#shop">Shop</a>
+        <a href="index.html#featured">Featured</a>
+        <a href="cart.html" class="cart-button">
+          Cart (<span id="cart-count">0</span>)
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <div class="page-head">
+        <span class="page-eyebrow">Curated Checkout Flow</span>
+        <h1>Your SocialEra Cart</h1>
+        <p>
+          Review your curated selections, adjust quantities, and continue to checkout.
+        </p>
+      </div>
+
+      <div id="cart-root"></div>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 SocialEra. All Rights Reserved.</p>
+    <p>Luxury cart design powered by your existing SocialEra cart data.</p>
+  </footer>
+
+  <script>
+    const cartRoot = document.getElementById('cart-root');
+    const cartCount = document.getElementById('cart-count');
+
+    let cart = JSON.parse(localStorage.getItem('lovadaCart')) || [];
+
+    const imageList = [
+      'assets/product-1.jpg',
+      'assets/product-2.jpg',
+      'assets/product-3.jpg',
+      'assets/product-4.jpg',
+      'assets/product-5.jpg'
+    ];
+
+    function updateCartCount() {
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      cartCount.textContent = totalItems;
+    }
+
+    function saveCart() {
+      localStorage.setItem('lovadaCart', JSON.stringify(cart));
+      updateCartCount();
+      renderCart();
+    }
+
+    function getCartItemKey(item, index) {
+      return item.variantKey || `${item.id}::legacy::${index}`;
+    }
+
+    function findCartItemIndexByKey(key) {
+      return cart.findIndex((item, index) => getCartItemKey(item, index) === key);
+    }
+
+    function changeQuantity(key, change) {
+      const itemIndex = findCartItemIndexByKey(key);
+      if (itemIndex === -1) return;
+
+      const item = cart[itemIndex];
+
+      item.quantity += change;
+
+      if (item.quantity <= 0) {
+        cart.splice(itemIndex, 1);
+      }
+
+      saveCart();
+    }
+
+    function removeItem(key) {
+      const itemIndex = findCartItemIndexByKey(key);
+      if (itemIndex === -1) return;
+      cart.splice(itemIndex, 1);
+      saveCart();
+    }
+
+    function clearCart() {
+      cart = [];
+      saveCart();
+    }
+
+    function getSubtotal() {
+      return cart.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+    }
+
+    function getItemImage(item, index) {
+      if (item.image && String(item.image).trim() !== '') {
+        return String(item.image);
+      }
+      return imageList[index % imageList.length];
+    }
+
+    function renderVariantTags(item) {
+      const tags = [];
+
+      if (item.selectedColor) {
+        tags.push(`<span class="meta-tag">Color: ${item.selectedColor}</span>`);
+      }
+
+      if (item.selectedSize) {
+        tags.push(`<span class="meta-tag">Size: ${item.selectedSize}</span>`);
+      }
+
+      return tags.length ? `<div class="meta-tags">${tags.join('')}</div>` : '';
+    }
+
+    function isCartItemOnSale(item) {
+      const originalPrice = Number(item.originalPrice || 0);
+      const currentPrice = Number(item.price || 0);
+      return originalPrice > 0 && currentPrice > 0 && currentPrice < originalPrice;
+    }
+
+    function getCartDiscountPercent(item) {
+      const originalPrice = Number(item.originalPrice || 0);
+      const currentPrice = Number(item.price || 0);
+
+      if (!isCartItemOnSale(item) || originalPrice <= 0) {
+        return 0;
+      }
+
+      return ((originalPrice - currentPrice) / originalPrice) * 100;
+    }
+
+    function renderItemPrice(item) {
+      const currentPrice = Number(item.price || 0);
+      const originalPrice = Number(item.originalPrice || 0);
+      const discountPercent = getCartDiscountPercent(item);
+
+      if (isCartItemOnSale(item)) {
+        return `
+          <div class="price-stack">
+            <div class="cart-price-row">
+              <div class="cart-price">$${currentPrice.toFixed(2)}</div>
+              <div class="cart-old-price">$${originalPrice.toFixed(2)}</div>
+            </div>
+            <div class="cart-sale-chip">${discountPercent.toFixed(0)}% OFF</div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="price-stack">
+          <div class="cart-price-row">
+            <div class="cart-price">$${currentPrice.toFixed(2)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderCart() {
+      if (cart.length === 0) {
+        cartRoot.innerHTML = `
+          <div class="cart-list-card empty-cart">
+            <h2>Your cart is empty</h2>
+            <p>
+              Start exploring the SocialEra collection and add your favorite pieces to build your curated cart.
+            </p>
+            <a href="index.html#shop" class="btn btn-gold">Shop Now</a>
+          </div>
+        `;
+        return;
+      }
+
+      const subtotal = getSubtotal();
+      const shipping = subtotal > 0 ? 15 : 0;
+      const total = subtotal + shipping;
+
+      cartRoot.innerHTML = `
+        <section class="cart-layout">
+          <div class="cart-list-card">
+            ${cart.map((item, index) => `
+              <div class="cart-item">
+                <div class="cart-item-image">
+                  <img src="${getItemImage(item, index)}" alt="${item.name}" onerror="this.onerror=null;this.src='${imageList[index % imageList.length]}'">
+                </div>
+
+                <div class="cart-item-info">
+                  <h3>${item.name}</h3>
+                  ${renderVariantTags(item)}
+                  <div class="cart-meta">
+                    ${isCartItemOnSale(item) ? 'Sale price applied' : 'Premium SocialEra selection'}<br>
+                    Curated storefront presentation
+                  </div>
+
+                  ${renderItemPrice(item)}
+
+                  <div class="qty-controls">
+                    <button onclick="changeQuantity('${getCartItemKey(item, index)}', -1)">−</button>
+                    <span>${item.quantity}</span>
+                    <button onclick="changeQuantity('${getCartItemKey(item, index)}', 1)">+</button>
+                  </div>
+                </div>
+
+                <div class="item-side">
+                  <div class="item-total">$${(Number(item.price) * item.quantity).toFixed(2)}</div>
+                  <button class="remove-btn" onclick="removeItem('${getCartItemKey(item, index)}')">Remove</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <aside class="summary-card">
+            <h2>Order Summary</h2>
+
+            <div class="summary-row">
+              <span>Items</span>
+              <span>${cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
+            </div>
+
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <span>$${subtotal.toFixed(2)}</span>
+            </div>
+
+            <div class="summary-row">
+              <span>Shipping</span>
+              <span>$${shipping.toFixed(2)}</span>
+            </div>
+
+            <div class="summary-row total">
+              <span>Total</span>
+              <span>$${total.toFixed(2)}</span>
+            </div>
+
+            <div class="summary-actions">
+              <a href="checkout.html" class="btn btn-gold">Proceed to Checkout</a>
+              <a href="index.html#shop" class="btn btn-light">Continue Shopping</a>
+              <button class="btn btn-dark" onclick="clearCart()">Clear Cart</button>
+            </div>
+          </aside>
+        </section>
+      `;
+    }
+
+    updateCartCount();
+    renderCart();
+  </script>
+</body>
+</html>

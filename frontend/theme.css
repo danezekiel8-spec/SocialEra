@@ -1,0 +1,218 @@
+html[data-theme="dark"]{
+  color-scheme: dark;
+}
+
+html[data-theme="dark"] body{
+  background:
+    radial-gradient(circle at top left, rgba(200,169,107,0.10), transparent 22%),
+    radial-gradient(circle at top right, rgba(139,92,246,0.10), transparent 24%),
+    linear-gradient(180deg, #101114 0%, #14161b 54%, #0d0f13 100%) !important;
+  color: #f4efe8 !important;
+}
+
+html[data-theme="dark"] header{
+  background: rgba(10, 11, 14, 0.92) !important;
+  border-bottom-color: rgba(200,169,107,0.18) !important;
+}
+
+html[data-theme="dark"] footer{
+  background: #090a0d !important;
+  color: #f4efe8 !important;
+  border-top-color: rgba(200,169,107,0.14) !important;
+}
+
+html[data-theme="dark"] a{
+  color: inherit;
+}
+
+html[data-theme="dark"] .feed-post,
+html[data-theme="dark"] .sidebar-card,
+html[data-theme="dark"] .hero-side-card,
+html[data-theme="dark"] .hero-stat,
+html[data-theme="dark"] .match-panel,
+html[data-theme="dark"] .match-card,
+html[data-theme="dark"] .gallery-card,
+html[data-theme="dark"] .info-card,
+html[data-theme="dark"] .extra-section,
+html[data-theme="dark"] .cart-list-card,
+html[data-theme="dark"] .summary-card,
+html[data-theme="dark"] .form-card,
+html[data-theme="dark"] .success-card,
+html[data-theme="dark"] .auth-card,
+html[data-theme="dark"] .account-card,
+html[data-theme="dark"] .account-panel,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .product-card,
+html[data-theme="dark"] .top-post-item,
+html[data-theme="dark"] .sidebar-mini-product,
+html[data-theme="dark"] .product-card,
+html[data-theme="dark"] .payment-option,
+html[data-theme="dark"] .order-box,
+html[data-theme="dark"] .detail-box,
+html[data-theme="dark"] .option-panel,
+html[data-theme="dark"] .summary-item-image,
+html[data-theme="dark"] .main-image-wrap,
+html[data-theme="dark"] .empty-checkout,
+html[data-theme="dark"] .empty-cart{
+  background: linear-gradient(180deg, rgba(27,30,37,0.94) 0%, rgba(18,20,26,0.92) 100%) !important;
+  color: #f4efe8 !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  box-shadow: 0 18px 36px rgba(0,0,0,0.28) !important;
+}
+
+html[data-theme="dark"] .feed-action,
+html[data-theme="dark"] .match-link,
+html[data-theme="dark"] .filter-btn,
+html[data-theme="dark"] .channel-pill,
+html[data-theme="dark"] .field input,
+html[data-theme="dark"] .field select,
+html[data-theme="dark"] .field textarea,
+html[data-theme="dark"] .payment-option,
+html[data-theme="dark"] .qty-box,
+html[data-theme="dark"] .qty-controls,
+html[data-theme="dark"] .color-swatch,
+html[data-theme="dark"] .size-chip,
+html[data-theme="dark"] .summary-tag,
+html[data-theme="dark"] .meta-tag,
+html[data-theme="dark"] .page-eyebrow,
+html[data-theme="dark"] .success-eyebrow,
+html[data-theme="dark"] .feed-hero-eyebrow,
+html[data-theme="dark"] .swipe-pill,
+html[data-theme="dark"] .auth-button,
+html[data-theme="dark"] .btn-light{
+  background: rgba(255,255,255,0.05) !important;
+  color: #f4efe8 !important;
+  border-color: rgba(255,255,255,0.10) !important;
+}
+
+html[data-theme="dark"] .feed-action:hover,
+html[data-theme="dark"] .match-link:hover,
+html[data-theme="dark"] .filter-btn:hover,
+html[data-theme="dark"] .channel-pill:hover,
+html[data-theme="dark"] .btn-light:hover{
+  background: rgba(255,255,255,0.09) !important;
+}
+
+html[data-theme="dark"] .match-empty,
+html[data-theme="dark"] .feed-caption p,
+html[data-theme="dark"] .hero-side-card p,
+html[data-theme="dark"] .hero-stat span,
+html[data-theme="dark"] .sidebar-card p,
+html[data-theme="dark"] .sidebar-list-item span,
+html[data-theme="dark"] .sidebar-mini-product span,
+html[data-theme="dark"] .match-card-sub,
+html[data-theme="dark"] .product-sub,
+html[data-theme="dark"] .product-desc,
+html[data-theme="dark"] .price-note,
+html[data-theme="dark"] .info-note,
+html[data-theme="dark"] .extra-section p,
+html[data-theme="dark"] .page-head p,
+html[data-theme="dark"] .section-sub,
+html[data-theme="dark"] .summary-item-info p,
+html[data-theme="dark"] .summary-row,
+html[data-theme="dark"] .account-email,
+html[data-theme="dark"] .panel-subtitle,
+html[data-theme="dark"] .helper,
+html[data-theme="dark"] .auth-subtitle,
+html[data-theme="dark"] .auth-bottom,
+html[data-theme="dark"] .cart-meta,
+html[data-theme="dark"] .empty-cart p,
+html[data-theme="dark"] .empty-checkout p{
+  color: #b7b3ad !important;
+}
+
+html[data-theme="dark"] .logo,
+html[data-theme="dark"] nav a,
+html[data-theme="dark"] .top-nav a,
+html[data-theme="dark"] .feed-caption h3,
+html[data-theme="dark"] .match-title,
+html[data-theme="dark"] .match-card-body h4,
+html[data-theme="dark"] .product-title,
+html[data-theme="dark"] .page-head h1,
+html[data-theme="dark"] .success-card h2,
+html[data-theme="dark"] .account-name,
+html[data-theme="dark"] .panel-title,
+html[data-theme="dark"] .auth-title,
+html[data-theme="dark"] .summary-card h2,
+html[data-theme="dark"] .form-card h2,
+html[data-theme="dark"] .section-block h2,
+html[data-theme="dark"] .detail-box strong,
+html[data-theme="dark"] .summary-item-total,
+html[data-theme="dark"] .item-total{
+  color: #f4efe8 !important;
+}
+
+html[data-theme="dark"] .cart-button,
+html[data-theme="dark"] .hero-btn.primary,
+html[data-theme="dark"] .btn-dark,
+html[data-theme="dark"] .match-add,
+html[data-theme="dark"] .feed-follow,
+html[data-theme="dark"] .remove-btn{
+  background: linear-gradient(135deg, #d7bc85, #b79053) !important;
+  color: #111111 !important;
+  box-shadow: 0 10px 24px rgba(200,169,107,0.22) !important;
+}
+
+html[data-theme="dark"] .hero-btn.secondary,
+html[data-theme="dark"] .search-suggestions,
+html[data-theme="dark"] .search-suggestion-item{
+  background: rgba(20,22,27,0.96) !important;
+  color: #f4efe8 !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+html[data-theme="dark"] .header-search input{
+  background: rgba(255,255,255,0.06) !important;
+  color: #f4efe8 !important;
+  border-color: rgba(255,255,255,0.10) !important;
+}
+
+html[data-theme="dark"] .header-search input::placeholder,
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder{
+  color: #8f8b86 !important;
+}
+
+html[data-theme="dark"] .cart-icon{
+  fill: #111111 !important;
+}
+
+.theme-toggle{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  color: #f5f1ea;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.theme-toggle:hover{
+  transform: translateY(-1px);
+  border-color: rgba(200,169,107,0.38);
+  box-shadow: 0 12px 22px rgba(0,0,0,0.12);
+}
+
+.theme-toggle-icon{
+  font-size: 13px;
+  line-height: 1;
+}
+
+.theme-toggle-label{
+  display:none;
+}
+
+html[data-theme="dark"] .theme-toggle{
+  background: rgba(255,255,255,0.08);
+  color: #f4efe8;
+  border-color: rgba(255,255,255,0.12);
+}

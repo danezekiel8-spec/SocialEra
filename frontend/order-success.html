@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialEra - Order Success</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f6f0e8;
+      --panel: rgba(255,255,255,0.84);
+      --text: #1d1713;
+      --muted: #6f6257;
+      --gold: #b9925e;
+      --dark: #111111;
+      --shadow: 0 14px 35px rgba(32, 20, 10, 0.10);
+      --shadow-soft: 0 10px 24px rgba(32, 20, 10, 0.08);
+      --radius-xl: 30px;
+      --max: 1100px;
+    }
+
+    body {
+      font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(185, 146, 94, 0.10), transparent 30%),
+        radial-gradient(circle at top right, rgba(139, 92, 246, 0.08), transparent 26%),
+        linear-gradient(180deg, #f8f3eb 0%, #f6f0e8 55%, #f4ede4 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .container {
+      width: min(94%, var(--max));
+      margin: 0 auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(17, 17, 17, 0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(200, 169, 107, 0.18);
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 86px;
+      gap: 20px;
+      padding: 12px 0;
+    }
+
+    .logo {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      color: white;
+    }
+
+    .logo-mark-image {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      flex-shrink: 0;
+      border-radius: 50%;
+    }
+
+    .logo-text-wrap h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 38px;
+      font-weight: bold;
+      letter-spacing: 0.4px;
+      margin-bottom: 2px;
+      color: #f8f5f0;
+      line-height: 1;
+    }
+
+    .logo-text-wrap p {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #c8a96b;
+    }
+
+    .logo-word {
+      display: inline-flex;
+      gap: 0;
+    }
+
+    .logo-word span {
+      display: inline-block;
+    }
+
+    .success-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(17,17,17,0.06);
+      color: #7d613b;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: #f5f1ea;
+      font-weight: bold;
+      font-size: 15px;
+      transition: color .25s ease, transform .25s ease;
+    }
+
+    nav a:hover {
+      color: #c8a96b;
+      transform: translateY(-1px);
+    }
+
+    .cart-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 16px;
+      background: linear-gradient(135deg, #d8bf8a, #c8a96b);
+      color: #111111;
+      border-radius: 12px;
+      font-weight: bold;
+      box-shadow: 0 10px 24px rgba(200,169,107,0.3);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .cart-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(200,169,107,0.35);
+      color: #111111;
+    }
+
+    .page {
+      padding: 56px 0 80px;
+    }
+
+    .success-card {
+      background: var(--panel);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(17,17,17,0.05);
+      padding: 42px;
+      text-align: center;
+    }
+
+    .success-icon {
+      width: 92px;
+      height: 92px;
+      margin: 0 auto 22px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #c8a96b, #e0c594);
+      color: #111111;
+      font-size: 42px;
+      font-weight: bold;
+      box-shadow: 0 10px 24px rgba(185, 146, 94, 0.24);
+    }
+
+    .success-card h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(34px, 5vw, 52px);
+      margin-bottom: 12px;
+    }
+
+    .success-card p {
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 17px;
+      max-width: 760px;
+      margin: 0 auto 22px;
+    }
+
+    .order-boxes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 28px 0 24px;
+      text-align: left;
+    }
+
+    .order-box {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(17,17,17,0.07);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .order-box span {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    .order-box strong {
+      display: block;
+      font-size: 18px;
+      color: var(--dark);
+      line-height: 1.5;
+      word-break: break-word;
+    }
+
+    .action-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      padding: 14px 22px;
+      border-radius: 999px;
+      font-weight: bold;
+      font-size: 15px;
+      transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #c8a96b, #e0c594);
+      color: #111111;
+      box-shadow: 0 8px 18px rgba(200, 169, 107, 0.20);
+    }
+
+    .btn-dark {
+      background: #111111;
+      color: #f8f5f0;
+    }
+
+    footer {
+      background: #111111;
+      color: #f1ece3;
+      text-align: center;
+      padding: 30px 20px;
+      margin-top: 34px;
+      border-top: 1px solid rgba(200,169,107,0.18);
+    }
+
+    footer p {
+      line-height: 1.7;
+    }
+
+    @media (max-width: 900px) {
+      .order-boxes {
+        grid-template-columns: 1fr;
+      }
+
+      .header-inner {
+        flex-direction: column;
+        justify-content: center;
+        padding: 18px 0;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .success-card {
+        padding: 24px;
+      }
+
+      .logo-text-wrap h1 {
+        font-size: 32px;
+      }
+
+      nav {
+        justify-content: center;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="index.html" class="logo" aria-label="SocialEra Home">
+        <div class="logo-text-wrap">
+          <h1 class="logo-word"><span>S</span><span>o</span><span>c</span><span>i</span><span>a</span><span>l</span><span>E</span><span>r</span><span>a</span></h1>
+          <p>Social Shopping</p>
+        </div>
+        <img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
+      </a>
+
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="index.html#shop">Shop</a>
+        <a href="index.html#featured">Featured</a>
+        <a href="cart.html" class="cart-button">Cart</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <section class="success-card">
+        <div class="success-icon">✓</div>
+        <div class="success-eyebrow">Order Confirmed</div>
+        <h2>Order placed successfully</h2>
+        <p>
+          Thank you for shopping with SocialEra. Your order has been received and your curated pieces are being prepared.
+        </p>
+
+        <div class="order-boxes">
+          <div class="order-box">
+            <span>Order Number</span>
+            <strong id="order-number">LV-000000</strong>
+          </div>
+
+          <div class="order-box">
+            <span>Customer</span>
+            <strong id="customer-name">SocialEra Customer</strong>
+          </div>
+
+          <div class="order-box">
+            <span>Email</span>
+            <strong id="customer-email">customer@example.com</strong>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <a href="index.html" class="btn btn-gold">Return Home</a>
+          <a href="index.html#shop" class="btn btn-dark">Continue Shopping</a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 SocialEra. All Rights Reserved.</p>
+    <p>Your SocialEra order flow is now complete from cart to success page.</p>
+  </footer>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const orderNumber = params.get('order') || 'LV-000000';
+    const name = params.get('name') || 'SocialEra Customer';
+    const email = params.get('email') || 'customer@example.com';
+
+    document.getElementById('order-number').textContent = orderNumber;
+    document.getElementById('customer-name').textContent = decodeURIComponent(name);
+    document.getElementById('customer-email').textContent = decodeURIComponent(email);
+  </script>
+</body>
+</html>

@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialEra - Checkout</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #f6f0e8;
+      --bg-soft: #fbf7f1;
+      --panel: rgba(255,255,255,0.84);
+      --text: #1d1713;
+      --muted: #6f6257;
+      --gold: #b9925e;
+      --gold-soft: #d8bc92;
+      --dark: #111111;
+      --violet: #8b5cf6;
+      --shadow: 0 14px 35px rgba(32, 20, 10, 0.10);
+      --shadow-soft: 0 10px 24px rgba(32, 20, 10, 0.08);
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --max: 1280px;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(185, 146, 94, 0.10), transparent 30%),
+        radial-gradient(circle at top right, rgba(139, 92, 246, 0.08), transparent 26%),
+        linear-gradient(180deg, #f8f3eb 0%, #f6f0e8 55%, #f4ede4 100%);
+      color: var(--text);
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .container {
+      width: min(94%, var(--max));
+      margin: 0 auto;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(17, 17, 17, 0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(200, 169, 107, 0.18);
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-height: 86px;
+      gap: 20px;
+      padding: 12px 0;
+    }
+
+    .logo {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      color: white;
+    }
+
+    .logo-mark-image {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      flex-shrink: 0;
+      border-radius: 50%;
+    }
+
+    .logo-text-wrap h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 38px;
+      font-weight: bold;
+      letter-spacing: 0.4px;
+      margin-bottom: 2px;
+      color: #f8f5f0;
+      line-height: 1;
+    }
+
+    .logo-text-wrap p {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #c8a96b;
+    }
+
+    .logo-word {
+      display: inline-flex;
+      gap: 0;
+    }
+
+    .logo-word span {
+      display: inline-block;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: #f5f1ea;
+      font-weight: bold;
+      font-size: 15px;
+      transition: color .25s ease, transform .25s ease;
+    }
+
+    nav a:hover {
+      color: #c8a96b;
+      transform: translateY(-1px);
+    }
+
+    .cart-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #c8a96b, #e0c594);
+      color: #111111;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-weight: bold;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.14);
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+
+    .cart-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+      color: #111111;
+    }
+
+    .page {
+      padding: 38px 0 70px;
+    }
+
+    .page-head {
+      margin-bottom: 24px;
+    }
+
+    .page-head h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(36px, 5vw, 54px);
+      margin-bottom: 10px;
+    }
+
+    .page-head p {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.7;
+      max-width: 760px;
+    }
+
+    .checkout-layout {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    .form-card,
+    .summary-card {
+      background: var(--panel);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(17,17,17,0.05);
+      backdrop-filter: blur(4px);
+    }
+
+    .form-card {
+      padding: 28px;
+    }
+
+    .summary-card {
+      padding: 28px;
+      position: sticky;
+      top: 110px;
+    }
+
+    .section-block + .section-block {
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(17,17,17,0.08);
+    }
+
+    .section-block h2,
+    .summary-card h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 30px;
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .field.full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      font-size: 13px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      color: var(--dark);
+      text-transform: uppercase;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      border: 1px solid rgba(17,17,17,0.10);
+      background: rgba(255,255,255,0.82);
+      color: #111111;
+      border-radius: 16px;
+      padding: 14px 16px;
+      outline: none;
+      font-size: 15px;
+      font-family: inherit;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .field textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      border-color: rgba(185,146,94,0.75);
+      box-shadow: 0 0 0 4px rgba(185,146,94,0.12);
+    }
+
+    .payment-options {
+      display: grid;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .payment-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border: 1px solid rgba(17,17,17,0.08);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.72);
+      cursor: pointer;
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .payment-option:hover {
+      transform: translateY(-1px);
+      border-color: rgba(185,146,94,0.45);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .payment-option input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--gold);
+    }
+
+    .payment-option strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 2px;
+    }
+
+    .payment-option span {
+      display: block;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .summary-list {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .summary-item {
+      display: grid;
+      grid-template-columns: 72px 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .summary-item-image {
+      width: 72px;
+      height: 86px;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #eadcc8;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .summary-item-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .summary-item-info h3 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+      margin-bottom: 4px;
+      line-height: 1.2;
+    }
+
+    .summary-item-info p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .summary-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .summary-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(17,17,17,0.05);
+      color: var(--dark);
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .summary-item-total {
+      font-weight: bold;
+      color: var(--dark);
+      font-size: 15px;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 0;
+      color: var(--muted);
+      border-top: 1px solid rgba(17,17,17,0.08);
+      font-size: 15px;
+    }
+
+    .summary-row.total {
+      color: var(--dark);
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    .btn {
+      border: none;
+      cursor: pointer;
+      padding: 14px 20px;
+      border-radius: 999px;
+      font-weight: bold;
+      font-size: 15px;
+      transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
+      text-align: center;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #c8a96b, #e0c594);
+      color: #111111;
+      box-shadow: 0 8px 18px rgba(200, 169, 107, 0.20);
+    }
+
+    .btn-dark {
+      background: #111111;
+      color: #f8f5f0;
+    }
+
+    .checkout-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .message {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      font-size: 15px;
+      line-height: 1.6;
+      display: none;
+    }
+
+    .message.success {
+      display: block;
+      background: rgba(201, 233, 204, 0.8);
+      border: 1px solid rgba(75, 140, 80, 0.18);
+      color: #1f4d24;
+    }
+
+    .message.error {
+      display: block;
+      background: rgba(255, 232, 232, 0.9);
+      border: 1px solid rgba(180, 70, 70, 0.18);
+      color: #8a2323;
+    }
+
+    .empty-checkout {
+      background: var(--panel);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(17,17,17,0.05);
+      padding: 70px 24px;
+      text-align: center;
+    }
+
+    .empty-checkout h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 34px;
+      margin-bottom: 12px;
+    }
+
+    .empty-checkout p {
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+
+    footer {
+      background: #111111;
+      color: #f1ece3;
+      text-align: center;
+      padding: 30px 20px;
+      margin-top: 34px;
+      border-top: 1px solid rgba(200,169,107,0.18);
+    }
+
+    footer p {
+      line-height: 1.7;
+    }
+
+    @media (max-width: 1100px) {
+      .checkout-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-card {
+        position: static;
+      }
+
+      .header-inner {
+        flex-direction: column;
+        justify-content: center;
+        padding: 18px 0;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-item {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-item-image {
+        width: 100%;
+        height: 220px;
+      }
+
+      .logo-text-wrap h1 {
+        font-size: 32px;
+      }
+
+      nav {
+        justify-content: center;
+      }
+
+      .form-card,
+      .summary-card {
+        padding: 20px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
+</head>
+
+<body>
+  <header>
+    <div class="container header-inner">
+      <a href="index.html" class="logo" aria-label="SocialEra Home">
+        <div class="logo-text-wrap">
+          <h1 class="logo-word">
+            <span>S</span><span>o</span><span>c</span><span>i</span><span>a</span><span>l</span><span>E</span><span>r</span><span>a</span>
+          </h1>
+          <p>Social Shopping</p>
+        </div>
+        <img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
+      </a>
+
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="index.html#shop">Shop</a>
+        <a href="index.html#featured">Featured</a>
+        <a href="cart.html" class="cart-button">
+          Cart (<span id="cart-count">0</span>)
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <div class="page-head">
+        <h1>Checkout</h1>
+        <p>
+          Complete your SocialEra order with a refined checkout experience styled to match the rest of your storefront.
+        </p>
+      </div>
+
+      <div id="checkout-root"></div>
+    </div>
+  </main>
+
+  <footer>
+    <p>© 2026 SocialEra. All Rights Reserved.</p>
+    <p>Luxury checkout styling built on your existing SocialEra cart flow.</p>
+  </footer>
+
+  <script type="module" src="supabase.js"></script>
+
+  <script>
+    const checkoutRoot = document.getElementById('checkout-root');
+    const cartCount = document.getElementById('cart-count');
+
+    let cart = JSON.parse(localStorage.getItem('lovadaCart')) || [];
+
+    const imageList = [
+      'assets/product-1.jpg',
+      'assets/product-2.jpg',
+      'assets/product-3.jpg',
+      'assets/product-4.jpg',
+      'assets/product-5.jpg'
+    ];
+
+    function updateCartCount() {
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      cartCount.textContent = totalItems;
+    }
+
+    function getSubtotal() {
+      return cart.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+    }
+
+    function getItemImage(item, index) {
+      if (item.image && String(item.image).trim() !== '') {
+        return String(item.image);
+      }
+      return imageList[index % imageList.length];
+    }
+
+    function renderVariantTags(item) {
+      const tags = [];
+
+      if (item.selectedColor) {
+        tags.push(`<span class="summary-tag">Color: ${item.selectedColor}</span>`);
+      }
+
+      if (item.selectedSize) {
+        tags.push(`<span class="summary-tag">Size: ${item.selectedSize}</span>`);
+      }
+
+      return tags.length ? `<div class="summary-tags">${tags.join('')}</div>` : '';
+    }
+
+    function renderCheckout() {
+      if (cart.length === 0) {
+        checkoutRoot.innerHTML = `
+          <div class="empty-checkout">
+            <h2>Your cart is empty</h2>
+            <p>
+              Add products to your SocialEra cart before continuing to checkout.
+            </p>
+            <a href="index.html#shop" class="btn btn-gold">Return to Shop</a>
+          </div>
+        `;
+        return;
+      }
+
+      const subtotal = getSubtotal();
+      const shipping = 15;
+      const total = subtotal + shipping;
+
+      checkoutRoot.innerHTML = `
+        <section class="checkout-layout">
+          <form class="form-card" id="checkout-form">
+            <div class="section-block">
+              <h2>Shipping Details</h2>
+              <p class="section-sub">Enter your delivery information for your curated SocialEra order.</p>
+
+              <div class="form-grid">
+                <div class="field">
+                  <label for="firstName">First Name</label>
+                  <input type="text" id="firstName" name="firstName" required />
+                </div>
+
+                <div class="field">
+                  <label for="lastName">Last Name</label>
+                  <input type="text" id="lastName" name="lastName" required />
+                </div>
+
+                <div class="field full">
+                  <label for="email">Email Address</label>
+                  <input type="email" id="email" name="email" required />
+                </div>
+
+                <div class="field full">
+                  <label for="address">Street Address</label>
+                  <input type="text" id="address" name="address" required />
+                </div>
+
+                <div class="field">
+                  <label for="city">City</label>
+                  <input type="text" id="city" name="city" required />
+                </div>
+
+                <div class="field">
+                  <label for="state">State / Region</label>
+                  <input type="text" id="state" name="state" required />
+                </div>
+
+                <div class="field">
+                  <label for="zip">Postal Code</label>
+                  <input type="text" id="zip" name="zip" required />
+                </div>
+
+                <div class="field">
+                  <label for="country">Country</label>
+                  <select id="country" name="country" required>
+                    <option value="">Select Country</option>
+                    <option>New Zealand</option>
+                    <option>Australia</option>
+                    <option>United States</option>
+                    <option>Canada</option>
+                    <option>United Kingdom</option>
+                  </select>
+                </div>
+
+                <div class="field full">
+                  <label for="notes">Delivery Notes</label>
+                  <textarea id="notes" name="notes" placeholder="Optional notes for your order"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="section-block">
+              <h2>Payment Method</h2>
+              <p class="section-sub">Choose how you would like to complete your purchase.</p>
+
+              <div class="payment-options">
+                <label class="payment-option">
+                  <input type="radio" name="paymentMethod" value="card" checked />
+                  <div>
+                    <strong>Credit / Debit Card</strong>
+                    <span>Elegant and secure card checkout flow.</span>
+                  </div>
+                </label>
+
+                <label class="payment-option">
+                  <input type="radio" name="paymentMethod" value="paypal" />
+                  <div>
+                    <strong>PayPal</strong>
+                    <span>Fast checkout using your PayPal account.</span>
+                  </div>
+                </label>
+
+                <label class="payment-option">
+                  <input type="radio" name="paymentMethod" value="cod" />
+                  <div>
+                    <strong>Cash on Delivery</strong>
+                    <span>Example offline method for testing storefront flow.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="section-block">
+              <h2>Card Details</h2>
+              <p class="section-sub">For now this is a front-end demo form that simulates order placement.</p>
+
+              <div class="form-grid">
+                <div class="field full">
+                  <label for="cardName">Name on Card</label>
+                  <input type="text" id="cardName" name="cardName" />
+                </div>
+
+                <div class="field full">
+                  <label for="cardNumber">Card Number</label>
+                  <input type="text" id="cardNumber" name="cardNumber" maxlength="19" placeholder="1234 5678 9012 3456" />
+                </div>
+
+                <div class="field">
+                  <label for="expiry">Expiry Date</label>
+                  <input type="text" id="expiry" name="expiry" maxlength="5" placeholder="MM/YY" />
+                </div>
+
+                <div class="field">
+                  <label for="cvv">CVV</label>
+                  <input type="text" id="cvv" name="cvv" maxlength="4" placeholder="123" />
+                </div>
+              </div>
+
+              <div class="checkout-actions">
+                <button type="submit" class="btn btn-gold">Place Order</button>
+                <a href="cart.html" class="btn btn-dark">Back to Cart</a>
+              </div>
+
+              <div id="checkout-message" class="message"></div>
+            </div>
+          </form>
+
+          <aside class="summary-card">
+            <h2>Order Summary</h2>
+
+            <div class="summary-list">
+              ${cart.map((item, index) => `
+                <div class="summary-item">
+                  <div class="summary-item-image">
+                    <img src="${getItemImage(item, index)}" alt="${item.name}" onerror="this.onerror=null;this.src='${imageList[index % imageList.length]}'">
+                  </div>
+
+                  <div class="summary-item-info">
+                    <h3>${item.name}</h3>
+                    <p>Qty: ${item.quantity}</p>
+                    <p>$${Number(item.price).toFixed(2)} each</p>
+                    ${renderVariantTags(item)}
+                  </div>
+
+                  <div class="summary-item-total">
+                    $${(Number(item.price) * item.quantity).toFixed(2)}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+
+            <div class="summary-row">
+              <span>Items</span>
+              <span>${cart.reduce((sum, item) => sum + item.quantity, 0)}</span>
+            </div>
+
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <span>$${subtotal.toFixed(2)}</span>
+            </div>
+
+            <div class="summary-row">
+              <span>Shipping</span>
+              <span>$${shipping.toFixed(2)}</span>
+            </div>
+
+            <div class="summary-row total">
+              <span>Total</span>
+              <span>$${total.toFixed(2)}</span>
+            </div>
+          </aside>
+        </section>
+      `;
+
+      attachFormHandlers();
+      prefillCheckoutDetails();
+    }
+
+    function ensureSelectOption(select, value) {
+      if (!select || !value) {
+        return;
+      }
+
+      const normalizedValue = String(value).trim();
+      const existingOption = Array.from(select.options).find(
+        (option) => option.value === normalizedValue || option.textContent === normalizedValue
+      );
+
+      if (!existingOption) {
+        const option = document.createElement('option');
+        option.value = normalizedValue;
+        option.textContent = normalizedValue;
+        select.appendChild(option);
+      }
+
+      select.value = normalizedValue;
+    }
+
+    async function prefillCheckoutDetails() {
+      if (!window.supabase) {
+        return;
+      }
+
+      try {
+        const { data, error } = await window.supabase.auth.getUser();
+
+        if (error || !data?.user) {
+          return;
+        }
+
+        const user = data.user;
+        const metadata = user.user_metadata || {};
+        const shippingAddress = metadata.shipping_address || {};
+
+        const firstNameInput = document.getElementById('firstName');
+        const lastNameInput = document.getElementById('lastName');
+        const emailInput = document.getElementById('email');
+        const addressInput = document.getElementById('address');
+        const cityInput = document.getElementById('city');
+        const stateInput = document.getElementById('state');
+        const zipInput = document.getElementById('zip');
+        const countryInput = document.getElementById('country');
+
+        const fullName = String(metadata.full_name || '').trim();
+        const [firstName = '', ...lastNameParts] = fullName.split(/\s+/).filter(Boolean);
+        const lastName = lastNameParts.join(' ');
+
+        if (firstNameInput && !firstNameInput.value && firstName) {
+          firstNameInput.value = firstName;
+        }
+
+        if (lastNameInput && !lastNameInput.value && lastName) {
+          lastNameInput.value = lastName;
+        }
+
+        if (emailInput && !emailInput.value && user.email) {
+          emailInput.value = user.email;
+        }
+
+        if (addressInput && !addressInput.value && shippingAddress.address_line_1) {
+          addressInput.value = shippingAddress.address_line_1;
+        }
+
+        if (cityInput && !cityInput.value && shippingAddress.city) {
+          cityInput.value = shippingAddress.city;
+        }
+
+        if (stateInput && !stateInput.value && shippingAddress.state_region) {
+          stateInput.value = shippingAddress.state_region;
+        }
+
+        if (zipInput && !zipInput.value && shippingAddress.postal_code) {
+          zipInput.value = shippingAddress.postal_code;
+        }
+
+        if (countryInput && !countryInput.value && shippingAddress.country) {
+          ensureSelectOption(countryInput, shippingAddress.country);
+        }
+      } catch (error) {
+        console.error('Failed to prefill checkout details:', error);
+      }
+    }
+
+    function attachFormHandlers() {
+      const form = document.getElementById('checkout-form');
+      const message = document.getElementById('checkout-message');
+      const cardNumber = document.getElementById('cardNumber');
+      const expiry = document.getElementById('expiry');
+      const cvv = document.getElementById('cvv');
+
+      if (cardNumber) {
+        cardNumber.addEventListener('input', (e) => {
+          let value = e.target.value.replace(/\D/g, '').slice(0, 16);
+          value = value.replace(/(.{4})/g, '$1 ').trim();
+          e.target.value = value;
+        });
+      }
+
+      if (expiry) {
+        expiry.addEventListener('input', (e) => {
+          let value = e.target.value.replace(/\D/g, '').slice(0, 4);
+          if (value.length > 2) {
+            value = value.slice(0, 2) + '/' + value.slice(2);
+          }
+          e.target.value = value;
+        });
+      }
+
+      if (cvv) {
+        cvv.addEventListener('input', (e) => {
+          e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+        });
+      }
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const paymentMethod = formData.get('paymentMethod');
+
+        const firstName = formData.get('firstName')?.trim();
+        const lastName = formData.get('lastName')?.trim();
+        const email = formData.get('email')?.trim();
+        const address = formData.get('address')?.trim();
+        const city = formData.get('city')?.trim();
+        const state = formData.get('state')?.trim();
+        const zip = formData.get('zip')?.trim();
+        const country = formData.get('country')?.trim();
+
+        if (!firstName || !lastName || !email || !address || !city || !state || !zip || !country) {
+          message.className = 'message error';
+          message.textContent = 'Please complete all required shipping fields before placing your order.';
+          return;
+        }
+
+        if (paymentMethod === 'card') {
+          const cardName = formData.get('cardName')?.trim();
+          const cardNumberValue = formData.get('cardNumber')?.trim().replace(/\s/g, '');
+          const expiryValue = formData.get('expiry')?.trim();
+          const cvvValue = formData.get('cvv')?.trim();
+
+          if (!cardName || cardNumberValue.length < 16 || expiryValue.length < 5 || cvvValue.length < 3) {
+            message.className = 'message error';
+            message.textContent = 'Please complete valid card details to continue.';
+            return;
+          }
+        }
+
+        const orderNumber = 'LV-' + Math.floor(100000 + Math.random() * 900000);
+
+        localStorage.removeItem('lovadaCart');
+        cart = [];
+        updateCartCount();
+
+        message.className = 'message success';
+        message.innerHTML = `
+          Your order has been placed successfully.<br>
+          Order number: <strong>${orderNumber}</strong><br>
+          Redirecting to your confirmation page...
+        `;
+
+        form.reset();
+
+        const customerName = `${firstName} ${lastName}`.trim();
+        const successUrl = `order-success.html?order=${encodeURIComponent(orderNumber)}&name=${encodeURIComponent(customerName)}&email=${encodeURIComponent(email)}`;
+
+        setTimeout(() => {
+          window.location.href = successUrl;
+        }, 1600);
+      });
+    }
+
+    updateCartCount();
+    renderCheckout();
+  </script>
+</body>
+</html>

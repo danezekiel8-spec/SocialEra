@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SocialEra - Shop</title>
+
+<style>
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+}
+
+html{
+scroll-behavior:smooth;
+}
+
+:root{
+--bg:#f8f5f0;
+--surface:#ffffff;
+--text:#1a1a1a;
+--muted:#6f6257;
+--gold:#c8a96b;
+--gold-dark:#b89554;
+--dark:#111111;
+--border:rgba(17,17,17,0.08);
+--shadow:0 10px 30px rgba(0,0,0,0.08);
+--shadow-soft:0 6px 14px rgba(0,0,0,0.06);
+--radius:18px;
+--sale:#dc2626;
+--sale-soft:rgba(220,38,38,0.08);
+--sale-deep:#b91c1c;
+}
+
+body{
+font-family:Inter, "Helvetica Neue", Arial, sans-serif;
+background:
+radial-gradient(circle at top left, rgba(139,92,246,0.04), transparent 20%),
+linear-gradient(180deg, #fcfaf7 0%, var(--bg) 100%);
+color:var(--text);
+overflow-x:hidden;
+}
+
+/* HEADER */
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:rgba(17,17,17,0.94);
+color:white;
+padding:20px 44px;
+position:sticky;
+top:0;
+z-index:1000;
+backdrop-filter:blur(12px);
+border-bottom:1px solid rgba(255,255,255,0.08);
+box-shadow:0 12px 32px rgba(0,0,0,0.18);
+}
+
+.logo{
+text-decoration:none;
+color:white;
+display:inline-flex;
+align-items:center;
+gap:14px;
+flex-shrink:0;
+}
+
+.logo h1{
+font-family:Georgia, serif;
+font-size:40px;
+font-weight:bold;
+line-height:1;
+margin-bottom:0;
+}
+
+.logo-mark-image{
+width:96px;
+height:96px;
+object-fit:contain;
+flex-shrink:0;
+border-radius:50%;
+}
+
+.logo p{
+font-size:12px;
+letter-spacing:2px;
+text-transform:uppercase;
+color:var(--gold);
+}
+
+.logo-word{
+display:inline-flex;
+gap:0;
+}
+
+.logo-word span{
+display:inline-block;
+}
+
+/* NAV */
+
+.top-nav{
+display:flex;
+align-items:center;
+gap:18px;
+flex-wrap:wrap;
+}
+
+.top-nav a{
+color:#f5f1ea;
+text-decoration:none;
+font-weight:bold;
+font-size:15px;
+transition:color .25s ease;
+}
+
+.top-nav a:hover{
+color:var(--gold);
+}
+
+/* SEARCH */
+
+.header-search{
+position:relative;
+display:flex;
+align-items:center;
+}
+
+.header-search input{
+width:240px;
+border-radius:999px;
+border:1px solid rgba(255,255,255,0.14);
+padding:11px 15px;
+background:#222;
+color:white;
+outline:none;
+transition:all .2s ease;
+}
+
+.header-search input:focus{
+border-color:var(--gold);
+box-shadow:0 0 0 3px rgba(200,169,107,0.15);
+}
+
+.header-search input::placeholder{
+color:#aaa;
+}
+
+.search-suggestions{
+position:absolute;
+top:48px;
+right:0;
+width:320px;
+max-height:0;
+overflow:hidden;
+opacity:0;
+transform:translateY(-4px);
+background:#ffffff;
+color:#111111;
+border-radius:16px;
+box-shadow:0 14px 30px rgba(0,0,0,0.16);
+border:1px solid rgba(17,17,17,0.08);
+transition:max-height .25s ease, opacity .25s ease, transform .25s ease;
+z-index:2000;
+}
+
+.search-suggestions.show{
+max-height:320px;
+opacity:1;
+transform:translateY(0);
+overflow-y:auto;
+}
+
+.search-suggestion-item{
+display:flex;
+align-items:center;
+gap:12px;
+padding:12px 14px;
+text-decoration:none;
+color:#111111;
+border-bottom:1px solid rgba(17,17,17,0.06);
+}
+
+.search-suggestion-item:last-child{
+border-bottom:none;
+}
+
+.search-suggestion-item:hover{
+background:#f7f2ea;
+}
+
+.search-suggestion-item img{
+width:48px;
+height:48px;
+object-fit:cover;
+border-radius:10px;
+flex-shrink:0;
+}
+
+.search-suggestion-text{
+display:flex;
+flex-direction:column;
+gap:4px;
+min-width:0;
+}
+
+.search-suggestion-text strong{
+font-size:14px;
+line-height:1.3;
+}
+
+.search-suggestion-text span{
+font-size:13px;
+color:#7a6a5c;
+}
+
+.search-empty{
+padding:14px;
+font-size:14px;
+color:#7a6a5c;
+}
+
+/* CART ICON */
+
+.cart-button{
+display:flex;
+align-items:center;
+justify-content:center;
+gap:10px;
+padding:11px 16px;
+background:linear-gradient(135deg, #d8bf8a, var(--gold));
+color:#111111;
+border-radius:12px;
+font-weight:bold;
+flex-shrink:0;
+box-shadow:0 10px 24px rgba(200,169,107,0.3);
+transition:transform .2s ease, box-shadow .2s ease;
+}
+
+.cart-button:hover{
+transform:translateY(-1px);
+box-shadow:0 14px 28px rgba(200,169,107,0.35);
+color:#111111;
+}
+
+.cart-icon{
+width:22px;
+height:22px;
+fill:#111111;
+}
+
+.cart-count{
+background:#ff4b4b;
+color:white;
+font-size:12px;
+min-width:20px;
+height:20px;
+padding:0 6px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+line-height:1;
+}
+
+/* HERO */
+
+.shop-hero{
+padding:34px 24px 18px;
+}
+
+.shop-hero-inner{
+max-width:1240px;
+margin:auto;
+background:linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.82) 100%);
+border:1px solid rgba(17,17,17,0.06);
+border-radius:28px;
+box-shadow:var(--shadow);
+backdrop-filter:blur(10px);
+padding:34px 30px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:20px;
+flex-wrap:wrap;
+}
+
+.shop-hero-copy h1{
+font-size:48px;
+line-height:1.05;
+margin-bottom:12px;
+}
+
+.shop-hero-copy p{
+font-size:16px;
+line-height:1.8;
+color:var(--muted);
+max-width:720px;
+}
+
+.shop-hero-actions{
+display:flex;
+gap:12px;
+flex-wrap:wrap;
+}
+
+.hero-link{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+padding:13px 16px;
+border-radius:999px;
+text-decoration:none;
+font-weight:700;
+transition:all .2s ease;
+}
+
+.hero-link.primary{
+background:#111;
+color:white;
+box-shadow:0 14px 30px rgba(17,17,17,0.14);
+}
+
+.hero-link.primary:hover{
+background:#222;
+transform:translateY(-1px);
+}
+
+.hero-link.secondary{
+background:white;
+color:#111;
+border:1px solid rgba(17,17,17,0.08);
+}
+
+.hero-link.secondary:hover{
+transform:translateY(-1px);
+box-shadow:0 12px 24px rgba(0,0,0,0.08);
+}
+
+/* SWIPE HINT */
+
+.swipe-hint-wrap{
+padding:0 24px 10px;
+}
+
+.swipe-hint{
+max-width:1240px;
+margin:auto;
+background:linear-gradient(135deg, rgba(17,17,17,0.94), rgba(34,34,34,0.92));
+color:white;
+border-radius:22px;
+padding:14px 18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:12px;
+box-shadow:var(--shadow);
+border:1px solid rgba(255,255,255,0.06);
+}
+
+.swipe-hint strong{
+font-size:14px;
+}
+
+.swipe-hint span{
+font-size:13px;
+color:rgba(255,255,255,0.78);
+line-height:1.6;
+}
+
+.swipe-pill{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+padding:8px 12px;
+border-radius:999px;
+background:rgba(255,255,255,0.10);
+font-size:12px;
+font-weight:700;
+white-space:nowrap;
+}
+
+/* SECTION */
+
+.section{
+padding:42px 24px 60px;
+}
+
+.section h2{
+text-align:center;
+font-size:36px;
+margin-bottom:34px;
+}
+
+/* CATEGORIES */
+
+.categories-grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:22px;
+max-width:1200px;
+margin:auto auto 30px;
+}
+
+.category-card{
+position:relative;
+height:240px;
+border-radius:20px;
+overflow:hidden;
+cursor:pointer;
+border:none;
+padding:0;
+background:none;
+box-shadow:var(--shadow-soft);
+transition:transform .28s ease, box-shadow .28s ease;
+}
+
+.category-card:hover{
+transform:translateY(-6px);
+box-shadow:var(--shadow);
+}
+
+.category-card img{
+width:100%;
+height:100%;
+object-fit:cover;
+transition:transform .4s ease;
+}
+
+.category-card:hover img{
+transform:scale(1.06);
+}
+
+.category-overlay{
+position:absolute;
+inset:0;
+background:linear-gradient(180deg, rgba(0,0,0,.1) 0%, rgba(0,0,0,.58) 100%);
+display:flex;
+align-items:flex-end;
+padding:18px;
+}
+
+.category-overlay strong{
+color:white;
+font-size:24px;
+}
+
+/* SHOP TOOLBAR */
+
+.shop-toolbar{
+max-width:1200px;
+margin:auto;
+margin-bottom:22px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+gap:12px;
+}
+
+.shop-filters{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.filter-btn{
+padding:9px 15px;
+border-radius:999px;
+border:1px solid #ddd;
+background:white;
+cursor:pointer;
+transition:all .2s ease;
+font-weight:600;
+}
+
+.filter-btn:hover{
+border-color:var(--gold);
+color:var(--gold-dark);
+}
+
+.filter-btn.active{
+background:linear-gradient(135deg, #d8bf8a, var(--gold));
+color:black;
+border-color:var(--gold);
+box-shadow:0 8px 18px rgba(200,169,107,0.22);
+}
+
+.shop-sort select{
+padding:10px 12px;
+border-radius:12px;
+border:1px solid #ddd;
+background:white;
+outline:none;
+}
+
+/* PRODUCTS */
+
+.products-grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:24px;
+max-width:1200px;
+margin:auto;
+}
+
+.product-card{
+background:white;
+border-radius:18px;
+overflow:hidden;
+box-shadow:0 8px 18px rgba(0,0,0,.06);
+transition:transform .25s ease, box-shadow .25s ease;
+border:1px solid rgba(17,17,17,0.05);
+}
+
+.product-card:hover{
+transform:translateY(-6px);
+box-shadow:0 18px 34px rgba(0,0,0,.1);
+}
+
+.product-card img{
+width:100%;
+height:250px;
+object-fit:cover;
+display:block;
+}
+
+.product-info{
+padding:18px;
+}
+
+.product-info h3{
+margin-bottom:8px;
+font-size:20px;
+line-height:1.25;
+}
+
+.product-sub{
+color:var(--muted);
+font-size:14px;
+line-height:1.55;
+min-height:46px;
+margin-bottom:10px;
+}
+
+.product-price-block{
+display:flex;
+flex-direction:column;
+gap:6px;
+margin-bottom:14px;
+}
+
+.product-price-row{
+display:flex;
+align-items:center;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.product-price{
+font-weight:bold;
+font-size:20px;
+color:#111;
+}
+
+.product-old-price{
+font-size:15px;
+color:#8a7d70;
+text-decoration:line-through;
+}
+
+.product-discount{
+display:inline-flex;
+align-items:center;
+padding:5px 9px;
+border-radius:999px;
+background:var(--sale-soft);
+color:var(--sale-deep);
+font-size:12px;
+font-weight:700;
+width:max-content;
+}
+
+.product-badge{
+position:absolute;
+top:12px;
+left:12px;
+background:#111;
+color:white;
+padding:6px 10px;
+border-radius:999px;
+font-size:12px;
+box-shadow:0 8px 18px rgba(0,0,0,0.16);
+}
+
+.product-badge.sale{
+background:var(--sale);
+}
+
+.product-image-wrap{
+position:relative;
+display:block;
+overflow:hidden;
+}
+
+.product-image-wrap img{
+transition:transform .35s ease;
+}
+
+.product-card:hover .product-image-wrap img{
+transform:scale(1.04);
+}
+
+.add-btn{
+width:100%;
+padding:11px;
+border:none;
+background:#111;
+color:white;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+transition:all .2s ease;
+}
+
+.add-btn:hover{
+background:#2b2b2b;
+transform:translateY(-1px);
+}
+
+.no-products,
+.loading-products,
+.debug-status{
+grid-column:1 / -1;
+background:white;
+padding:28px;
+border-radius:16px;
+text-align:center;
+box-shadow:0 6px 12px rgba(0,0,0,.06);
+color:#6f6257;
+}
+
+.debug-status{
+margin-bottom:16px;
+font-size:14px;
+line-height:1.7;
+}
+
+/* FOOTER */
+
+footer{
+background:#111;
+color:white;
+text-align:center;
+padding:22px;
+margin-top:44px;
+}
+
+/* MOBILE */
+
+@media(max-width:1100px){
+.products-grid{
+grid-template-columns:repeat(2,1fr);
+}
+
+.categories-grid{
+grid-template-columns:repeat(2,1fr);
+}
+}
+
+@media(max-width:900px){
+header{
+flex-direction:column;
+gap:16px;
+padding:20px;
+}
+
+.top-nav{
+justify-content:center;
+}
+
+.header-search input{
+width:220px;
+}
+
+.search-suggestions{
+left:0;
+right:auto;
+width:280px;
+}
+
+.shop-hero-copy h1{
+font-size:38px;
+}
+}
+
+@media(max-width:760px){
+.swipe-hint-wrap,
+.shop-hero,
+.section{
+padding-left:16px;
+padding-right:16px;
+}
+
+.swipe-hint{
+flex-direction:column;
+align-items:flex-start;
+}
+}
+
+@media(max-width:600px){
+.products-grid{
+grid-template-columns:1fr;
+}
+
+.categories-grid{
+grid-template-columns:1fr;
+}
+
+.logo h1{
+font-size:34px;
+}
+
+.header-search{
+width:100%;
+}
+
+.header-search input{
+width:100%;
+}
+
+.search-suggestions{
+width:100%;
+left:0;
+right:0;
+}
+
+.shop-hero-inner{
+padding:26px 22px;
+}
+
+.shop-hero-copy h1{
+font-size:32px;
+}
+}
+</style>
+<link rel="stylesheet" href="theme.css">
+<script src="theme.js"></script>
+</head>
+
+<body>
+
+<header>
+<a href="index.html" class="logo">
+<div>
+<h1 class="logo-word">
+<span>S</span><span>o</span><span>c</span><span>i</span><span>a</span><span>l</span><span>E</span><span>r</span><span>a</span>
+</h1>
+<p>Social Shopping</p>
+</div>
+<img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
+</a>
+
+<nav class="top-nav">
+<a href="index.html">Home</a>
+<a href="shop.html">Shop</a>
+<a href="login.html" class="auth-link static-auth-link">Login</a>
+<a href="signup.html" class="auth-link static-auth-link">Sign Up</a>
+
+<div class="header-search">
+<input type="text" id="search-input" placeholder="Search products">
+<div id="search-suggestions" class="search-suggestions"></div>
+</div>
+
+<a href="cart.html" class="cart-button" aria-label="Cart">
+<svg class="cart-icon" viewBox="0 0 24 24" aria-hidden="true">
+<path d="M7 4H5L4 6v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H10.58c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.72c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H7.42L6.48 6H4.42"></path>
+<circle cx="10" cy="20" r="2"></circle>
+<circle cx="20" cy="20" r="2"></circle>
+</svg>
+<span>Cart</span>
+<span id="cart-count" class="cart-count">0</span>
+</a>
+</nav>
+</header>
+
+<section class="shop-hero">
+<div class="shop-hero-inner">
+<div class="shop-hero-copy">
+<h1>SocialEra Shop</h1>
+<p>
+A dedicated shopping experience with categories, filters, sorting, and full catalog browsing — separated cleanly from the social feed.
+</p>
+</div>
+<div class="shop-hero-actions">
+<a href="index.html" class="hero-link secondary">Back to Feed</a>
+<a href="#products" class="hero-link primary">Browse Products</a>
+</div>
+</div>
+</section>
+
+<section class="swipe-hint-wrap">
+<div class="swipe-hint">
+<div>
+<strong>App-style navigation enabled</strong>
+<span>On mobile, swipe right anywhere on this page to go back to the feed.</span>
+</div>
+<div class="swipe-pill">Swipe right → Feed</div>
+</div>
+</section>
+
+<section class="section">
+<h2>Shop by Category</h2>
+
+<div class="categories-grid">
+<button class="category-card" onclick="activateCategory('men',true)">
+<img src="assets/category-men.jpg" alt="Men">
+<div class="category-overlay">
+<strong>Men</strong>
+</div>
+</button>
+
+<button class="category-card" onclick="activateCategory('women',true)">
+<img src="assets/category-women.jpg" alt="Women">
+<div class="category-overlay">
+<strong>Women</strong>
+</div>
+</button>
+
+<button class="category-card" onclick="activateCategory('accessories',true)">
+<img src="assets/category-accessories.jpg" alt="Accessories">
+<div class="category-overlay">
+<strong>Accessories</strong>
+</div>
+</button>
+
+<button class="category-card" onclick="activateCategory('home',true)">
+<img src="assets/category-home.jpg" alt="Home">
+<div class="category-overlay">
+<strong>Home</strong>
+</div>
+</button>
+</div>
+
+<div class="shop-toolbar">
+<div class="shop-filters">
+<button class="filter-btn active" data-category="all">All</button>
+<button class="filter-btn" data-category="men">Men</button>
+<button class="filter-btn" data-category="women">Women</button>
+<button class="filter-btn" data-category="accessories">Accessories</button>
+<button class="filter-btn" data-category="home">Home</button>
+</div>
+
+<div class="shop-sort">
+<select id="sort-select">
+<option value="default">Sort</option>
+<option value="low-high">Price Low</option>
+<option value="high-low">Price High</option>
+<option value="name-az">Name A-Z</option>
+</select>
+</div>
+</div>
+
+<div id="products" class="products-grid">
+<div class="loading-products">Loading products...</div>
+</div>
+</section>
+
+<footer>
+<p>© 2026 SocialEra</p>
+</footer>
+
+<script>
+const productsContainer=document.getElementById('products');
+const cartCount=document.getElementById('cart-count');
+const searchInput=document.getElementById('search-input');
+const sortSelect=document.getElementById('sort-select');
+const filterButtons=document.querySelectorAll('.filter-btn');
+const suggestionsBox=document.getElementById('search-suggestions');
+
+let cart=JSON.parse(localStorage.getItem('lovadaCart'))||[];
+let allProducts=[];
+let currentCategory='all';
+
+const imageList=[
+'assets/category-accessories.jpg',
+'assets/category-women.jpg',
+'assets/category-men.jpg',
+'assets/hero-4.jpg',
+'assets/category-home.jpg'
+];
+
+const productBadges=['New','Popular','Featured','Limited','Best Seller'];
+const productOptionPresets={
+men:{colors:['Obsidian','Stone','Olive'],sizes:['S','M','L','XL']},
+women:{colors:['Espresso','Sand','Midnight'],sizes:['XS','S','M','L']},
+accessories:{colors:['Black','Gold','Pearl'],sizes:['One Size']},
+home:{colors:['Ivory','Sage','Charcoal'],sizes:['Standard','Large']}
+};
+
+function updateCartCount(){
+const total=cart.reduce((sum,i)=>sum+i.quantity,0);
+cartCount.textContent=total;
+}
+
+function addToCart(productId){
+const product=allProducts.find(item=>String(item.id)===String(productId));
+
+if(!product){
+alert('Product not found');
+return;
+}
+
+const variant=getDefaultVariant(product);
+const variantKey=buildVariantKey(product,variant);
+const existing=cart.find(i=>String(i.variantKey||i.id)===variantKey);
+const effectivePrice=getEffectivePrice(product);
+const regularPrice=Number(product.price||0);
+const originalPrice=isSaleActive(product)?regularPrice:effectivePrice;
+
+if(existing){
+existing.quantity+=1;
+existing.price=effectivePrice;
+existing.originalPrice=originalPrice;
+if(product.image){
+existing.image=product.image;
+}
+}else{
+cart.push({
+id:product.id,
+variantKey:variantKey,
+name:product.name,
+price:effectivePrice,
+originalPrice:originalPrice,
+quantity:1,
+image:product.image||'',
+selectedColor:variant.color,
+selectedSize:variant.size
+});
+}
+
+localStorage.setItem('lovadaCart',JSON.stringify(cart));
+updateCartCount();
+alert('Added to cart');
+}
+
+function normalizeCategory(product){
+if(product.category){
+return String(product.category).toLowerCase();
+}
+
+const name=String(product.name||'').toLowerCase();
+
+if(name.includes('men')) return 'men';
+if(name.includes('women')||name.includes('dress')) return 'women';
+if(
+name.includes('bag')||
+name.includes('heel')||
+name.includes('accessory')||
+name.includes('watch')||
+name.includes('clutch')
+) return 'accessories';
+if(name.includes('home')) return 'home';
+
+return 'women';
+}
+
+function getDefaultVariant(product){
+const preset=productOptionPresets[normalizeCategory(product)]||productOptionPresets.women;
+const colors=Array.isArray(product.colors)&&product.colors.length
+? product.colors.map(entry=>typeof entry==='string'?entry:String(entry.name||'Default'))
+: preset.colors;
+const sizes=Array.isArray(product.sizes)&&product.sizes.length
+? product.sizes
+: preset.sizes;
+
+return {
+color:String(colors[0]||'Default'),
+size:String(sizes[0]||'One Size')
+};
+}
+
+function buildVariantKey(product,variant){
+return `${product.id}::${variant.color}::${variant.size}`;
+}
+
+function getFilteredProducts(){
+let filtered=[...allProducts];
+const search=searchInput.value.trim().toLowerCase();
+const sort=sortSelect.value;
+
+if(search){
+filtered=filtered.filter(p=>
+String(p.name||'').toLowerCase().includes(search)
+);
+}
+
+if(currentCategory!=='all'){
+filtered=filtered.filter(p=>normalizeCategory(p)===currentCategory);
+}
+
+if(sort==='low-high'){
+filtered.sort((a,b)=>getEffectivePrice(a)-getEffectivePrice(b));
+}
+
+if(sort==='high-low'){
+filtered.sort((a,b)=>getEffectivePrice(b)-getEffectivePrice(a));
+}
+
+if(sort==='name-az'){
+filtered.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+}
+
+return filtered;
+}
+
+function escapeHtml(value){
+return String(value)
+.replace(/&/g,'&amp;')
+.replace(/</g,'&lt;')
+.replace(/>/g,'&gt;')
+.replace(/"/g,'&quot;')
+.replace(/'/g,'&#39;');
+}
+
+function getProductImage(product,index){
+if(product.image && String(product.image).trim()!==''){
+return String(product.image);
+}
+return imageList[index%imageList.length];
+}
+
+function isSaleActive(product){
+const regular=Number(product.price||0);
+const saleEnabled=Boolean(product.saleEnabled);
+const salePrice=Number(product.salePrice||0);
+
+return saleEnabled && salePrice > 0 && regular > 0 && salePrice < regular;
+}
+
+function getEffectivePrice(product){
+return isSaleActive(product) ? Number(product.salePrice||0) : Number(product.price||0);
+}
+
+function getDiscountPercent(product){
+const regular=Number(product.price||0);
+const sale=Number(product.salePrice||0);
+
+if(!isSaleActive(product) || regular <= 0){
+return 0;
+}
+
+return ((regular - sale) / regular) * 100;
+}
+
+function getProductBadge(product,index){
+if(isSaleActive(product)){
+return {
+text: String(product.saleLabel || 'Sale'),
+sale: true
+};
+}
+
+return {
+text: productBadges[index%productBadges.length],
+sale: false
+};
+}
+
+function renderPriceBlock(product){
+const regular=Number(product.price||0);
+const effective=getEffectivePrice(product);
+const discount=getDiscountPercent(product);
+
+if(isSaleActive(product)){
+return `
+<div class="product-price-block">
+<div class="product-price-row">
+<div class="product-price">$${effective.toFixed(2)}</div>
+<div class="product-old-price">$${regular.toFixed(2)}</div>
+</div>
+<div class="product-discount">${discount.toFixed(0)}% OFF</div>
+</div>
+`;
+}
+
+return `
+<div class="product-price-block">
+<div class="product-price-row">
+<div class="product-price">$${effective.toFixed(2)}</div>
+</div>
+</div>
+`;
+}
+
+function renderProducts(){
+const products=getFilteredProducts();
+
+if(!products.length){
+productsContainer.innerHTML=`
+<div class="no-products">
+No products found. Try a different search or filter.
+</div>
+`;
+return;
+}
+
+productsContainer.innerHTML=products.map((p,i)=>{
+const badge=getProductBadge(p,i);
+
+return `
+<div class="product-card">
+<a href="product.html?id=${encodeURIComponent(p.id)}" class="product-image-wrap">
+<img
+src="${escapeHtml(getProductImage(p,i))}"
+alt="${escapeHtml(String(p.name||'Product'))}"
+onerror="this.onerror=null;this.src='${imageList[i%imageList.length]}';"
+>
+<div class="product-badge ${badge.sale ? 'sale' : ''}">${escapeHtml(badge.text)}</div>
+</a>
+
+<div class="product-info">
+<a href="product.html?id=${encodeURIComponent(p.id)}" style="text-decoration:none;color:inherit;">
+<h3>${escapeHtml(String(p.name||'Untitled Product'))}</h3>
+</a>
+
+<div class="product-sub">
+${p.description
+? escapeHtml(String(p.description).slice(0,90)+(String(p.description).length>90?'...':''))
+: 'Curated premium selection styled for the SocialEra storefront experience.'}
+</div>
+
+${renderPriceBlock(p)}
+
+<button class="add-btn" onclick="addToCart('${escapeHtml(String(p.id))}')">
+Add to Cart
+</button>
+</div>
+</div>
+`;
+}).join('');
+}
+
+function renderSuggestions(){
+const query=searchInput.value.trim().toLowerCase();
+
+if(!query){
+suggestionsBox.classList.remove('show');
+suggestionsBox.innerHTML='';
+return;
+}
+
+const matches=allProducts.filter(product=>
+String(product.name||'').toLowerCase().includes(query)
+).slice(0,5);
+
+if(!matches.length){
+suggestionsBox.innerHTML=`<div class="search-empty">No matching items found.</div>`;
+suggestionsBox.classList.add('show');
+return;
+}
+
+suggestionsBox.innerHTML=matches.map((product,index)=>`
+<a class="search-suggestion-item" href="product.html?id=${encodeURIComponent(product.id)}">
+<img
+src="${escapeHtml(getProductImage(product,index))}"
+alt="${escapeHtml(String(product.name||'Product'))}"
+onerror="this.onerror=null;this.src='${imageList[index%imageList.length]}';"
+>
+<div class="search-suggestion-text">
+<strong>${escapeHtml(String(product.name||'Untitled Product'))}</strong>
+<span>$${getEffectivePrice(product).toFixed(2)}</span>
+</div>
+</a>
+`).join('');
+
+suggestionsBox.classList.add('show');
+}
+
+function getApiCandidates(){
+return [
+'/api/products'
+];
+}
+
+async function fetchProductsFrom(url){
+const response=await fetch(url,{
+method:'GET',
+headers:{
+'Accept':'application/json'
+}
+});
+
+if(!response.ok){
+throw new Error(`Request failed: ${response.status} ${response.statusText}`);
+}
+
+const data=await response.json();
+
+if(!Array.isArray(data)){
+throw new Error('API did not return an array of products.');
+}
+
+return data;
+}
+
+function showDebugStatus(message){
+productsContainer.innerHTML=`
+<div class="debug-status">
+${message}
+</div>
+`;
+}
+
+function activateCategory(cat,scroll){
+currentCategory=cat;
+
+filterButtons.forEach(btn=>{
+btn.classList.toggle('active',btn.dataset.category===cat);
+});
+
+renderProducts();
+
+if(scroll){
+productsContainer.scrollIntoView({behavior:'smooth',block:'start'});
+}
+}
+
+filterButtons.forEach(btn=>{
+btn.onclick=()=>activateCategory(btn.dataset.category,true);
+});
+
+searchInput.addEventListener('input',()=>{
+renderProducts();
+renderSuggestions();
+});
+
+searchInput.addEventListener('keydown',(e)=>{
+if(e.key==='Enter'){
+e.preventDefault();
+renderProducts();
+renderSuggestions();
+suggestionsBox.classList.remove('show');
+productsContainer.scrollIntoView({behavior:'smooth',block:'start'});
+}
+});
+
+sortSelect.addEventListener('change',renderProducts);
+
+document.addEventListener('click',(e)=>{
+if(!e.target.closest('.header-search')){
+suggestionsBox.classList.remove('show');
+}
+});
+
+function applySearchFromUrl(){
+const params=new URLSearchParams(window.location.search);
+const search=params.get('search') || '';
+if(search){
+searchInput.value=search;
+}
+}
+
+async function loadProducts(){
+const apiCandidates=getApiCandidates();
+let lastError=null;
+
+showDebugStatus('Loading products...');
+
+for(const url of apiCandidates){
+try{
+showDebugStatus(`Trying: ${url}`);
+
+const data=await fetchProductsFrom(url);
+
+allProducts=data.map((product,index)=>({
+id:product.id ?? index + 1,
+name:product.name ?? 'Untitled Product',
+price:Number(product.price ?? 0),
+category:product.category ?? '',
+description:product.description ?? '',
+image:product.image ?? '',
+stock:Number(product.stock ?? 0),
+featured:Boolean(product.featured),
+saleEnabled:Boolean(product.saleEnabled),
+salePrice:Number(product.salePrice ?? 0),
+saleLabel:product.saleLabel ?? 'Sale',
+fulfillmentType:product.fulfillmentType ?? 'inhouse',
+supplierName:product.supplierName ?? '',
+supplierSku:product.supplierSku ?? '',
+supplierCost:Number(product.supplierCost ?? 0),
+supplierLink:product.supplierLink ?? '',
+processingTime:product.processingTime ?? '',
+shippingTime:product.shippingTime ?? ''
+}));
+
+renderProducts();
+return;
+}catch(error){
+lastError=error;
+console.warn('Failed loading from:',url,error);
+}
+}
+
+productsContainer.innerHTML=`
+<div class="no-products">
+Failed to load products.<br><br>
+Make sure the backend is running and that <strong>/api/products</strong> returns a valid JSON array.<br><br>
+Open the site through the backend server instead of double-clicking the HTML file.
+</div>
+`;
+
+if(lastError){
+console.error('Final product loading error:',lastError);
+}
+}
+
+async function updateAuthNavigation(){
+if(!window.supabase){
+return;
+}
+
+const nav=document.querySelector('.top-nav');
+if(!nav) return;
+
+const cartButton=nav.querySelector('.cart-button');
+if(!cartButton) return;
+
+nav.querySelectorAll('.auth-link').forEach(link=>link.remove());
+
+try{
+const { data } = await window.supabase.auth.getUser();
+const user=data?.user;
+
+if(user){
+const accountLink=document.createElement('a');
+accountLink.href='account.html';
+accountLink.textContent='Account';
+accountLink.classList.add('auth-link');
+nav.insertBefore(accountLink, cartButton);
+}else{
+const loginLink=document.createElement('a');
+loginLink.href='login.html';
+loginLink.textContent='Login';
+loginLink.classList.add('auth-link');
+
+const signupLink=document.createElement('a');
+signupLink.href='signup.html';
+signupLink.textContent='Sign Up';
+signupLink.classList.add('auth-link');
+
+nav.insertBefore(loginLink, cartButton);
+nav.insertBefore(signupLink, cartButton);
+}
+}catch(error){
+console.warn('Auth navigation update failed:', error);
+}
+}
+
+/* SWIPE RIGHT TO FEED */
+let touchStartX=0;
+let touchStartY=0;
+let touchEndX=0;
+let touchEndY=0;
+
+document.addEventListener('touchstart',(e)=>{
+if(e.touches.length!==1) return;
+touchStartX=e.touches[0].clientX;
+touchStartY=e.touches[0].clientY;
+},{passive:true});
+
+document.addEventListener('touchend',(e)=>{
+if(e.changedTouches.length!==1) return;
+touchEndX=e.changedTouches[0].clientX;
+touchEndY=e.changedTouches[0].clientY;
+
+const dx=touchEndX-touchStartX;
+const dy=touchEndY-touchStartY;
+
+if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.2){
+if(dx>0){
+window.location.href='index.html';
+}
+}
+},{passive:true});
+
+document.addEventListener('DOMContentLoaded',()=>{
+updateCartCount();
+applySearchFromUrl();
+loadProducts();
+});
+</script>
+
+<script type="module" src="supabase.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+setTimeout(updateAuthNavigation,150);
+});
+</script>
+
+</body>
+</html>

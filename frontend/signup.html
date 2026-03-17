@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialEra - Sign Up</title>
+
+  <style>
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    html{
+      scroll-behavior:smooth;
+    }
+
+    :root{
+      --bg:#f8f5f0;
+      --surface:#ffffff;
+      --text:#1a1a1a;
+      --muted:#6f6257;
+      --gold:#c8a96b;
+      --gold-dark:#b89554;
+      --dark:#111111;
+      --border:rgba(17,17,17,0.08);
+      --shadow:0 10px 30px rgba(0,0,0,0.08);
+      --shadow-soft:0 6px 14px rgba(0,0,0,0.06);
+      --radius:18px;
+      --success:#166534;
+      --success-soft:rgba(22,101,52,0.08);
+      --error:#b91c1c;
+      --error-soft:rgba(185,28,28,0.08);
+    }
+
+    body{
+      font-family:Inter, "Helvetica Neue", Arial, sans-serif;
+      min-height:100vh;
+      background:
+        radial-gradient(circle at top left, rgba(139,92,246,0.04), transparent 20%),
+        linear-gradient(180deg, #fcfaf7 0%, var(--bg) 100%);
+      color:var(--text);
+      display:flex;
+      flex-direction:column;
+    }
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      background:rgba(17,17,17,0.94);
+      color:white;
+      padding:20px 44px;
+      position:sticky;
+      top:0;
+      z-index:1000;
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      box-shadow:0 12px 32px rgba(0,0,0,0.18);
+    }
+
+    .logo{
+      text-decoration:none;
+      color:white;
+      display:inline-flex;
+      align-items:center;
+      gap:14px;
+      flex-shrink:0;
+    }
+
+    .logo h1{
+      font-family:Georgia, serif;
+      font-size:40px;
+      font-weight:bold;
+      line-height:1;
+      margin-bottom:0;
+    }
+
+    .logo-mark-image{
+      width:96px;
+      height:96px;
+      object-fit:contain;
+      flex-shrink:0;
+      border-radius:50%;
+    }
+
+    .logo p{
+      font-size:12px;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color:var(--gold);
+    }
+
+    .logo-word{
+      display:inline-flex;
+      gap:0;
+    }
+
+    .logo-word span{
+      display:inline-block;
+    }
+
+    .top-nav{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      flex-wrap:wrap;
+    }
+
+    .top-nav a{
+      color:#f5f1ea;
+      text-decoration:none;
+      font-weight:bold;
+      font-size:15px;
+      transition:color .25s ease;
+    }
+
+    .top-nav a:hover{
+      color:var(--gold);
+    }
+
+    .cart-button{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:11px 16px;
+      background:linear-gradient(135deg, #d8bf8a, var(--gold));
+      color:#111111;
+      border-radius:12px;
+      font-weight:bold;
+      box-shadow:0 10px 24px rgba(200,169,107,0.3);
+      transition:transform .2s ease, box-shadow .2s ease;
+    }
+
+    .cart-button:hover{
+      transform:translateY(-1px);
+      box-shadow:0 14px 28px rgba(200,169,107,0.35);
+      color:#111111;
+    }
+
+    .page-wrap{
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:48px 20px;
+    }
+
+    .auth-card{
+      width:100%;
+      max-width:520px;
+      background:rgba(255,255,255,0.9);
+      border:1px solid rgba(17,17,17,0.06);
+      border-radius:28px;
+      box-shadow:0 18px 45px rgba(0,0,0,0.09);
+      overflow:hidden;
+      backdrop-filter:blur(8px);
+    }
+
+    .auth-top{
+      padding:34px 34px 18px;
+      background:
+        linear-gradient(180deg, rgba(200,169,107,0.08) 0%, rgba(255,255,255,0) 100%);
+    }
+
+    .auth-eyebrow{
+      display:inline-block;
+      font-size:12px;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color:var(--gold-dark);
+      margin-bottom:12px;
+      font-weight:700;
+    }
+
+    .auth-title{
+      font-size:38px;
+      line-height:1.05;
+      margin-bottom:12px;
+    }
+
+    .auth-subtitle{
+      color:var(--muted);
+      font-size:15px;
+      line-height:1.7;
+    }
+
+    .auth-body{
+      padding:24px 34px 34px;
+    }
+
+    .status{
+      display:none;
+      margin-bottom:18px;
+      padding:14px 16px;
+      border-radius:16px;
+      font-size:14px;
+      line-height:1.6;
+    }
+
+    .status.show{
+      display:block;
+    }
+
+    .status.success{
+      background:var(--success-soft);
+      color:var(--success);
+      border:1px solid rgba(22,101,52,0.14);
+    }
+
+    .status.error{
+      background:var(--error-soft);
+      color:var(--error);
+      border:1px solid rgba(185,28,28,0.14);
+    }
+
+    .auth-form{
+      display:grid;
+      gap:16px;
+    }
+
+    .field{
+      display:grid;
+      gap:8px;
+    }
+
+    .optional-block{
+      margin-top:4px;
+      padding:18px;
+      border-radius:18px;
+      border:1px solid rgba(17,17,17,0.08);
+      background:rgba(17,17,17,0.03);
+      display:grid;
+      gap:16px;
+    }
+
+    .optional-head{
+      display:grid;
+      gap:6px;
+    }
+
+    .optional-eyebrow{
+      font-size:12px;
+      letter-spacing:1.8px;
+      text-transform:uppercase;
+      color:var(--gold-dark);
+      font-weight:700;
+    }
+
+    .optional-head p{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.6;
+    }
+
+    .field-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:16px;
+    }
+
+    .field label{
+      font-size:14px;
+      font-weight:700;
+      color:#221d19;
+    }
+
+    .field input{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(17,17,17,0.1);
+      padding:14px 15px;
+      background:#fff;
+      color:var(--text);
+      outline:none;
+      font-size:15px;
+      transition:border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+
+    .field input:focus{
+      border-color:var(--gold);
+      box-shadow:0 0 0 4px rgba(200,169,107,0.15);
+    }
+
+    .helper{
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.5;
+    }
+
+    .auth-button{
+      width:100%;
+      border:none;
+      border-radius:14px;
+      padding:15px 18px;
+      background:#111;
+      color:white;
+      font-size:15px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+      box-shadow:0 14px 30px rgba(17,17,17,0.14);
+      margin-top:6px;
+    }
+
+    .auth-button:hover{
+      transform:translateY(-1px);
+      background:#222;
+    }
+
+    .auth-button:disabled{
+      opacity:.65;
+      cursor:not-allowed;
+      transform:none;
+      box-shadow:none;
+    }
+
+    .auth-bottom{
+      margin-top:18px;
+      text-align:center;
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.7;
+    }
+
+    .auth-bottom a{
+      color:#111;
+      font-weight:700;
+      text-decoration:none;
+    }
+
+    .auth-bottom a:hover{
+      color:var(--gold-dark);
+    }
+
+    footer{
+      background:#111;
+      color:white;
+      text-align:center;
+      padding:22px;
+      margin-top:auto;
+    }
+
+    @media(max-width:900px){
+      header{
+        flex-direction:column;
+        gap:16px;
+        padding:20px;
+      }
+
+      .top-nav{
+        justify-content:center;
+      }
+    }
+
+    @media(max-width:600px){
+      .auth-top{
+        padding:28px 22px 16px;
+      }
+
+      .auth-body{
+        padding:22px 22px 28px;
+      }
+
+      .auth-title{
+        font-size:32px;
+      }
+
+      .logo h1{
+        font-size:34px;
+      }
+
+      .field-grid{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="theme.css">
+  <script src="theme.js"></script>
+</head>
+<body>
+
+  <header>
+    <a href="index.html" class="logo">
+      <div>
+      <h1 class="logo-word">
+        <span>S</span><span>o</span><span>c</span><span>i</span><span>a</span><span>l</span><span>E</span><span>r</span><span>a</span>
+      </h1>
+      <p>Social Shopping</p>
+      </div>
+      <img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
+    </a>
+
+    <nav class="top-nav">
+      <a href="index.html">Home</a>
+      <a href="index.html#shop">Shop</a>
+      <a href="login.html">Login</a>
+      <a href="signup.html">Sign Up</a>
+      <a href="cart.html" class="cart-button">Cart</a>
+    </nav>
+  </header>
+
+  <main class="page-wrap">
+    <section class="auth-card">
+      <div class="auth-top">
+        <span class="auth-eyebrow">Create your account</span>
+        <h2 class="auth-title">Join SocialEra</h2>
+        <p class="auth-subtitle">
+          Create your account to start saving favourites, managing your cart, and building your SocialEra profile.
+        </p>
+      </div>
+
+      <div class="auth-body">
+        <div id="status-message" class="status"></div>
+
+        <form id="signup-form" class="auth-form">
+          <div class="field">
+            <label for="full-name">Full name</label>
+            <input type="text" id="full-name" name="full-name" placeholder="Your full name" required />
+          </div>
+
+          <div class="field">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Choose a username" required />
+            <div class="helper">This can become part of your future SocialEra profile.</div>
+          </div>
+
+          <div class="field">
+            <label for="email">Email address</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" required />
+          </div>
+
+          <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Create a password" required />
+            <div class="helper">Use at least 6 characters.</div>
+          </div>
+
+          <section class="optional-block" aria-labelledby="shipping-heading">
+            <div class="optional-head">
+              <span class="optional-eyebrow">Optional</span>
+              <div id="shipping-heading" class="field label">Shipping details</div>
+              <p>Add your shipping address now for a faster checkout later.</p>
+            </div>
+
+            <div class="field">
+              <label for="address-line-1">Address line 1</label>
+              <input type="text" id="address-line-1" name="address-line-1" placeholder="Street address" />
+            </div>
+
+            <div class="field">
+              <label for="address-line-2">Address line 2</label>
+              <input type="text" id="address-line-2" name="address-line-2" placeholder="Apartment, suite, unit, etc. (optional)" />
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="city">City</label>
+                <input type="text" id="city" name="city" placeholder="City" />
+              </div>
+
+              <div class="field">
+                <label for="state-region">State / Region</label>
+                <input type="text" id="state-region" name="state-region" placeholder="State or region" />
+              </div>
+            </div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label for="postal-code">Postal code</label>
+                <input type="text" id="postal-code" name="postal-code" placeholder="Postal code" />
+              </div>
+
+              <div class="field">
+                <label for="country">Country</label>
+                <input type="text" id="country" name="country" placeholder="Country" />
+              </div>
+            </div>
+          </section>
+
+          <button type="submit" id="signup-button" class="auth-button">Create Account</button>
+        </form>
+
+        <div class="auth-bottom">
+          Already have an account?
+          <a href="login.html">Log in</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 SocialEra</p>
+  </footer>
+
+  <script type="module" src="supabase.js"></script>
+
+  <script>
+    const signupForm = document.getElementById('signup-form');
+    const signupButton = document.getElementById('signup-button');
+    const statusMessage = document.getElementById('status-message');
+    const fullNameInput = document.getElementById('full-name');
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const addressLine1Input = document.getElementById('address-line-1');
+    const addressLine2Input = document.getElementById('address-line-2');
+    const cityInput = document.getElementById('city');
+    const stateRegionInput = document.getElementById('state-region');
+    const postalCodeInput = document.getElementById('postal-code');
+    const countryInput = document.getElementById('country');
+
+    function showStatus(message, type){
+      statusMessage.textContent = message;
+      statusMessage.className = `status show ${type}`;
+    }
+
+    function clearStatus(){
+      statusMessage.textContent = '';
+      statusMessage.className = 'status';
+    }
+
+    function normalizeUsername(value){
+      return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '')
+        .replace(/[^a-z0-9._-]/g, '');
+    }
+
+    signupForm.addEventListener('submit', async function(event){
+      event.preventDefault();
+      clearStatus();
+
+      const fullName = fullNameInput.value.trim();
+      const username = normalizeUsername(usernameInput.value);
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      const shippingAddress = {
+        address_line_1: addressLine1Input.value.trim(),
+        address_line_2: addressLine2Input.value.trim(),
+        city: cityInput.value.trim(),
+        state_region: stateRegionInput.value.trim(),
+        postal_code: postalCodeInput.value.trim(),
+        country: countryInput.value.trim()
+      };
+      const hasShippingAddress = Object.values(shippingAddress).some(Boolean);
+
+      if(!fullName || !username || !email || !password){
+        showStatus('Please fill in all fields.', 'error');
+        return;
+      }
+
+      if(password.length < 6){
+        showStatus('Password must be at least 6 characters long.', 'error');
+        return;
+      }
+
+      if(!window.supabase){
+        showStatus('Supabase is not connected yet.', 'error');
+        return;
+      }
+
+      signupButton.disabled = true;
+      signupButton.textContent = 'Creating Account...';
+
+      try{
+        const { data, error } = await window.supabase.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: {
+              full_name: fullName,
+              username: username,
+              shipping_address: hasShippingAddress ? shippingAddress : null
+            }
+          }
+        });
+
+        if(error){
+          showStatus(error.message, 'error');
+          return;
+        }
+
+        if(data && data.user){
+          showStatus(
+            'Account created successfully. Check your email for a confirmation link if Supabase asks you to verify your address.',
+            'success'
+          );
+          signupForm.reset();
+        }else{
+          showStatus('Signup completed, but no user details were returned.', 'success');
+        }
+      }catch(error){
+        showStatus('Something went wrong while creating your account.', 'error');
+        console.error(error);
+      }finally{
+        signupButton.disabled = false;
+        signupButton.textContent = 'Create Account';
+      }
+    });
+  </script>
+</body>
+</html>

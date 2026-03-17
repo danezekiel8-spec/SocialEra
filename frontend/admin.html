@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SocialEra Admin</title>
+
+<style>
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+}
+
+:root{
+--bg:#f8f5f0;
+--surface:#ffffff;
+--surface-2:#fcfaf7;
+--text:#171717;
+--muted:#6f6257;
+--gold:#c8a96b;
+--border:rgba(17,17,17,0.08);
+--shadow:0 12px 30px rgba(0,0,0,0.08);
+--shadow-soft:0 6px 16px rgba(0,0,0,0.05);
+--danger:#d64545;
+--success:#1f9d55;
+--blue:#2563eb;
+--blue-soft:rgba(37,99,235,0.12);
+--green-soft:rgba(31,157,85,0.10);
+--sale:#dc2626;
+--sale-soft:rgba(220,38,38,0.08);
+}
+
+body{
+font-family:Inter, "Helvetica Neue", Arial, sans-serif;
+background:
+radial-gradient(circle at top left, rgba(139,92,246,0.04), transparent 20%),
+linear-gradient(180deg, #fcfaf7 0%, var(--bg) 100%);
+color:var(--text);
+min-height:100vh;
+}
+
+header{
+background:rgba(17,17,17,0.95);
+color:white;
+padding:22px 28px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:16px;
+box-shadow:0 12px 30px rgba(0,0,0,0.18);
+}
+
+.logo{
+text-decoration:none;
+color:white;
+display:inline-flex;
+align-items:center;
+gap:14px;
+}
+
+.logo h1{
+font-family:Georgia, serif;
+font-size:34px;
+line-height:1;
+margin-bottom:0;
+}
+
+.logo-copy p{
+font-size:12px;
+letter-spacing:2px;
+text-transform:uppercase;
+color:var(--gold);
+}
+
+.logo-mark-image{
+width:88px;
+height:88px;
+object-fit:contain;
+flex-shrink:0;
+border-radius:50%;
+}
+
+.logo p{
+font-size:12px;
+letter-spacing:2px;
+text-transform:uppercase;
+color:var(--gold);
+}
+
+.header-right{
+display:flex;
+align-items:center;
+gap:12px;
+flex-wrap:wrap;
+}
+
+.header-link{
+text-decoration:none;
+color:white;
+padding:10px 14px;
+border:1px solid rgba(255,255,255,0.1);
+border-radius:999px;
+transition:all .2s ease;
+background:transparent;
+cursor:pointer;
+font:inherit;
+}
+
+.header-link:hover{
+border-color:var(--gold);
+color:var(--gold);
+}
+
+.page{
+max-width:1380px;
+margin:34px auto;
+padding:0 20px 50px;
+}
+
+.login-wrap{
+max-width:460px;
+margin:40px auto;
+display:block;
+}
+
+.card{
+background:var(--surface);
+border:1px solid var(--border);
+border-radius:20px;
+box-shadow:var(--shadow);
+}
+
+.login-card{
+padding:26px;
+}
+
+.login-card h2{
+font-size:28px;
+margin-bottom:8px;
+}
+
+.login-card p{
+font-size:14px;
+color:var(--muted);
+margin-bottom:18px;
+}
+
+.form-grid{
+display:grid;
+gap:14px;
+}
+
+.field{
+display:flex;
+flex-direction:column;
+gap:7px;
+}
+
+.field label{
+font-size:14px;
+font-weight:700;
+color:#2a2a2a;
+}
+
+.field input,
+.field select,
+.field textarea{
+width:100%;
+padding:12px 14px;
+border-radius:12px;
+border:1px solid #ddd;
+background:white;
+font:inherit;
+outline:none;
+transition:border-color .2s ease, box-shadow .2s ease;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus{
+border-color:var(--gold);
+box-shadow:0 0 0 3px rgba(200,169,107,0.15);
+}
+
+.field textarea{
+resize:vertical;
+min-height:110px;
+}
+
+.checkbox-row{
+display:flex;
+align-items:center;
+gap:10px;
+padding-top:6px;
+}
+
+.checkbox-row input{
+width:18px;
+height:18px;
+}
+
+.form-actions{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+padding-top:8px;
+}
+
+.btn{
+border:none;
+border-radius:12px;
+padding:12px 16px;
+font-weight:700;
+cursor:pointer;
+transition:all .2s ease;
+}
+
+.btn-primary{
+background:linear-gradient(135deg, #d8bf8a, var(--gold));
+color:#111;
+box-shadow:0 10px 22px rgba(200,169,107,0.25);
+}
+
+.btn-primary:hover{
+transform:translateY(-1px);
+}
+
+.btn-dark{
+background:#111;
+color:white;
+}
+
+.btn-dark:hover{
+background:#2a2a2a;
+}
+
+.btn-light{
+background:#f3efe8;
+color:#111;
+}
+
+.btn-light:hover{
+background:#ece5da;
+}
+
+.btn-danger{
+background:var(--danger);
+color:white;
+}
+
+.status{
+margin-top:16px;
+padding:12px 14px;
+border-radius:12px;
+font-size:14px;
+display:none;
+line-height:1.5;
+}
+
+.status.show{
+display:block;
+}
+
+.status.success{
+background:rgba(31,157,85,0.12);
+color:#13663a;
+border:1px solid rgba(31,157,85,0.2);
+}
+
+.status.error{
+background:rgba(214,69,69,0.12);
+color:#8f1f1f;
+border:1px solid rgba(214,69,69,0.2);
+}
+
+.status.info{
+background:rgba(17,17,17,0.05);
+color:#333;
+border:1px solid rgba(17,17,17,0.08);
+}
+
+.dashboard{
+display:none;
+grid-template-columns:430px 1fr;
+gap:24px;
+align-items:start;
+}
+
+.form-card{
+padding:22px;
+position:sticky;
+top:20px;
+}
+
+.form-card h2{
+font-size:24px;
+margin-bottom:8px;
+}
+
+.form-card p{
+color:var(--muted);
+font-size:14px;
+margin-bottom:18px;
+}
+
+.section-title{
+font-size:15px;
+font-weight:800;
+margin-top:6px;
+margin-bottom:2px;
+color:#222;
+}
+
+.section-note{
+font-size:13px;
+color:var(--muted);
+margin-bottom:2px;
+}
+
+.dropship-box{
+padding:14px;
+border:1px solid rgba(37,99,235,0.14);
+background:rgba(37,99,235,0.03);
+border-radius:16px;
+display:grid;
+gap:14px;
+}
+
+.sale-box{
+padding:14px;
+border:1px solid rgba(220,38,38,0.14);
+background:var(--sale-soft);
+border-radius:16px;
+display:grid;
+gap:14px;
+}
+
+.profit-box{
+padding:16px;
+border:1px solid rgba(31,157,85,0.16);
+background:var(--green-soft);
+border-radius:16px;
+display:grid;
+gap:12px;
+}
+
+.profit-grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:12px;
+}
+
+.profit-item{
+background:white;
+border:1px solid rgba(17,17,17,0.06);
+border-radius:14px;
+padding:12px;
+}
+
+.profit-label{
+font-size:12px;
+color:var(--muted);
+margin-bottom:6px;
+text-transform:uppercase;
+letter-spacing:.5px;
+}
+
+.profit-value{
+font-size:20px;
+font-weight:800;
+color:#111;
+}
+
+.profit-value.good{
+color:#13663a;
+}
+
+.profit-value.warn{
+color:#b45309;
+}
+
+.profit-value.bad{
+color:#b91c1c;
+}
+
+.products-card{
+padding:22px;
+}
+
+.products-top{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:12px;
+flex-wrap:wrap;
+margin-bottom:16px;
+}
+
+.products-top h2{
+font-size:24px;
+}
+
+.products-top p{
+font-size:14px;
+color:var(--muted);
+}
+
+.admin-products{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:18px;
+}
+
+.admin-product{
+background:var(--surface-2);
+border:1px solid var(--border);
+border-radius:18px;
+overflow:hidden;
+box-shadow:var(--shadow-soft);
+}
+
+.admin-product-image{
+width:100%;
+height:220px;
+object-fit:cover;
+display:block;
+background:#eee;
+}
+
+.admin-product-body{
+padding:16px;
+}
+
+.badge-row{
+display:flex;
+gap:8px;
+flex-wrap:wrap;
+margin-bottom:10px;
+}
+
+.badge{
+display:inline-flex;
+align-items:center;
+padding:6px 10px;
+border-radius:999px;
+font-size:12px;
+font-weight:700;
+}
+
+.badge.gold{
+background:rgba(200,169,107,0.18);
+color:#7c5d1f;
+}
+
+.badge.dark{
+background:#111;
+color:white;
+}
+
+.badge.soft{
+background:#ece7df;
+color:#5f5447;
+}
+
+.badge.blue{
+background:var(--blue-soft);
+color:var(--blue);
+}
+
+.badge.sale{
+background:rgba(220,38,38,0.12);
+color:var(--sale);
+}
+
+.admin-product h3{
+font-size:22px;
+margin-bottom:8px;
+line-height:1.2;
+}
+
+.admin-desc{
+font-size:14px;
+line-height:1.6;
+color:var(--muted);
+margin-bottom:12px;
+min-height:66px;
+}
+
+.admin-meta{
+display:grid;
+gap:8px;
+margin-bottom:16px;
+font-size:14px;
+color:#2a2a2a;
+}
+
+.admin-actions{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.empty-state{
+padding:30px;
+border-radius:18px;
+border:1px dashed rgba(17,17,17,0.15);
+background:white;
+text-align:center;
+color:var(--muted);
+}
+
+.small{
+font-size:13px;
+color:var(--muted);
+}
+
+.hidden{
+display:none !important;
+}
+
+@media(max-width:1100px){
+.dashboard{
+grid-template-columns:1fr;
+}
+
+.form-card{
+position:static;
+}
+
+.admin-products{
+grid-template-columns:1fr 1fr;
+}
+}
+
+@media(max-width:760px){
+.admin-products{
+grid-template-columns:1fr;
+}
+
+.profit-grid{
+grid-template-columns:1fr;
+}
+
+header{
+flex-direction:column;
+align-items:flex-start;
+}
+
+.logo h1{
+font-size:30px;
+}
+}
+</style>
+<link rel="stylesheet" href="theme.css">
+<script src="theme.js"></script>
+</head>
+<body>
+
+<header>
+<a href="index.html" class="logo">
+<div class="logo-copy">
+<h1>SocialEra Admin</h1>
+<p>Social Shopping</p>
+</div>
+<img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
+</a>
+
+<div class="header-right">
+<a class="header-link" href="index.html">View Store</a>
+<button id="logout-btn" class="header-link hidden" type="button">Logout</button>
+</div>
+</header>
+
+<main class="page">
+<section id="login-section" class="login-wrap">
+<div class="card login-card">
+<h2>Admin Login</h2>
+<p>Sign in to manage SocialEra products.</p>
+
+<form id="login-form" class="form-grid">
+<div class="field">
+<label for="login-username">Username</label>
+<input type="text" id="login-username" placeholder="Enter username" required>
+</div>
+
+<div class="field">
+<label for="login-password">Password</label>
+<input type="password" id="login-password" placeholder="Enter password" required>
+</div>
+
+<div class="form-actions">
+<button type="submit" class="btn btn-primary">Login</button>
+</div>
+
+<div id="login-status" class="status"></div>
+</form>
+</div>
+</section>
+
+<section id="dashboard" class="dashboard">
+<section class="card form-card">
+<h2 id="form-title">Add Product</h2>
+<p>Create a new product or edit an existing one.</p>
+
+<form id="product-form" class="form-grid">
+<input type="hidden" id="product-id">
+
+<div class="section-title">Basic Product Info</div>
+
+<div class="field">
+<label for="name">Product Name</label>
+<input type="text" id="name" placeholder="Nike Air Max" required>
+</div>
+
+<div class="field">
+<label for="price">Regular Price</label>
+<input type="number" id="price" placeholder="129.99" step="0.01" min="0" required>
+</div>
+
+<div class="field">
+<label for="category">Category</label>
+<select id="category">
+<option value="men">Men</option>
+<option value="women">Women</option>
+<option value="accessories">Accessories</option>
+<option value="home">Home</option>
+</select>
+</div>
+
+<div class="field">
+<label for="image">Image Path</label>
+<input type="text" id="image" placeholder="assets/product-1.jpg">
+</div>
+
+<div class="field">
+<label for="stock">Stock</label>
+<input type="number" id="stock" placeholder="10" min="0">
+</div>
+
+<div class="field">
+<label for="description">Description</label>
+<textarea id="description" placeholder="Describe the product..."></textarea>
+</div>
+
+<div class="checkbox-row">
+<input type="checkbox" id="featured">
+<label for="featured">Featured Product</label>
+</div>
+
+<div class="section-title">Sale</div>
+<div class="section-note">Turn on sale pricing and badge text for promotions.</div>
+
+<div class="checkbox-row">
+<input type="checkbox" id="sale-enabled">
+<label for="sale-enabled">Put this product on sale</label>
+</div>
+
+<div id="sale-fields" class="sale-box hidden">
+<div class="field">
+<label for="sale-price">Sale Price</label>
+<input type="number" id="sale-price" placeholder="99.99" step="0.01" min="0">
+</div>
+
+<div class="field">
+<label for="sale-label">Sale Badge Text</label>
+<input type="text" id="sale-label" placeholder="Sale">
+</div>
+
+<div class="profit-box">
+<div class="section-title" style="margin:0;">Sale Preview</div>
+<div class="profit-grid">
+<div class="profit-item">
+<div class="profit-label">Regular Price</div>
+<div id="sale-regular-preview" class="profit-value">$0.00</div>
+</div>
+
+<div class="profit-item">
+<div class="profit-label">Sale Price</div>
+<div id="sale-price-preview" class="profit-value">$0.00</div>
+</div>
+
+<div class="profit-item">
+<div class="profit-label">Discount</div>
+<div id="sale-discount-preview" class="profit-value">0.00%</div>
+</div>
+</div>
+<div id="sale-note" class="small">Enter regular price and sale price.</div>
+</div>
+</div>
+
+<div class="section-title">Fulfillment</div>
+<div class="section-note">Choose whether SocialEra ships this item or a supplier handles it.</div>
+
+<div class="field">
+<label for="fulfillment-type">Fulfillment Type</label>
+<select id="fulfillment-type">
+<option value="inhouse">In House</option>
+<option value="dropship">Dropship</option>
+</select>
+</div>
+
+<div id="dropship-fields" class="dropship-box hidden">
+<div class="field">
+<label for="supplier-name">Supplier Name</label>
+<input type="text" id="supplier-name" placeholder="AliExpress Supplier A">
+</div>
+
+<div class="field">
+<label for="supplier-sku">Supplier SKU</label>
+<input type="text" id="supplier-sku" placeholder="LJ-8842">
+</div>
+
+<div class="field">
+<label for="supplier-cost">Supplier Cost</label>
+<input type="number" id="supplier-cost" placeholder="72.00" step="0.01" min="0">
+</div>
+
+<div class="field">
+<label for="supplier-link">Supplier Link</label>
+<input type="text" id="supplier-link" placeholder="https://supplier-site.com/product">
+</div>
+
+<div class="field">
+<label for="processing-time">Processing Time</label>
+<input type="text" id="processing-time" placeholder="2-4 business days">
+</div>
+
+<div class="field">
+<label for="shipping-time">Shipping Time</label>
+<input type="text" id="shipping-time" placeholder="7-12 business days">
+</div>
+
+<div id="profit-box" class="profit-box">
+<div class="section-title" style="margin:0;">Profit Preview</div>
+<div class="profit-grid">
+<div class="profit-item">
+<div class="profit-label">Selling Price</div>
+<div id="profit-selling" class="profit-value">$0.00</div>
+</div>
+
+<div class="profit-item">
+<div class="profit-label">Supplier Cost</div>
+<div id="profit-cost" class="profit-value">$0.00</div>
+</div>
+
+<div class="profit-item">
+<div class="profit-label">Estimated Profit</div>
+<div id="profit-amount" class="profit-value">$0.00</div>
+</div>
+
+<div class="profit-item">
+<div class="profit-label">Profit Margin</div>
+<div id="profit-margin" class="profit-value">0.00%</div>
+</div>
+
+<div class="profit-item">
+<div class="profit-label">Profit Status</div>
+<div id="profit-status" class="profit-value">Neutral</div>
+</div>
+
+<div class="profit-item">
+<div class="profit-label">Note</div>
+<div id="profit-note" class="small">Enter selling price and supplier cost.</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="form-actions">
+<button type="submit" class="btn btn-primary" id="submit-btn">Save Product</button>
+<button type="button" class="btn btn-light" id="cancel-edit-btn">Cancel Edit</button>
+</div>
+
+<div id="status" class="status"></div>
+</form>
+</section>
+
+<section class="card products-card">
+<div class="products-top">
+<div>
+<h2>Products</h2>
+<p id="product-count">Loading products...</p>
+</div>
+
+<button class="btn btn-dark" type="button" onclick="loadProducts()">Refresh</button>
+</div>
+
+<div id="admin-products" class="admin-products">
+<div class="empty-state">Loading products...</div>
+</div>
+</section>
+</section>
+</main>
+
+<script>
+const API_BASE='';
+
+const loginSection=document.getElementById('login-section');
+const dashboard=document.getElementById('dashboard');
+const logoutBtn=document.getElementById('logout-btn');
+
+const loginForm=document.getElementById('login-form');
+const loginUsernameInput=document.getElementById('login-username');
+const loginPasswordInput=document.getElementById('login-password');
+const loginStatus=document.getElementById('login-status');
+
+const form=document.getElementById('product-form');
+const formTitle=document.getElementById('form-title');
+const submitBtn=document.getElementById('submit-btn');
+const cancelEditBtn=document.getElementById('cancel-edit-btn');
+const statusBox=document.getElementById('status');
+const productsGrid=document.getElementById('admin-products');
+const productCount=document.getElementById('product-count');
+
+const productIdInput=document.getElementById('product-id');
+const nameInput=document.getElementById('name');
+const priceInput=document.getElementById('price');
+const categoryInput=document.getElementById('category');
+const imageInput=document.getElementById('image');
+const stockInput=document.getElementById('stock');
+const descriptionInput=document.getElementById('description');
+const featuredInput=document.getElementById('featured');
+
+const saleEnabledInput=document.getElementById('sale-enabled');
+const saleFields=document.getElementById('sale-fields');
+const salePriceInput=document.getElementById('sale-price');
+const saleLabelInput=document.getElementById('sale-label');
+const saleRegularPreview=document.getElementById('sale-regular-preview');
+const salePricePreview=document.getElementById('sale-price-preview');
+const saleDiscountPreview=document.getElementById('sale-discount-preview');
+const saleNote=document.getElementById('sale-note');
+
+const fulfillmentTypeInput=document.getElementById('fulfillment-type');
+const dropshipFields=document.getElementById('dropship-fields');
+const supplierNameInput=document.getElementById('supplier-name');
+const supplierSkuInput=document.getElementById('supplier-sku');
+const supplierCostInput=document.getElementById('supplier-cost');
+const supplierLinkInput=document.getElementById('supplier-link');
+const processingTimeInput=document.getElementById('processing-time');
+const shippingTimeInput=document.getElementById('shipping-time');
+
+const profitSelling=document.getElementById('profit-selling');
+const profitCost=document.getElementById('profit-cost');
+const profitAmount=document.getElementById('profit-amount');
+const profitMargin=document.getElementById('profit-margin');
+const profitStatus=document.getElementById('profit-status');
+const profitNote=document.getElementById('profit-note');
+
+let allProducts=[];
+
+function getAdminToken(){
+return localStorage.getItem('lovadaAdminToken') || '';
+}
+
+function setAdminToken(token){
+localStorage.setItem('lovadaAdminToken', token);
+}
+
+function clearAdminToken(){
+localStorage.removeItem('lovadaAdminToken');
+}
+
+function escapeHtml(value){
+return String(value)
+.replace(/&/g,'&amp;')
+.replace(/</g,'&lt;')
+.replace(/>/g,'&gt;')
+.replace(/"/g,'&quot;')
+.replace(/'/g,'&#39;');
+}
+
+function showStatus(message,type='success'){
+statusBox.textContent=message;
+statusBox.className=`status show ${type}`;
+}
+
+function clearStatus(){
+statusBox.textContent='';
+statusBox.className='status';
+}
+
+function showLoginStatus(message,type='info'){
+loginStatus.textContent=message;
+loginStatus.className=`status show ${type}`;
+}
+
+function clearLoginStatus(){
+loginStatus.textContent='';
+loginStatus.className='status';
+}
+
+function showLoginView(){
+loginSection.style.display='block';
+dashboard.style.display='none';
+logoutBtn.classList.add('hidden');
+}
+
+function showDashboardView(){
+loginSection.style.display='none';
+dashboard.style.display='grid';
+logoutBtn.classList.remove('hidden');
+}
+
+function formatMoney(value){
+return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function getEffectiveSellingPrice(){
+const regularPrice = Number(priceInput.value || 0);
+const saleEnabled = saleEnabledInput.checked;
+const salePrice = Number(salePriceInput.value || 0);
+
+if (saleEnabled && salePrice > 0 && salePrice < regularPrice) {
+return salePrice;
+}
+
+return regularPrice;
+}
+
+function getProfitClass(value){
+if(value > 0){
+return 'profit-value good';
+}
+if(value < 0){
+return 'profit-value bad';
+}
+return 'profit-value warn';
+}
+
+function getMarginClass(value){
+if(value >= 30){
+return 'profit-value good';
+}
+if(value > 0){
+return 'profit-value warn';
+}
+if(value < 0){
+return 'profit-value bad';
+}
+return 'profit-value warn';
+}
+
+function updateSalePreview(){
+const regularPrice = Number(priceInput.value || 0);
+const salePrice = Number(salePriceInput.value || 0);
+const saleEnabled = saleEnabledInput.checked;
+const discount = regularPrice > 0 && salePrice > 0 ? ((regularPrice - salePrice) / regularPrice) * 100 : 0;
+
+saleRegularPreview.textContent = formatMoney(regularPrice);
+salePricePreview.textContent = formatMoney(salePrice);
+saleDiscountPreview.textContent = `${discount > 0 ? discount.toFixed(2) : '0.00'}%`;
+
+if (!saleEnabled) {
+saleNote.textContent = 'Turn on sale to set promotional pricing.';
+return;
+}
+
+if (salePrice <= 0) {
+saleNote.textContent = 'Enter a valid sale price.';
+return;
+}
+
+if (regularPrice <= 0) {
+saleNote.textContent = 'Enter the regular price first.';
+return;
+}
+
+if (salePrice >= regularPrice) {
+saleNote.textContent = 'Sale price should be lower than regular price.';
+return;
+}
+
+saleNote.textContent = `Customers save ${formatMoney(regularPrice - salePrice)} on this product.`;
+}
+
+function updateProfitPreview(){
+const sellingPrice=getEffectiveSellingPrice();
+const supplierCost=Number(supplierCostInput.value || 0);
+const profit=sellingPrice - supplierCost;
+const margin=sellingPrice > 0 ? (profit / sellingPrice) * 100 : 0;
+
+profitSelling.textContent=formatMoney(sellingPrice);
+profitCost.textContent=formatMoney(supplierCost);
+profitAmount.textContent=formatMoney(profit);
+profitMargin.textContent=`${margin.toFixed(2)}%`;
+
+profitAmount.className=getProfitClass(profit);
+profitMargin.className=getMarginClass(margin);
+
+if(profit > 0 && margin >= 30){
+profitStatus.textContent='Strong';
+profitStatus.className='profit-value good';
+profitNote.textContent='Healthy margin for a dropshipping product.';
+}else if(profit > 0){
+profitStatus.textContent='Okay';
+profitStatus.className='profit-value warn';
+profitNote.textContent='Profitable, but margin could be stronger.';
+}else if(profit < 0){
+profitStatus.textContent='Loss';
+profitStatus.className='profit-value bad';
+profitNote.textContent='You are losing money at this price.';
+}else{
+profitStatus.textContent='Neutral';
+profitStatus.className='profit-value warn';
+profitNote.textContent='Enter selling price and supplier cost.';
+}
+}
+
+function toggleSaleFields(){
+saleFields.classList.toggle('hidden', !saleEnabledInput.checked);
+updateSalePreview();
+updateProfitPreview();
+}
+
+function toggleDropshipFields(){
+const isDropship=fulfillmentTypeInput.value==='dropship';
+dropshipFields.classList.toggle('hidden',!isDropship);
+updateProfitPreview();
+}
+
+function resetDropshipFields(){
+supplierNameInput.value='';
+supplierSkuInput.value='';
+supplierCostInput.value='';
+supplierLinkInput.value='';
+processingTimeInput.value='';
+shippingTimeInput.value='';
+updateProfitPreview();
+}
+
+function resetSaleFields(){
+saleEnabledInput.checked = false;
+salePriceInput.value = '';
+saleLabelInput.value = 'Sale';
+toggleSaleFields();
+}
+
+function resetForm(){
+productIdInput.value='';
+nameInput.value='';
+priceInput.value='';
+categoryInput.value='men';
+imageInput.value='';
+stockInput.value='';
+descriptionInput.value='';
+featuredInput.checked=false;
+resetSaleFields();
+fulfillmentTypeInput.value='inhouse';
+resetDropshipFields();
+toggleDropshipFields();
+formTitle.textContent='Add Product';
+submitBtn.textContent='Save Product';
+clearStatus();
+}
+
+async function fetchJson(url,options={}){
+const token=getAdminToken();
+
+const response=await fetch(url,{
+headers:{
+'Content-Type':'application/json',
+...(token ? { Authorization:`Bearer ${token}` } : {}),
+...(options.headers || {})
+},
+...options
+});
+
+const data=await response.json().catch(()=>null);
+
+if(!response.ok){
+if(response.status===401 && !url.includes('/api/admin/login')){
+clearAdminToken();
+showLoginView();
+}
+throw new Error(data?.error || `Request failed: ${response.status}`);
+}
+
+return data;
+}
+
+function renderProducts(){
+if(!allProducts.length){
+productsGrid.innerHTML=`<div class="empty-state">No products yet. Add your first item on the left.</div>`;
+productCount.textContent='0 products';
+return;
+}
+
+productCount.textContent=`${allProducts.length} product${allProducts.length===1?'':'s'}`;
+
+productsGrid.innerHTML=allProducts.map((product,index)=>{
+const regularPrice=Number(product.price || 0);
+const saleEnabled=Boolean(product.saleEnabled);
+const salePrice=Number(product.salePrice || 0);
+const liveSellingPrice = saleEnabled && salePrice > 0 && salePrice < regularPrice ? salePrice : regularPrice;
+const supplierCost=Number(product.supplierCost || 0);
+const profit=liveSellingPrice - supplierCost;
+const margin=liveSellingPrice > 0 ? ((profit / liveSellingPrice) * 100) : 0;
+const discount=regularPrice > 0 && saleEnabled && salePrice > 0 && salePrice < regularPrice ? ((regularPrice - salePrice) / regularPrice) * 100 : 0;
+
+return `
+<div class="admin-product">
+<img
+class="admin-product-image"
+src="${escapeHtml(product.image || `assets/product-${(index % 5) + 1}.jpg`)}"
+alt="${escapeHtml(product.name || 'Product')}"
+onerror="this.onerror=null;this.src='assets/product-${(index % 5) + 1}.jpg';"
+>
+
+<div class="admin-product-body">
+<div class="badge-row">
+<span class="badge dark">ID ${escapeHtml(product.id)}</span>
+<span class="badge soft">${escapeHtml(product.category || 'uncategorized')}</span>
+${product.featured ? '<span class="badge gold">Featured</span>' : ''}
+${product.fulfillmentType === 'dropship' ? '<span class="badge blue">Dropship</span>' : '<span class="badge soft">In House</span>'}
+${saleEnabled ? `<span class="badge sale">${escapeHtml(product.saleLabel || 'Sale')}</span>` : ''}
+</div>
+
+<h3>${escapeHtml(product.name || 'Untitled Product')}</h3>
+
+<div class="admin-desc">
+${escapeHtml(product.description || 'No description provided.')}
+</div>
+
+<div class="admin-meta">
+<div><strong>Regular Price:</strong> ${formatMoney(regularPrice)}</div>
+${saleEnabled ? `<div><strong>Sale Price:</strong> ${formatMoney(salePrice)}</div>` : ''}
+${saleEnabled ? `<div><strong>Discount:</strong> ${discount.toFixed(2)}%</div>` : ''}
+<div><strong>Stock:</strong> ${Number(product.stock || 0)}</div>
+<div><strong>Fulfillment:</strong> ${product.fulfillmentType === 'dropship' ? 'Dropship' : 'In House'}</div>
+${product.fulfillmentType === 'dropship' ? `<div><strong>Supplier:</strong> ${escapeHtml(product.supplierName || 'Not set')}</div>` : ''}
+${product.fulfillmentType === 'dropship' ? `<div><strong>Supplier Cost:</strong> ${formatMoney(supplierCost)}</div>` : ''}
+${product.fulfillmentType === 'dropship' ? `<div><strong>Estimated Profit:</strong> ${formatMoney(profit)}</div>` : ''}
+${product.fulfillmentType === 'dropship' ? `<div><strong>Margin:</strong> ${margin.toFixed(2)}%</div>` : ''}
+<div class="small"><strong>Image:</strong> ${escapeHtml(product.image || 'No custom image')}</div>
+</div>
+
+<div class="admin-actions">
+<button class="btn btn-primary" onclick="startEdit(${Number(product.id)})">Edit</button>
+<button class="btn btn-danger" onclick="deleteProduct(${Number(product.id)})">Delete</button>
+</div>
+</div>
+</div>
+`;
+}).join('');
+}
+
+async function loadProducts(){
+productsGrid.innerHTML=`<div class="empty-state">Loading products...</div>`;
+
+try{
+const data=await fetchJson(`${API_BASE}/api/products`,{
+method:'GET'
+});
+
+allProducts=Array.isArray(data) ? data : [];
+renderProducts();
+}catch(error){
+productsGrid.innerHTML=`<div class="empty-state">Failed to load products. Make sure the backend server is running.</div>`;
+productCount.textContent='Failed to load';
+console.error(error);
+}
+}
+
+function startEdit(productId){
+const product=allProducts.find((item)=>Number(item.id)===Number(productId));
+
+if(!product){
+showStatus('Product not found.','error');
+return;
+}
+
+productIdInput.value=product.id;
+nameInput.value=product.name || '';
+priceInput.value=product.price || '';
+categoryInput.value=product.category || 'men';
+imageInput.value=product.image || '';
+stockInput.value=product.stock || 0;
+descriptionInput.value=product.description || '';
+featuredInput.checked=Boolean(product.featured);
+
+saleEnabledInput.checked = Boolean(product.saleEnabled);
+salePriceInput.value = product.salePrice || '';
+saleLabelInput.value = product.saleLabel || 'Sale';
+toggleSaleFields();
+
+fulfillmentTypeInput.value=product.fulfillmentType || 'inhouse';
+supplierNameInput.value=product.supplierName || '';
+supplierSkuInput.value=product.supplierSku || '';
+supplierCostInput.value=product.supplierCost || '';
+supplierLinkInput.value=product.supplierLink || '';
+processingTimeInput.value=product.processingTime || '';
+shippingTimeInput.value=product.shippingTime || '';
+toggleDropshipFields();
+updateSalePreview();
+updateProfitPreview();
+
+formTitle.textContent='Edit Product';
+submitBtn.textContent='Update Product';
+showStatus(`Editing "${product.name}"`);
+window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function deleteProduct(productId){
+const confirmed=window.confirm('Delete this product?');
+
+if(!confirmed){
+return;
+}
+
+try{
+await fetchJson(`${API_BASE}/api/products/${productId}`,{
+method:'DELETE'
+});
+
+showStatus('Product deleted successfully.');
+resetForm();
+await loadProducts();
+}catch(error){
+showStatus(error.message || 'Failed to delete product.','error');
+console.error(error);
+}
+}
+
+loginForm.addEventListener('submit',async function(e){
+e.preventDefault();
+clearLoginStatus();
+
+const username=loginUsernameInput.value.trim();
+const password=loginPasswordInput.value;
+
+if(!username || !password){
+showLoginStatus('Username and password are required.','error');
+return;
+}
+
+try{
+const data=await fetchJson(`${API_BASE}/api/admin/login`,{
+method:'POST',
+body:JSON.stringify({ username, password })
+});
+
+if(data.token){
+setAdminToken(data.token);
+}
+
+loginPasswordInput.value='';
+showDashboardView();
+await loadProducts();
+}catch(error){
+showLoginStatus(error.message || 'Login failed.','error');
+console.error(error);
+}
+});
+
+logoutBtn.addEventListener('click',async function(){
+try{
+await fetchJson(`${API_BASE}/api/admin/logout`,{
+method:'POST'
+});
+}catch(error){
+console.error(error);
+}
+
+clearAdminToken();
+showLoginView();
+clearLoginStatus();
+showLoginStatus('Logged out successfully.','success');
+});
+
+form.addEventListener('submit',async function(e){
+e.preventDefault();
+clearStatus();
+
+const payload={
+name:nameInput.value.trim(),
+price:Number(priceInput.value),
+category:categoryInput.value,
+image:imageInput.value.trim(),
+stock:Number(stockInput.value || 0),
+description:descriptionInput.value.trim(),
+featured:featuredInput.checked,
+saleEnabled:saleEnabledInput.checked,
+salePrice:Number(salePriceInput.value || 0),
+saleLabel:saleLabelInput.value.trim() || 'Sale',
+fulfillmentType:fulfillmentTypeInput.value,
+supplierName:supplierNameInput.value.trim(),
+supplierSku:supplierSkuInput.value.trim(),
+supplierCost:Number(supplierCostInput.value || 0),
+supplierLink:supplierLinkInput.value.trim(),
+processingTime:processingTimeInput.value.trim(),
+shippingTime:shippingTimeInput.value.trim()
+};
+
+if(!payload.name){
+showStatus('Product name is required.','error');
+return;
+}
+
+if(Number.isNaN(payload.price) || payload.price <= 0){
+showStatus('Valid regular price is required.','error');
+return;
+}
+
+if(payload.saleEnabled){
+if(Number.isNaN(payload.salePrice) || payload.salePrice <= 0){
+showStatus('Valid sale price is required when sale is enabled.','error');
+return;
+}
+if(payload.salePrice >= payload.price){
+showStatus('Sale price must be lower than the regular price.','error');
+return;
+}
+}
+
+if(payload.fulfillmentType==='dropship' && !payload.supplierName){
+showStatus('Supplier name is required for dropshipping products.','error');
+return;
+}
+
+const editingId=productIdInput.value.trim();
+
+try{
+if(editingId){
+await fetchJson(`${API_BASE}/api/products/${editingId}`,{
+method:'PUT',
+body:JSON.stringify(payload)
+});
+showStatus('Product updated successfully.');
+}else{
+await fetchJson(`${API_BASE}/api/products`,{
+method:'POST',
+body:JSON.stringify(payload)
+});
+showStatus('Product added successfully.');
+}
+
+resetForm();
+await loadProducts();
+}catch(error){
+showStatus(error.message || 'Something went wrong.','error');
+console.error(error);
+}
+});
+
+cancelEditBtn.addEventListener('click',resetForm);
+fulfillmentTypeInput.addEventListener('change',toggleDropshipFields);
+saleEnabledInput.addEventListener('change',toggleSaleFields);
+priceInput.addEventListener('input',()=>{
+updateSalePreview();
+updateProfitPreview();
+});
+salePriceInput.addEventListener('input',()=>{
+updateSalePreview();
+updateProfitPreview();
+});
+supplierCostInput.addEventListener('input',updateProfitPreview);
+
+async function bootAdmin(){
+showLoginView();
+
+const token=getAdminToken();
+if(!token){
+return;
+}
+
+try{
+await fetchJson(`${API_BASE}/api/admin/verify`,{
+method:'GET'
+});
+showDashboardView();
+await loadProducts();
+}catch(error){
+clearAdminToken();
+showLoginView();
+showLoginStatus('Please log in again.','info');
+console.error(error);
+}
+}
+
+toggleSaleFields();
+toggleDropshipFields();
+updateSalePreview();
+updateProfitPreview();
+bootAdmin();
+</script>
+
+</body>
+</html>
