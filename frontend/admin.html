@@ -118,6 +118,82 @@ margin:34px auto;
 padding:0 20px 50px;
 }
 
+.page-intro{
+display:grid;
+grid-template-columns:1.1fr .9fr;
+gap:18px;
+margin-bottom:24px;
+}
+
+.intro-card{
+padding:24px;
+display:grid;
+gap:14px;
+}
+
+.intro-eyebrow{
+display:inline-flex;
+align-items:center;
+width:max-content;
+padding:8px 12px;
+border-radius:999px;
+background:rgba(17,17,17,0.06);
+color:#7d613b;
+font-size:12px;
+font-weight:800;
+letter-spacing:1px;
+text-transform:uppercase;
+}
+
+.intro-card h2{
+font-size:32px;
+line-height:1.05;
+}
+
+.intro-card p{
+font-size:15px;
+line-height:1.7;
+color:var(--muted);
+max-width:700px;
+}
+
+.intro-pills{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.intro-pill{
+display:inline-flex;
+align-items:center;
+padding:10px 12px;
+border-radius:999px;
+background:#f3efe8;
+border:1px solid rgba(17,17,17,0.06);
+font-size:13px;
+font-weight:700;
+color:#2d241b;
+}
+
+.intro-note{
+padding:20px 22px;
+display:grid;
+gap:10px;
+background:linear-gradient(180deg, rgba(17,17,17,0.96) 0%, rgba(26,26,26,0.94) 100%);
+color:white;
+border-color:rgba(255,255,255,0.08);
+}
+
+.intro-note h3{
+font-size:18px;
+}
+
+.intro-note p{
+font-size:14px;
+line-height:1.7;
+color:rgba(255,255,255,0.78);
+}
+
 .login-wrap{
 max-width:460px;
 margin:40px auto;
@@ -287,6 +363,11 @@ gap:24px;
 align-items:start;
 }
 
+.dashboard-right{
+display:grid;
+gap:24px;
+}
+
 .form-card{
 padding:22px;
 position:sticky;
@@ -386,6 +467,99 @@ color:#b91c1c;
 
 .products-card{
 padding:22px;
+}
+
+.launch-card{
+padding:22px;
+display:grid;
+gap:18px;
+}
+
+.launch-top{
+display:flex;
+justify-content:space-between;
+align-items:flex-start;
+gap:14px;
+flex-wrap:wrap;
+}
+
+.launch-top h2{
+font-size:24px;
+}
+
+.launch-top p{
+font-size:14px;
+color:var(--muted);
+max-width:720px;
+line-height:1.6;
+}
+
+.health-grid{
+display:grid;
+grid-template-columns:repeat(2,minmax(0,1fr));
+gap:14px;
+}
+
+.health-card{
+padding:16px;
+border-radius:18px;
+border:1px solid var(--border);
+background:var(--surface-2);
+display:grid;
+gap:8px;
+}
+
+.health-card.good{
+background:rgba(31,157,85,0.08);
+border-color:rgba(31,157,85,0.16);
+}
+
+.health-card.warn{
+background:rgba(220,38,38,0.06);
+border-color:rgba(220,38,38,0.14);
+}
+
+.health-label{
+font-size:12px;
+letter-spacing:.7px;
+text-transform:uppercase;
+font-weight:800;
+color:var(--muted);
+}
+
+.health-value{
+font-size:20px;
+font-weight:800;
+color:#111;
+}
+
+.health-copy{
+font-size:14px;
+line-height:1.6;
+color:var(--muted);
+}
+
+.quick-links{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.quick-link{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+padding:10px 14px;
+border-radius:999px;
+background:#f3efe8;
+color:#111;
+text-decoration:none;
+font-weight:700;
+border:1px solid rgba(17,17,17,0.08);
+}
+
+.quick-link:hover{
+background:#ece5da;
 }
 
 .products-top{
@@ -519,7 +693,16 @@ color:var(--muted);
 display:none !important;
 }
 
+footer{
+background:#111;
+color:white;
+text-align:center;
+padding:22px;
+margin-top:20px;
+}
+
 @media(max-width:1100px){
+.page-intro,
 .dashboard{
 grid-template-columns:1fr;
 }
@@ -535,6 +718,10 @@ grid-template-columns:1fr 1fr;
 
 @media(max-width:760px){
 .admin-products{
+grid-template-columns:1fr;
+}
+
+.health-grid{
 grid-template-columns:1fr;
 }
 
@@ -568,11 +755,35 @@ font-size:30px;
 
 <div class="header-right">
 <a class="header-link" href="index.html">View Store</a>
+<a class="header-link" href="support.html">Support Desk</a>
 <button id="logout-btn" class="header-link hidden" type="button">Logout</button>
 </div>
 </header>
 
 <main class="page">
+<section class="page-intro">
+<article class="card intro-card">
+<span class="intro-eyebrow">Admin Control Center</span>
+<h2>Manage the storefront without losing the premium feel of the brand.</h2>
+<p>
+Use this space to keep your catalog clean, your sale pricing intentional, and your launch checklist visible before you put SocialEra in front of real customers.
+</p>
+<div class="intro-pills">
+<span class="intro-pill">Catalog quality</span>
+<span class="intro-pill">Launch readiness</span>
+<span class="intro-pill">Sale control</span>
+<span class="intro-pill">Dropship visibility</span>
+</div>
+</article>
+
+<aside class="card intro-note">
+<h3>Before you launch</h3>
+<p>
+Make sure your admin password is changed from the current local setup, your contact inboxes are real, and checkout is only switched on once you are comfortable accepting live orders.
+</p>
+</aside>
+</section>
+
 <section id="login-section" class="login-wrap">
 <div class="card login-card">
 <h2>Admin Login</h2>
@@ -776,6 +987,29 @@ font-size:30px;
 </form>
 </section>
 
+<section class="dashboard-right">
+<section class="card launch-card">
+<div class="launch-top">
+<div>
+<h2>Launch Overview</h2>
+<p>Keep an eye on the store states that matter most before go-live: admin access, checkout status, product readiness, and your customer-facing trust pages.</p>
+</div>
+<button class="btn btn-dark" type="button" onclick="renderLaunchOverview()">Refresh Overview</button>
+</div>
+
+<div id="launch-health" class="health-grid"></div>
+
+<div class="quick-links">
+<a class="quick-link" href="index.html" target="_blank" rel="noreferrer">Open Storefront</a>
+<a class="quick-link" href="support.html" target="_blank" rel="noreferrer">Open Support Desk</a>
+<a class="quick-link" href="contact.html" target="_blank" rel="noreferrer">Open Contact</a>
+<a class="quick-link" href="shipping-policy.html" target="_blank" rel="noreferrer">Open Shipping Policy</a>
+<a class="quick-link" href="returns-policy.html" target="_blank" rel="noreferrer">Open Returns Policy</a>
+<a class="quick-link" href="privacy-policy.html" target="_blank" rel="noreferrer">Open Privacy</a>
+<a class="quick-link" href="terms.html" target="_blank" rel="noreferrer">Open Terms</a>
+</div>
+</section>
+
 <section class="card products-card">
 <div class="products-top">
 <div>
@@ -791,7 +1025,20 @@ font-size:30px;
 </div>
 </section>
 </section>
+</section>
 </main>
+
+<footer>
+<p>© 2026 SocialEra Admin</p>
+<p class="footer-links">
+<a href="index.html">Storefront</a> ·
+<a href="contact.html">Contact</a> ·
+<a href="shipping-policy.html">Shipping Policy</a> ·
+<a href="returns-policy.html">Returns Policy</a> ·
+<a href="privacy-policy.html">Privacy Policy</a> ·
+<a href="terms.html">Terms</a>
+</p>
+</footer>
 
 <script>
 const API_BASE='';
@@ -812,6 +1059,7 @@ const cancelEditBtn=document.getElementById('cancel-edit-btn');
 const statusBox=document.getElementById('status');
 const productsGrid=document.getElementById('admin-products');
 const productCount=document.getElementById('product-count');
+const launchHealth=document.getElementById('launch-health');
 
 const productIdInput=document.getElementById('product-id');
 const nameInput=document.getElementById('name');
@@ -848,6 +1096,10 @@ const profitStatus=document.getElementById('profit-status');
 const profitNote=document.getElementById('profit-note');
 
 let allProducts=[];
+let storefrontConfig={
+adminConfigured:true,
+checkoutEnabled:false
+};
 
 function getAdminToken(){
 return localStorage.getItem('lovadaAdminToken') || '';
@@ -888,6 +1140,31 @@ loginStatus.className=`status show ${type}`;
 function clearLoginStatus(){
 loginStatus.textContent='';
 loginStatus.className='status';
+}
+
+async function loadStorefrontConfig(){
+try{
+const response=await fetch(`${API_BASE}/api/storefront-config`,{
+method:'GET',
+headers:{ 'Accept':'application/json' }
+});
+
+if(!response.ok){
+throw new Error(`Request failed: ${response.status}`);
+}
+
+const data=await response.json();
+storefrontConfig={
+adminConfigured:Boolean(data?.adminConfigured),
+checkoutEnabled:Boolean(data?.checkoutEnabled)
+};
+}catch(error){
+console.error('Failed to load storefront config:',error);
+storefrontConfig={
+adminConfigured:false,
+checkoutEnabled:false
+};
+}
 }
 
 function showLoginView(){
@@ -1083,10 +1360,12 @@ function renderProducts(){
 if(!allProducts.length){
 productsGrid.innerHTML=`<div class="empty-state">No products yet. Add your first item on the left.</div>`;
 productCount.textContent='0 products';
+renderLaunchOverview();
 return;
 }
 
 productCount.textContent=`${allProducts.length} product${allProducts.length===1?'':'s'}`;
+renderLaunchOverview();
 
 productsGrid.innerHTML=allProducts.map((product,index)=>{
 const regularPrice=Number(product.price || 0);
@@ -1143,6 +1422,57 @@ ${product.fulfillmentType === 'dropship' ? `<div><strong>Margin:</strong> ${marg
 </div>
 `;
 }).join('');
+}
+
+function renderLaunchOverview(){
+if(!launchHealth){
+return;
+}
+
+const catalogReady=allProducts.length > 0;
+const featuredCount=allProducts.filter((product)=>Boolean(product.featured)).length;
+const saleCount=allProducts.filter((product)=>Boolean(product.saleEnabled)).length;
+
+const cards=[
+{
+label:'Admin Access',
+value:storefrontConfig.adminConfigured ? 'Configured' : 'Blocked',
+copy:storefrontConfig.adminConfigured
+? 'Server credentials are present and admin login is available.'
+: 'Set ADMIN_USERNAME and ADMIN_PASSWORD before launch.',
+tone:storefrontConfig.adminConfigured ? 'good' : 'warn'
+},
+{
+label:'Checkout',
+value:storefrontConfig.checkoutEnabled ? 'Live' : 'Paused',
+copy:storefrontConfig.checkoutEnabled
+? 'Checkout is enabled on the backend.'
+: 'Checkout is intentionally disabled until a real payment or order workflow is ready.',
+tone:storefrontConfig.checkoutEnabled ? 'good' : 'warn'
+},
+{
+label:'Catalog',
+value:catalogReady ? `${allProducts.length} Items` : 'Needs Products',
+copy:catalogReady
+? `${featuredCount} featured and ${saleCount} on sale.`
+: 'Add at least one launch-ready product before go-live.',
+tone:catalogReady ? 'good' : 'warn'
+},
+{
+label:'Trust Pages',
+value:'Ready',
+copy:'About, Contact, Shipping, Returns, Privacy, and Terms pages are linked from the storefront footer.',
+tone:'good'
+}
+];
+
+launchHealth.innerHTML=cards.map((card)=>`
+<article class="health-card ${card.tone}">
+<div class="health-label">${escapeHtml(card.label)}</div>
+<div class="health-value">${escapeHtml(card.value)}</div>
+<div class="health-copy">${escapeHtml(card.copy)}</div>
+</article>
+`).join('');
 }
 
 async function loadProducts(){
@@ -1358,6 +1688,16 @@ supplierCostInput.addEventListener('input',updateProfitPreview);
 
 async function bootAdmin(){
 showLoginView();
+await loadStorefrontConfig();
+renderLaunchOverview();
+
+if(!storefrontConfig.adminConfigured){
+loginUsernameInput.disabled=true;
+loginPasswordInput.disabled=true;
+loginForm.querySelector('button[type="submit"]').disabled=true;
+showLoginStatus('Admin login is disabled until ADMIN_USERNAME and ADMIN_PASSWORD are configured on the server.','error');
+return;
+}
 
 const token=getAdminToken();
 if(!token){
@@ -1374,6 +1714,7 @@ await loadProducts();
 clearAdminToken();
 showLoginView();
 showLoginStatus('Please log in again.','info');
+renderLaunchOverview();
 console.error(error);
 }
 }

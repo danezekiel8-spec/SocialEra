@@ -554,8 +554,8 @@
 
       <nav>
         <a href="index.html">Home</a>
-        <a href="index.html#shop">Shop</a>
-        <a href="index.html#featured">Featured</a>
+        <a href="shop.html">Shop</a>
+        <a href="shop.html">Featured</a>
         <a href="cart.html" class="cart-button">
           Cart (<span id="cart-count">0</span>)
         </a>
@@ -582,12 +582,17 @@
   </footer>
 
   <script type="module" src="supabase.js"></script>
+  <script src="public-page.js"></script>
 
   <script>
     const checkoutRoot = document.getElementById('checkout-root');
     const cartCount = document.getElementById('cart-count');
 
     let cart = JSON.parse(localStorage.getItem('lovadaCart')) || [];
+    let storefrontConfig = {
+      adminConfigured: false,
+      checkoutEnabled: false
+    };
 
     const imageList = [
       'assets/product-1.jpg',
@@ -627,6 +632,33 @@
       return tags.length ? `<div class="summary-tags">${tags.join('')}</div>` : '';
     }
 
+    async function loadStorefrontConfig() {
+      try {
+        const response = await fetch('/api/storefront-config', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed: ${response.status}`);
+        }
+
+        const data = await response.json();
+        storefrontConfig = {
+          adminConfigured: Boolean(data?.adminConfigured),
+          checkoutEnabled: Boolean(data?.checkoutEnabled)
+        };
+      } catch (error) {
+        console.error('Failed to load storefront config:', error);
+        storefrontConfig = {
+          adminConfigured: false,
+          checkoutEnabled: false
+        };
+      }
+    }
+
     function renderCheckout() {
       if (cart.length === 0) {
         checkoutRoot.innerHTML = `
@@ -635,7 +667,21 @@
             <p>
               Add products to your SocialEra cart before continuing to checkout.
             </p>
-            <a href="index.html#shop" class="btn btn-gold">Return to Shop</a>
+            <a href="shop.html" class="btn btn-gold">Return to Shop</a>
+          </div>
+        `;
+        return;
+      }
+
+      if (!storefrontConfig.checkoutEnabled) {
+        checkoutRoot.innerHTML = `
+          <div class="empty-checkout">
+            <h2>Checkout is temporarily unavailable</h2>
+            <p>
+              Orders are paused until a real payment or fulfillment workflow is enabled on the server. This prevents test orders from being submitted as if they were live purchases.
+            </p>
+            <a href="cart.html" class="btn btn-dark">Back to Cart</a>
+            <a href="shop.html" class="btn btn-gold">Continue Shopping</a>
           </div>
         `;
         return;
@@ -709,7 +755,7 @@
 
             <div class="section-block">
               <h2>Payment Method</h2>
-              <p class="section-sub">Choose how you would like to complete your purchase.</p>
+              <p class="section-sub">Choose how you would like to complete your purchase once live checkout is enabled.</p>
 
               <div class="payment-options">
                 <label class="payment-option">
@@ -740,7 +786,7 @@
 
             <div class="section-block">
               <h2>Card Details</h2>
-              <p class="section-sub">For now this is a front-end demo form that simulates order placement.</p>
+              <p class="section-sub">Enter your payment details for the live checkout flow.</p>
 
               <div class="form-grid">
                 <div class="field full">
@@ -998,8 +1044,13 @@
       });
     }
 
-    updateCartCount();
-    renderCheckout();
+    async function bootCheckout() {
+      updateCartCount();
+      await loadStorefrontConfig();
+      renderCheckout();
+    }
+
+    bootCheckout();
   </script>
 </body>
 </html>

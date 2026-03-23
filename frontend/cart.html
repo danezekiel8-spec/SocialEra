@@ -530,8 +530,8 @@
 
       <nav>
         <a href="index.html">Home</a>
-        <a href="index.html#shop">Shop</a>
-        <a href="index.html#featured">Featured</a>
+        <a href="shop.html">Shop</a>
+        <a href="shop.html">Featured</a>
         <a href="cart.html" class="cart-button">
           Cart (<span id="cart-count">0</span>)
         </a>
@@ -558,6 +558,7 @@
     <p>Luxury cart design powered by your existing SocialEra cart data.</p>
   </footer>
 
+  <script src="public-page.js"></script>
   <script>
     const cartRoot = document.getElementById('cart-root');
     const cartCount = document.getElementById('cart-count');
@@ -694,7 +695,7 @@
             <p>
               Start exploring the SocialEra collection and add your favorite pieces to build your curated cart.
             </p>
-            <a href="index.html#shop" class="btn btn-gold">Shop Now</a>
+            <a href="shop.html" class="btn btn-gold">Shop Now</a>
           </div>
         `;
         return;
@@ -763,7 +764,7 @@
 
             <div class="summary-actions">
               <a href="checkout.html" class="btn btn-gold">Proceed to Checkout</a>
-              <a href="index.html#shop" class="btn btn-light">Continue Shopping</a>
+              <a href="shop.html" class="btn btn-light">Continue Shopping</a>
               <button class="btn btn-dark" onclick="clearCart()">Clear Cart</button>
             </div>
           </aside>

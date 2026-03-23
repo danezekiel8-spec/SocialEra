@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialEra - Support Desk</title>
+  <link rel="stylesheet" href="theme.css" />
+  <script src="theme.js"></script>
+  <style>
+    *{
+      box-sizing:border-box;
+      margin:0;
+      padding:0;
+    }
+
+    :root{
+      --bg:#f8f5f0;
+      --surface:#ffffff;
+      --surface-soft:rgba(255,255,255,0.9);
+      --text:#171717;
+      --muted:#6f6257;
+      --gold:#c8a96b;
+      --gold-dark:#b89554;
+      --dark:#111111;
+      --border:rgba(17,17,17,0.08);
+      --shadow:0 14px 35px rgba(0,0,0,0.08);
+      --shadow-soft:0 8px 20px rgba(0,0,0,0.06);
+      --success:#166534;
+      --success-soft:rgba(22,101,52,0.10);
+      --error:#b91c1c;
+      --error-soft:rgba(185,28,28,0.10);
+      --info-soft:rgba(17,17,17,0.05);
+    }
+
+    body{
+      font-family:Inter, "Helvetica Neue", Arial, sans-serif;
+      min-height:100vh;
+      background:
+        radial-gradient(circle at top left, rgba(139,92,246,0.04), transparent 20%),
+        linear-gradient(180deg, #fcfaf7 0%, var(--bg) 100%);
+      color:var(--text);
+    }
+
+    header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      background:rgba(17,17,17,0.84);
+      color:white;
+      padding:14px 30px;
+      position:sticky;
+      top:0;
+      z-index:1000;
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      box-shadow:0 12px 32px rgba(0,0,0,0.18);
+      gap:16px;
+    }
+
+    .logo{
+      text-decoration:none;
+      color:white;
+      display:inline-flex;
+      align-items:center;
+      gap:14px;
+      flex-shrink:0;
+    }
+
+    .logo h1{
+      font-family:Georgia, "Times New Roman", serif;
+      font-size:34px;
+      line-height:1;
+      margin-bottom:0;
+    }
+
+    .logo p{
+      font-size:12px;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color:var(--gold);
+    }
+
+    .logo-word{
+      display:inline-flex;
+      gap:0;
+    }
+
+    .logo-word span{
+      display:inline-block;
+    }
+
+    .logo-mark-image{
+      width:72px;
+      height:72px;
+      object-fit:contain;
+      border-radius:50%;
+      flex-shrink:0;
+    }
+
+    .top-nav{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+
+    .top-nav a{
+      color:#f5f1ea;
+      text-decoration:none;
+      font-weight:700;
+      font-size:14px;
+      transition:color .2s ease;
+    }
+
+    .top-nav a:hover{
+      color:var(--gold);
+    }
+
+    .cart-button{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:10px 14px;
+      background:linear-gradient(135deg, #d8bf8a, var(--gold));
+      color:#111111;
+      border-radius:12px;
+      font-weight:700;
+      box-shadow:0 10px 24px rgba(200,169,107,0.3);
+      transition:transform .2s ease, box-shadow .2s ease;
+    }
+
+    .cart-button:hover{
+      transform:translateY(-1px);
+      box-shadow:0 14px 28px rgba(200,169,107,0.35);
+      color:#111111;
+    }
+
+    .page{
+      max-width:1420px;
+      margin:0 auto;
+      padding:34px 20px 50px;
+    }
+
+    .access-shell{
+      max-width:560px;
+      margin:0 auto 28px;
+    }
+
+    .hero{
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      gap:22px;
+      margin-bottom:24px;
+    }
+
+    .card{
+      background:var(--surface-soft);
+      border:1px solid rgba(17,17,17,0.06);
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(10px);
+    }
+
+    .hidden{
+      display:none !important;
+    }
+
+    .hero-card{
+      padding:30px;
+      display:grid;
+      gap:14px;
+    }
+
+    .hero-eyebrow{
+      display:inline-flex;
+      align-items:center;
+      width:max-content;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(17,17,17,0.06);
+      color:#7d613b;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:1px;
+      text-transform:uppercase;
+    }
+
+    .hero-card h2{
+      font-size:42px;
+      line-height:1.02;
+    }
+
+    .hero-card p{
+      font-size:15px;
+      line-height:1.75;
+      color:var(--muted);
+      max-width:760px;
+    }
+
+    .hero-pills{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .hero-pill{
+      display:inline-flex;
+      align-items:center;
+      padding:10px 12px;
+      border-radius:999px;
+      background:#f3efe8;
+      border:1px solid rgba(17,17,17,0.06);
+      font-size:13px;
+      font-weight:700;
+      color:#2d241b;
+    }
+
+    .summary-card{
+      padding:24px;
+      display:grid;
+      gap:16px;
+      background:linear-gradient(180deg, rgba(17,17,17,0.96) 0%, rgba(26,26,26,0.94) 100%);
+      color:white;
+    }
+
+    .summary-card h3{
+      font-size:22px;
+    }
+
+    .summary-card p{
+      font-size:14px;
+      line-height:1.7;
+      color:rgba(255,255,255,0.78);
+    }
+
+    .summary-list{
+      display:grid;
+      gap:12px;
+    }
+
+    .summary-item{
+      padding:14px 16px;
+      border-radius:18px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.08);
+    }
+
+    .summary-item strong{
+      display:block;
+      margin-bottom:6px;
+      font-size:14px;
+    }
+
+    .summary-item span{
+      font-size:13px;
+      line-height:1.6;
+      color:rgba(255,255,255,0.72);
+    }
+
+    .layout{
+      display:grid;
+      grid-template-columns:340px minmax(0,1fr) 360px;
+      gap:22px;
+      align-items:start;
+    }
+
+    .layout.reply-collapsed{
+      grid-template-columns:340px minmax(0,1fr) 76px;
+    }
+
+    .panel{
+      padding:22px;
+      display:grid;
+      gap:16px;
+      min-width:0;
+    }
+
+    .access-card{
+      padding:28px;
+      display:grid;
+      gap:18px;
+    }
+
+    .access-card h2{
+      font-size:32px;
+      line-height:1.08;
+    }
+
+    .access-card p{
+      font-size:14px;
+      line-height:1.7;
+      color:var(--muted);
+    }
+
+    .panel h3{
+      font-size:24px;
+    }
+
+    .panel-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .panel-copy{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.65;
+    }
+
+    .field{
+      display:grid;
+      gap:8px;
+    }
+
+    .field label{
+      font-size:13px;
+      font-weight:700;
+      color:#221d19;
+    }
+
+    .field input,
+    .field textarea{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(17,17,17,0.1);
+      padding:13px 14px;
+      background:#fff;
+      font:inherit;
+      outline:none;
+      transition:border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .field input:focus,
+    .field textarea:focus{
+      border-color:var(--gold);
+      box-shadow:0 0 0 3px rgba(200,169,107,0.15);
+    }
+
+    .field textarea{
+      resize:vertical;
+      min-height:150px;
+    }
+
+    .helper{
+      font-size:12px;
+      line-height:1.6;
+      color:var(--muted);
+    }
+
+    .button-row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .rep-bar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:14px;
+      padding:16px 18px;
+      border-radius:18px;
+      background:rgba(17,17,17,0.04);
+      border:1px solid rgba(17,17,17,0.06);
+      flex-wrap:wrap;
+    }
+
+    .rep-copy{
+      display:grid;
+      gap:4px;
+    }
+
+    .rep-copy strong{
+      font-size:15px;
+    }
+
+    .rep-copy span{
+      font-size:13px;
+      line-height:1.6;
+      color:var(--muted);
+    }
+
+    .btn{
+      border:none;
+      border-radius:14px;
+      padding:12px 16px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+      font:inherit;
+    }
+
+    .btn:hover{
+      transform:translateY(-1px);
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg, #d8bf8a, var(--gold));
+      color:#111111;
+      box-shadow:0 10px 22px rgba(200,169,107,0.25);
+    }
+
+    .btn-dark{
+      background:#111111;
+      color:white;
+    }
+
+    .btn-light{
+      background:#f3efe8;
+      color:#111111;
+      border:1px solid rgba(17,17,17,0.06);
+    }
+
+    .panel-toggle{
+      width:42px;
+      height:42px;
+      padding:0;
+      border-radius:999px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+    }
+
+    .status{
+      display:none;
+      padding:14px 16px;
+      border-radius:16px;
+      font-size:14px;
+      line-height:1.6;
+    }
+
+    .status.show{
+      display:block;
+    }
+
+    .status.success{
+      background:var(--success-soft);
+      border:1px solid rgba(22,101,52,0.14);
+      color:var(--success);
+    }
+
+    .status.error{
+      background:var(--error-soft);
+      border:1px solid rgba(185,28,28,0.14);
+      color:var(--error);
+    }
+
+    .status.info{
+      background:var(--info-soft);
+      border:1px solid rgba(17,17,17,0.08);
+      color:#333;
+    }
+
+    .inbox-list{
+      display:grid;
+      gap:10px;
+      max-height:760px;
+      overflow:auto;
+      padding-right:4px;
+    }
+
+    .message-item{
+      border:none;
+      width:100%;
+      text-align:left;
+      background:#f9f6f1;
+      border:1px solid rgba(17,17,17,0.06);
+      border-radius:18px;
+      padding:14px;
+      cursor:pointer;
+      display:grid;
+      gap:6px;
+      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .message-item:hover{
+      transform:translateY(-1px);
+      box-shadow:var(--shadow-soft);
+      border-color:rgba(200,169,107,0.35);
+    }
+
+    .message-item.active{
+      border-color:rgba(200,169,107,0.5);
+      box-shadow:0 12px 24px rgba(200,169,107,0.12);
+      background:linear-gradient(180deg, #fffaf0 0%, #f8f2e7 100%);
+    }
+
+    .message-item strong{
+      font-size:14px;
+      line-height:1.45;
+      overflow-wrap:anywhere;
+    }
+
+    .message-meta{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      font-size:12px;
+      color:var(--muted);
+      flex-wrap:wrap;
+    }
+
+    .message-snippet{
+      font-size:13px;
+      line-height:1.6;
+      color:var(--muted);
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .thread-shell{
+      display:grid;
+      gap:18px;
+      min-width:0;
+    }
+
+    .reply-panel.is-collapsed{
+      padding:18px 14px;
+      align-content:start;
+      justify-items:center;
+      gap:12px;
+      overflow:hidden;
+    }
+
+    .reply-panel.is-collapsed .panel-copy,
+    .reply-panel.is-collapsed .thread-shell{
+      display:none;
+    }
+
+    .collapsed-label{
+      display:none;
+      writing-mode:vertical-rl;
+      transform:rotate(180deg);
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      color:var(--gold-dark);
+    }
+
+    .reply-panel.is-collapsed .collapsed-label{
+      display:block;
+    }
+
+    .reply-panel.is-collapsed .panel-head{
+      width:100%;
+      justify-content:center;
+    }
+
+    .reply-panel.is-collapsed .panel-head h3{
+      display:none;
+    }
+
+    .thread-top{
+      display:grid;
+      gap:8px;
+      width:100%;
+      max-width:680px;
+      margin:0 auto;
+      padding-bottom:4px;
+    }
+
+    .thread-kicker{
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      color:var(--gold-dark);
+    }
+
+    .thread-subject{
+      font-size:28px;
+      line-height:1.12;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+
+    .thread-copy{
+      font-size:14px;
+      line-height:1.7;
+      color:var(--muted);
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+
+    .thread-conversation-box{
+      width:100%;
+      max-width:680px;
+      margin:0 auto;
+      padding:18px 18px 10px;
+      border-radius:28px;
+      border:1px solid rgba(17,17,17,0.05);
+      background:linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(248,245,240,0.92) 100%);
+      box-shadow:var(--shadow-soft);
+      max-height:500px;
+      overflow-y:auto;
+      overflow-x:hidden;
+    }
+
+    .thread-conversation{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .thread-message{
+      display:grid;
+      gap:6px;
+      max-width:86%;
+    }
+
+    .thread-message.is-latest{
+      margin-left:auto;
+      justify-items:end;
+    }
+
+    .thread-message-head{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:flex-start;
+      padding:0 2px;
+    }
+
+    .thread-message-author{
+      display:grid;
+      gap:4px;
+      min-width:0;
+    }
+
+    .thread-message-author strong,
+    .thread-message-author span,
+    .thread-message-time{
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+
+    .thread-message-author strong{
+      font-size:13px;
+      line-height:1.5;
+    }
+
+    .thread-message-author span{
+      font-size:11px;
+      line-height:1.6;
+      color:var(--muted);
+    }
+
+    .thread-message-time{
+      font-size:11px;
+      color:var(--muted);
+      flex-shrink:0;
+    }
+
+    .thread-message.is-latest .thread-message-head{
+      justify-content:flex-end;
+      text-align:right;
+    }
+
+    .thread-body{
+      min-height:0;
+      white-space:pre-wrap;
+      font-size:13px;
+      line-height:1.7;
+      color:#2a241f;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+      max-width:100%;
+      overflow-x:hidden;
+      padding:14px 16px;
+      border-radius:22px;
+      background:linear-gradient(180deg, #f6efe2 0%, #efe3ce 100%);
+      border:1px solid rgba(185,146,94,0.18);
+      box-shadow:0 10px 22px rgba(80,54,21,0.06);
+    }
+
+    .thread-message.is-latest .thread-body{
+      background:linear-gradient(180deg, #d9bf8d 0%, #c8a96b 100%);
+      border-color:rgba(172,129,61,0.42);
+      color:#17120d;
+      box-shadow:0 12px 24px rgba(200,169,107,0.18);
+    }
+
+    .thread-body.is-collapsed{
+      max-height:260px;
+      overflow:hidden;
+      position:relative;
+      mask-image:linear-gradient(180deg, #000 0%, #000 80%, transparent 100%);
+      -webkit-mask-image:linear-gradient(180deg, #000 0%, #000 80%, transparent 100%);
+    }
+
+    .thread-body-toggle{
+      border:none;
+      background:transparent;
+      color:var(--gold-dark);
+      font:inherit;
+      font-weight:800;
+      font-size:13px;
+      cursor:pointer;
+      padding:0;
+      width:max-content;
+    }
+
+    .thread-body-toggle:hover{
+      color:#8f6c2d;
+    }
+
+    .empty-state{
+      padding:22px;
+      border-radius:20px;
+      border:1px dashed rgba(17,17,17,0.14);
+      background:rgba(17,17,17,0.02);
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.7;
+    }
+
+    .reply-shell{
+      display:grid;
+      gap:14px;
+      width:100%;
+      max-width:680px;
+      margin:0 auto;
+      padding:16px 18px 0;
+    }
+
+    .reply-meta{
+      display:grid;
+      gap:8px;
+      font-size:13px;
+      color:var(--muted);
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
+
+    .workflow-card{
+      padding:16px 18px;
+      border-radius:20px;
+      background:rgba(17,17,17,0.03);
+      border:1px solid rgba(17,17,17,0.06);
+      display:grid;
+      gap:14px;
+      width:100%;
+      max-width:680px;
+      margin:0 auto;
+    }
+
+    .workflow-card h4{
+      font-size:18px;
+    }
+
+    .workflow-grid{
+      display:grid;
+      gap:12px;
+    }
+
+    .field select{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(17,17,17,0.1);
+      padding:13px 14px;
+      background:#fff;
+      font:inherit;
+      outline:none;
+      transition:border-color .2s ease, box-shadow .2s ease;
+    }
+
+    .field select:focus{
+      border-color:var(--gold);
+      box-shadow:0 0 0 3px rgba(200,169,107,0.15);
+    }
+
+    .footer-links{
+      margin-top:10px;
+      font-size:13px;
+      line-height:1.8;
+      color:rgba(255,255,255,0.78);
+    }
+
+    .footer-links a{
+      color:inherit;
+      text-decoration:none;
+    }
+
+    footer{
+      background:#111111;
+      color:white;
+      text-align:center;
+      padding:22px;
+      margin-top:24px;
+    }
+
+    @media(max-width:1180px){
+      .layout{
+        grid-template-columns:1fr;
+      }
+
+      .hero{
+        grid-template-columns:1fr;
+      }
+    }
+
+    @media(max-width:900px){
+      header{
+        flex-direction:column;
+        padding:16px 18px;
+      }
+
+      .top-nav{
+        justify-content:center;
+      }
+    }
+
+    @media(max-width:600px){
+      .logo h1{
+        font-size:30px;
+      }
+
+      .hero-card h2{
+        font-size:34px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="logo">
+      <div>
+        <h1 class="logo-word">
+          <span>S</span><span>o</span><span>c</span><span>i</span><span>a</span><span>l</span><span>E</span><span>r</span><span>a</span>
+        </h1>
+        <p>Social Shopping</p>
+      </div>
+      <img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image" />
+    </a>
+
+    <nav class="top-nav">
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="admin.html">Admin</a>
+      <a href="cart.html" class="cart-button">Cart <span id="cart-count">0</span></a>
+    </nav>
+  </header>
+
+  <main class="page">
+    <section id="support-access-shell" class="access-shell">
+      <article class="card access-card">
+        <div>
+          <span class="hero-eyebrow">Team Access</span>
+          <h2>Let each support rep sign in before touching the inbox.</h2>
+        </div>
+
+        <p>
+          Every rep can use the same support access code, but they should enter their own name so assignments, notes, and updates stay traceable inside the shared workspace.
+        </p>
+
+        <div id="rep-access-status" class="status"></div>
+
+        <div class="field">
+          <label for="rep-name">Representative Name</label>
+          <input id="rep-name" type="text" placeholder="Ariana / Dan / Support Rep" />
+        </div>
+
+        <div class="field">
+          <label for="support-access-code">Support Access Code</label>
+          <input id="support-access-code" type="password" placeholder="Enter the shared support access code" />
+        </div>
+
+        <div class="button-row">
+          <button id="support-login-btn" class="btn btn-primary" type="button">Enter Support Desk</button>
+        </div>
+      </article>
+    </section>
+
+    <section id="support-workspace" class="hidden">
+    <section class="hero">
+      <article class="card hero-card">
+        <span class="hero-eyebrow">Support Desk</span>
+        <h2>Connect Gmail and handle customer questions without leaving SocialEra.</h2>
+        <p>
+          This desk is designed for your own Gmail account. Once you add your Google client ID and API key, you can connect, load inbox messages, review queries, and send replies from one place.
+        </p>
+        <div class="hero-pills">
+          <span class="hero-pill">Inbox preview</span>
+          <span class="hero-pill">Reply composer</span>
+          <span class="hero-pill">Browser-only config</span>
+          <span class="hero-pill">Ready for your Gmail</span>
+        </div>
+      </article>
+
+      <aside class="card summary-card">
+        <h3>What you need first</h3>
+        <p>
+          Google requires a Cloud project, Gmail API access, and a web OAuth client before a website can connect to your inbox.
+        </p>
+        <div class="summary-list">
+          <div class="summary-item">
+            <strong>1. Enable Gmail API</strong>
+            <span>Turn on Gmail API inside a Google Cloud project you control.</span>
+          </div>
+          <div class="summary-item">
+            <strong>2. Create a web client ID</strong>
+            <span>Add your local and future production site URLs to the authorized origins list.</span>
+          </div>
+          <div class="summary-item">
+            <strong>3. Paste your keys here</strong>
+            <span>This page stores them only in your browser so you can test the support flow locally first.</span>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="layout">
+      <aside class="card panel">
+        <h3>Gmail Setup</h3>
+        <p class="panel-copy">
+          Paste the Google credentials for your Gmail integration. These are stored in your browser only for this support desk.
+        </p>
+
+        <div id="setup-status" class="status"></div>
+
+        <div class="field">
+          <label for="google-client-id">Google OAuth Client ID</label>
+          <input id="google-client-id" type="text" placeholder="1234567890-abc123.apps.googleusercontent.com" />
+        </div>
+
+        <div class="field">
+          <label for="google-api-key">Google API Key</label>
+          <input id="google-api-key" type="text" placeholder="AIza..." />
+        </div>
+
+        <p class="helper">
+          For local testing, Google’s docs say `http://localhost` and `http://localhost:5001` should be added to authorized JavaScript origins for a web app client.
+        </p>
+
+        <div class="button-row">
+          <button id="save-config-btn" class="btn btn-primary" type="button">Save Config</button>
+          <button id="connect-gmail-btn" class="btn btn-dark" type="button">Connect Gmail</button>
+          <button id="disconnect-gmail-btn" class="btn btn-light" type="button">Disconnect</button>
+        </div>
+
+        <div class="rep-bar">
+          <div class="rep-copy">
+            <strong id="active-rep-name">Not signed in</strong>
+            <span>Sign in as a rep so assignments and notes can be tracked for the whole team.</span>
+          </div>
+          <button id="support-logout-btn" class="btn btn-light" type="button">Log Out</button>
+        </div>
+
+        <div class="summary-list">
+          <div class="summary-item">
+            <strong>Scopes requested</strong>
+            <span>Read inbox messages and send replies from your Gmail account.</span>
+          </div>
+          <div class="summary-item">
+            <strong>Best account to use</strong>
+            <span>Your normal Gmail is fine while SocialEra is still in early launch mode.</span>
+          </div>
+        </div>
+      </aside>
+
+      <section class="card panel reply-panel">
+        <div class="panel-head">
+          <h3>Reply</h3>
+          <button id="reply-toggle-btn" class="btn btn-light panel-toggle" type="button" aria-expanded="true" aria-label="Collapse reply panel">−</button>
+        </div>
+        <p class="panel-copy">
+          Select a message to review it and draft your reply from this panel.
+        </p>
+        <div class="collapsed-label">Reply Panel</div>
+
+        <div id="thread-shell" class="thread-shell">
+          <div class="empty-state">
+            No thread selected yet. Once you connect Gmail and choose a message, the thread details will show here.
+          </div>
+        </div>
+      </section>
+
+      <section class="card panel">
+        <h3>Inbox</h3>
+        <p class="panel-copy">
+          Load your latest inbox messages here. Use the search box if you want to narrow the list later.
+        </p>
+
+        <div id="inbox-status" class="status"></div>
+
+        <div class="field">
+          <label for="gmail-search">Search Gmail</label>
+          <input id="gmail-search" type="text" placeholder="from:customer@example.com OR subject:return" />
+        </div>
+
+        <div class="button-row">
+          <button id="refresh-inbox-btn" class="btn btn-primary" type="button">Refresh Inbox</button>
+        </div>
+
+        <div id="inbox-list" class="inbox-list">
+          <div class="empty-state">
+            Connect Gmail first, then your inbox threads will appear here.
+          </div>
+        </div>
+      </section>
+    </section>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 SocialEra</p>
+    <p class="footer-links">
+      <a href="index.html">Home</a> ·
+      <a href="shop.html">Shop</a> ·
+      <a href="admin.html">Admin</a> ·
+      <a href="contact.html">Contact</a>
+    </p>
+  </footer>
+
+  <script src="public-page.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script>
+    const SUPPORT_STORAGE = {
+      token: 'socialera-support-token',
+      repName: 'socialera-support-rep-name'
+    };
+    const CONFIG_KEYS = {
+      clientId: 'socialera-gmail-client-id',
+      apiKey: 'socialera-gmail-api-key'
+    };
+
+    const GMAIL_SCOPES = [
+      'https://www.googleapis.com/auth/gmail.readonly',
+      'https://www.googleapis.com/auth/gmail.send'
+    ].join(' ');
+
+    const supportAccessShell = document.getElementById('support-access-shell');
+    const supportWorkspace = document.getElementById('support-workspace');
+    const repAccessStatus = document.getElementById('rep-access-status');
+    const repNameInput = document.getElementById('rep-name');
+    const supportAccessCodeInput = document.getElementById('support-access-code');
+    const supportLoginBtn = document.getElementById('support-login-btn');
+    const supportLogoutBtn = document.getElementById('support-logout-btn');
+    const activeRepName = document.getElementById('active-rep-name');
+    const setupStatus = document.getElementById('setup-status');
+    const inboxStatus = document.getElementById('inbox-status');
+    const layoutShell = document.querySelector('.layout');
+    const replyPanel = document.querySelector('.reply-panel');
+    const replyToggleBtn = document.getElementById('reply-toggle-btn');
+    const clientIdInput = document.getElementById('google-client-id');
+    const apiKeyInput = document.getElementById('google-api-key');
+    const saveConfigBtn = document.getElementById('save-config-btn');
+    const connectBtn = document.getElementById('connect-gmail-btn');
+    const disconnectBtn = document.getElementById('disconnect-gmail-btn');
+    const refreshInboxBtn = document.getElementById('refresh-inbox-btn');
+    const searchInput = document.getElementById('gmail-search');
+    const inboxList = document.getElementById('inbox-list');
+    const threadShell = document.getElementById('thread-shell');
+
+    let googleToken = null;
+    let tokenClient = null;
+    let inboxMessages = [];
+    let selectedMessage = null;
+    let supportWorkspaceData = { threads: {} };
+    let replyPanelCollapsed = false;
+    let threadBodyExpanded = false;
+
+    function showStatus(element, message, type){
+      element.textContent = message;
+      element.className = `status show ${type}`;
+    }
+
+    function clearStatus(element){
+      element.textContent = '';
+      element.className = 'status';
+    }
+
+    function applyReplyPanelState(){
+      if(!layoutShell || !replyPanel || !replyToggleBtn){
+        return;
+      }
+
+      layoutShell.classList.toggle('reply-collapsed', replyPanelCollapsed);
+      replyPanel.classList.toggle('is-collapsed', replyPanelCollapsed);
+      replyToggleBtn.textContent = replyPanelCollapsed ? '+' : '−';
+      replyToggleBtn.setAttribute('aria-expanded', String(!replyPanelCollapsed));
+      replyToggleBtn.setAttribute('aria-label', replyPanelCollapsed ? 'Expand reply panel' : 'Collapse reply panel');
+    }
+
+    function getStoredConfig(){
+      return {
+        clientId: localStorage.getItem(CONFIG_KEYS.clientId) || '',
+        apiKey: localStorage.getItem(CONFIG_KEYS.apiKey) || ''
+      };
+    }
+
+    function getSupportToken(){
+      return localStorage.getItem(SUPPORT_STORAGE.token) || '';
+    }
+
+    function getSupportRepName(){
+      return localStorage.getItem(SUPPORT_STORAGE.repName) || '';
+    }
+
+    function setSupportSession(token, repName){
+      localStorage.setItem(SUPPORT_STORAGE.token, token);
+      localStorage.setItem(SUPPORT_STORAGE.repName, repName);
+    }
+
+    function clearSupportSession(){
+      localStorage.removeItem(SUPPORT_STORAGE.token);
+      localStorage.removeItem(SUPPORT_STORAGE.repName);
+    }
+
+    function showSupportWorkspace(repName){
+      supportAccessShell.classList.add('hidden');
+      supportWorkspace.classList.remove('hidden');
+      activeRepName.textContent = repName || 'Support Rep';
+    }
+
+    function showSupportLogin(){
+      supportWorkspace.classList.add('hidden');
+      supportAccessShell.classList.remove('hidden');
+      activeRepName.textContent = 'Not signed in';
+      repAccessStatus.textContent = '';
+      repAccessStatus.className = 'status';
+    }
+
+    function saveConfig(){
+      localStorage.setItem(CONFIG_KEYS.clientId, clientIdInput.value.trim());
+      localStorage.setItem(CONFIG_KEYS.apiKey, apiKeyInput.value.trim());
+      showStatus(setupStatus, 'Google config saved in this browser.', 'success');
+    }
+
+    function loadConfigIntoForm(){
+      const config = getStoredConfig();
+      clientIdInput.value = config.clientId;
+      apiKeyInput.value = config.apiKey;
+    }
+
+    function hasConfig(){
+      const config = getStoredConfig();
+      return Boolean(config.clientId && config.apiKey);
+    }
+
+    function escapeHtml(value){
+      return String(value || '')
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;');
+    }
+
+    function getWorkspaceKey(message){
+      return String(
+        message?.threadId ||
+        message?.messageId ||
+        message?.id ||
+        ''
+      ).trim();
+    }
+
+    function parseHeaders(payload){
+      const headers = payload?.headers || [];
+      const result = {};
+
+      headers.forEach((header) => {
+        result[header.name.toLowerCase()] = header.value;
+      });
+
+      return result;
+    }
+
+    function decodeBase64Url(value){
+      if(!value){
+        return '';
+      }
+
+      const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = normalized + '='.repeat((4 - normalized.length % 4) % 4);
+
+      try{
+        return decodeURIComponent(escape(window.atob(padded)));
+      }catch(error){
+        try{
+          return window.atob(padded);
+        }catch(innerError){
+          return '';
+        }
+      }
+    }
+
+    function extractPlainText(payload){
+      if(!payload){
+        return '';
+      }
+
+      if(payload.mimeType === 'text/plain' && payload.body?.data){
+        return decodeBase64Url(payload.body.data);
+      }
+
+      if(Array.isArray(payload.parts)){
+        for(const part of payload.parts){
+          const text = extractPlainText(part);
+          if(text){
+            return text;
+          }
+        }
+      }
+
+      if(payload.body?.data){
+        return decodeBase64Url(payload.body.data);
+      }
+
+      return '';
+    }
+
+    function formatDate(value){
+      if(!value){
+        return 'Unknown date';
+      }
+
+      const date = new Date(value);
+      if(Number.isNaN(date.getTime())){
+        return value;
+      }
+
+      return date.toLocaleString(undefined, {
+        year:'numeric',
+        month:'short',
+        day:'numeric',
+        hour:'numeric',
+        minute:'2-digit'
+      });
+    }
+
+    function formatThreadMessage(message, isLatest){
+      const body = message.body || message.snippet || 'No message body available.';
+      const isLongMessage = body.length > 900;
+      const collapsedClass = isLongMessage && !threadBodyExpanded && isLatest ? 'is-collapsed' : '';
+
+      return `
+        <article class="thread-message ${isLatest ? 'is-latest' : ''}">
+          <div class="thread-message-head">
+            <div class="thread-message-author">
+              <strong>${escapeHtml(message.from || 'Unknown sender')}</strong>
+              <span>${escapeHtml(message.replyTo || message.from || '')}</span>
+            </div>
+            <div class="thread-message-time">${escapeHtml(formatDate(message.date))}</div>
+          </div>
+          <div class="thread-body ${collapsedClass}" ${isLatest ? 'id="thread-body-content"' : ''}>${escapeHtml(body)}</div>
+          ${isLongMessage && isLatest ? `<button id="thread-body-toggle" class="thread-body-toggle" type="button">${threadBodyExpanded ? 'See less' : 'See more'}</button>` : ''}
+        </article>
+      `;
+    }
+
+    function buildRawEmail(to, subject, body, messageId, references){
+      const lines = [
+        `To: ${to}`,
+        'Content-Type: text/plain; charset="UTF-8"',
+        'MIME-Version: 1.0',
+        `Subject: ${subject}`
+      ];
+
+      if(messageId){
+        lines.push(`In-Reply-To: ${messageId}`);
+      }
+
+      if(references){
+        lines.push(`References: ${references}`);
+      }
+
+      lines.push('', body);
+
+      const mime = lines.join('\r\n');
+      return btoa(unescape(encodeURIComponent(mime)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/g, '');
+    }
+
+    async function gmailRequest(path, options = {}){
+      if(!googleToken){
+        throw new Error('Connect Gmail first.');
+      }
+
+      const config = getStoredConfig();
+      const url = new URL(`https://gmail.googleapis.com/gmail/v1/users/me/${path}`);
+
+      if(config.apiKey){
+        url.searchParams.set('key', config.apiKey);
+      }
+
+      const response = await fetch(url.toString(), {
+        ...options,
+        headers: {
+          Authorization: `Bearer ${googleToken}`,
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        }
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if(!response.ok){
+        throw new Error(data?.error?.message || `Gmail request failed: ${response.status}`);
+      }
+
+      return data;
+    }
+
+    async function supportRequest(path, options = {}){
+      const token = getSupportToken();
+
+      const response = await fetch(path, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(options.headers || {})
+        }
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if(!response.ok){
+        if(response.status === 401){
+          clearSupportSession();
+          showSupportLogin();
+        }
+        throw new Error(data?.error || `Request failed: ${response.status}`);
+      }
+
+      return data;
+    }
+
+    function renderInbox(){
+      if(!inboxMessages.length){
+        inboxList.innerHTML = `
+          <div class="empty-state">
+            No inbox messages were found for the current view.
+          </div>
+        `;
+        return;
+      }
+
+      inboxList.innerHTML = inboxMessages.map((message) => `
+        <button class="message-item ${selectedMessage?.id === message.id ? 'active' : ''}" type="button" data-message-id="${escapeHtml(message.id)}">
+          <strong>${escapeHtml(message.subject || '(No subject)')}</strong>
+          <div class="message-meta">
+            <span>${escapeHtml(message.from || 'Unknown sender')}</span>
+            <span>${escapeHtml(formatDate(message.date))}</span>
+          </div>
+          <div class="message-snippet">${escapeHtml(message.snippet || 'No preview available.')}</div>
+        </button>
+      `).join('');
+
+      inboxList.querySelectorAll('.message-item').forEach((button) => {
+        button.addEventListener('click', () => {
+          const messageId = button.getAttribute('data-message-id');
+          loadThread(messageId);
+        });
+      });
+    }
+
+    function renderThread(){
+      if(!selectedMessage){
+        threadShell.innerHTML = `
+          <div class="empty-state">
+            No thread selected yet. Once you connect Gmail and choose a message, the thread details will show here.
+          </div>
+        `;
+        return;
+      }
+
+      threadShell.innerHTML = `
+        <div class="thread-top">
+          <div class="thread-kicker">Thread view</div>
+          <div class="thread-subject">${escapeHtml(selectedMessage.subject || '(No subject)')}</div>
+          <div class="thread-copy">
+            ${selectedMessage.threadMessages?.length || 1} message${(selectedMessage.threadMessages?.length || 1) === 1 ? '' : 's'} in this conversation.
+          </div>
+        </div>
+
+        <div class="thread-conversation-box">
+          <div class="thread-conversation">
+            ${(selectedMessage.threadMessages || [selectedMessage]).map((message, index, list) => (
+              formatThreadMessage(message, index === list.length - 1)
+            )).join('')}
+          </div>
+        </div>
+
+        <div class="reply-shell">
+          <div class="reply-meta">
+            <span>Replying to: <strong>${escapeHtml(selectedMessage.replyTo || selectedMessage.from || '')}</strong></span>
+            <span>Subject: <strong>${escapeHtml(selectedMessage.replySubject || '')}</strong></span>
+          </div>
+
+          <div class="field">
+            <label for="reply-message">Reply message</label>
+            <textarea id="reply-message" placeholder="Write your reply here..."></textarea>
+          </div>
+
+          <div class="button-row">
+            <button id="send-reply-btn" class="btn btn-primary" type="button">Send Reply</button>
+            <button id="open-gmail-btn" class="btn btn-light" type="button">Open in Gmail</button>
+          </div>
+        </div>
+
+        <div class="workflow-card">
+          <h4>Shared Team Workflow</h4>
+          <div class="workflow-grid">
+            <div class="field">
+              <label for="assigned-rep">Assigned Representative</label>
+              <input id="assigned-rep" type="text" value="${escapeHtml(selectedMessage.workspace?.assignedRep || getSupportRepName())}" placeholder="Assign this thread to a rep" />
+            </div>
+
+            <div class="field">
+              <label for="thread-status">Thread Status</label>
+              <select id="thread-status">
+                <option value="open" ${selectedMessage.workspace?.status === 'open' ? 'selected' : ''}>Open</option>
+                <option value="pending" ${selectedMessage.workspace?.status === 'pending' ? 'selected' : ''}>Pending</option>
+                <option value="replied" ${selectedMessage.workspace?.status === 'replied' ? 'selected' : ''}>Replied</option>
+                <option value="closed" ${selectedMessage.workspace?.status === 'closed' ? 'selected' : ''}>Closed</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="thread-notes">Internal Notes</label>
+              <textarea id="thread-notes" placeholder="Add handoff notes, resolution details, or reminders for the next rep...">${escapeHtml(selectedMessage.workspace?.notes || '')}</textarea>
+            </div>
+          </div>
+
+          <div class="button-row">
+            <button id="save-workflow-btn" class="btn btn-light" type="button">Save Workflow Notes</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('send-reply-btn').addEventListener('click', sendReply);
+      document.getElementById('open-gmail-btn').addEventListener('click', openInGmail);
+      document.getElementById('save-workflow-btn').addEventListener('click', saveWorkflowState);
+      const threadBodyToggle = document.getElementById('thread-body-toggle');
+      if(threadBodyToggle){
+        threadBodyToggle.addEventListener('click', () => {
+          threadBodyExpanded = !threadBodyExpanded;
+          renderThread();
+        });
+      }
+    }
+
+    async function loadInbox(){
+      if(!googleToken){
+        showStatus(inboxStatus, 'Connect Gmail before loading inbox messages.', 'error');
+        return;
+      }
+
+      showStatus(inboxStatus, 'Loading inbox messages...', 'info');
+
+      try{
+        const query = searchInput.value.trim();
+        const params = new URLSearchParams({
+          labelIds: 'INBOX',
+          maxResults: '15'
+        });
+
+        if(query){
+          params.set('q', query);
+        }
+
+        const config = getStoredConfig();
+        if(config.apiKey){
+          params.set('key', config.apiKey);
+        }
+
+        const listResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages?${params.toString()}`, {
+          headers: {
+            Authorization: `Bearer ${googleToken}`
+          }
+        });
+
+        const listData = await listResponse.json().catch(() => null);
+        if(!listResponse.ok){
+          throw new Error(listData?.error?.message || `Inbox request failed: ${listResponse.status}`);
+        }
+
+        const messageRefs = listData?.messages || [];
+        inboxMessages = await Promise.all(messageRefs.map(async (item) => {
+          const detail = await gmailRequest(`messages/${item.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date&metadataHeaders=Reply-To&metadataHeaders=Message-ID&metadataHeaders=References`);
+          const headers = parseHeaders(detail.payload);
+
+          return {
+            id: item.id,
+            threadId: detail.threadId,
+            workspaceKey: detail.threadId || item.id,
+            snippet: detail.snippet || '',
+            subject: headers.subject || '(No subject)',
+            from: headers.from || 'Unknown sender',
+            replyTo: headers['reply-to'] || headers.from || '',
+            date: headers.date || '',
+            messageId: headers['message-id'] || '',
+            references: headers.references || ''
+          };
+        }));
+
+        selectedMessage = null;
+        renderInbox();
+        renderThread();
+        showStatus(inboxStatus, `Loaded ${inboxMessages.length} inbox message${inboxMessages.length === 1 ? '' : 's'}.`, 'success');
+      }catch(error){
+        console.error(error);
+        showStatus(inboxStatus, error.message || 'Failed to load inbox.', 'error');
+      }
+    }
+
+    async function loadThread(messageId){
+      showStatus(inboxStatus, 'Loading message thread...', 'info');
+
+      try{
+        const preview = inboxMessages.find((item) => item.id === messageId) || {};
+        const threadId = preview.threadId || messageId;
+        const threadDetail = await gmailRequest(`threads/${threadId}?format=full`);
+        const threadMessages = (threadDetail.messages || []).map((message) => {
+          const headers = parseHeaders(message.payload);
+          return {
+            id: message.id,
+            threadId: message.threadId,
+            subject: headers.subject || preview.subject || '(No subject)',
+            from: headers.from || 'Unknown sender',
+            replyTo: headers['reply-to'] || headers.from || '',
+            date: headers.date || '',
+            messageId: headers['message-id'] || '',
+            references: headers.references || '',
+            snippet: message.snippet || '',
+            body: extractPlainText(message.payload)
+          };
+        });
+        const latestMessage = threadMessages[threadMessages.length - 1] || threadMessages[0] || preview;
+        threadBodyExpanded = false;
+
+        selectedMessage = {
+          id: messageId,
+          threadId: threadId,
+          workspaceKey: threadId,
+          subject: latestMessage.subject || preview.subject || '(No subject)',
+          from: latestMessage.from || preview.from || 'Unknown sender',
+          replyTo: latestMessage.replyTo || preview.replyTo || '',
+          date: latestMessage.date || preview.date || '',
+          messageId: latestMessage.messageId || preview.messageId || '',
+          references: latestMessage.references || preview.references || '',
+          snippet: latestMessage.snippet || preview.snippet || '',
+          body: latestMessage.body || '',
+          threadMessages,
+          workspace: supportWorkspaceData.threads[threadId || messageId] || {},
+          replySubject: /^Re:/i.test(latestMessage.subject || '')
+            ? (latestMessage.subject || '')
+            : `Re: ${latestMessage.subject || '(No subject)'}`
+        };
+
+        renderInbox();
+        renderThread();
+        showStatus(inboxStatus, 'Message loaded.', 'success');
+      }catch(error){
+        console.error(error);
+        showStatus(inboxStatus, error.message || 'Failed to load message.', 'error');
+      }
+    }
+
+    async function sendReply(){
+      if(!selectedMessage){
+        showStatus(inboxStatus, 'Choose a message before sending a reply.', 'error');
+        return;
+      }
+
+      const replyBox = document.getElementById('reply-message');
+      const body = replyBox.value.trim();
+
+      if(!body){
+        showStatus(inboxStatus, 'Write your reply first.', 'error');
+        return;
+      }
+
+      showStatus(inboxStatus, 'Sending reply...', 'info');
+
+      try{
+        const raw = buildRawEmail(
+          selectedMessage.replyTo,
+          selectedMessage.replySubject,
+          body,
+          selectedMessage.messageId,
+          selectedMessage.references || selectedMessage.messageId
+        );
+
+        await gmailRequest('messages/send', {
+          method: 'POST',
+          body: JSON.stringify({
+            raw,
+            threadId: selectedMessage.threadId
+          })
+        });
+
+        replyBox.value = '';
+        showStatus(inboxStatus, 'Reply sent from your Gmail account.', 'success');
+      }catch(error){
+        console.error(error);
+        showStatus(inboxStatus, error.message || 'Failed to send reply.', 'error');
+      }
+    }
+
+    async function loadSupportWorkspaceState(){
+      try{
+        const data = await supportRequest('/api/support/workspace', { method: 'GET' });
+        supportWorkspaceData = data && data.threads ? data : { threads: {} };
+      }catch(error){
+        console.error(error);
+        showStatus(inboxStatus, error.message || 'Failed to load the team workspace state.', 'error');
+      }
+    }
+
+    async function saveWorkflowState(){
+      if(!selectedMessage){
+        showStatus(inboxStatus, 'Choose a message before saving workflow details.', 'error');
+        return;
+      }
+
+      const assignedRep = document.getElementById('assigned-rep').value.trim();
+      const status = document.getElementById('thread-status').value;
+      const notes = document.getElementById('thread-notes').value.trim();
+
+      showStatus(inboxStatus, 'Saving shared workflow details...', 'info');
+
+      try{
+        const workspaceKey = getWorkspaceKey(selectedMessage);
+
+        if(!workspaceKey){
+          throw new Error('This thread does not have a stable workspace key yet.');
+        }
+
+        const data = await supportRequest(`/api/support/workspace/${encodeURIComponent(workspaceKey)}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            assignedRep,
+            status,
+            notes,
+            customerEmail: selectedMessage.replyTo || '',
+            subject: selectedMessage.subject || ''
+          })
+        });
+
+        supportWorkspaceData.threads[workspaceKey] = data.entry;
+        selectedMessage.workspace = data.entry;
+        await loadSupportWorkspaceState();
+        renderThread();
+        showStatus(inboxStatus, 'Shared workflow details saved for the team.', 'success');
+      }catch(error){
+        console.error(error);
+        showStatus(inboxStatus, error.message || 'Failed to save workflow details.', 'error');
+      }
+    }
+
+    function openInGmail(){
+      if(!selectedMessage){
+        return;
+      }
+
+      const url = `https://mail.google.com/mail/u/0/#search/rfc822msgid:${encodeURIComponent(selectedMessage.messageId || '')}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+
+    function buildTokenClient(){
+      const config = getStoredConfig();
+
+      if(!config.clientId){
+        return null;
+      }
+
+      if(!window.google || !window.google.accounts || !window.google.accounts.oauth2){
+        return null;
+      }
+
+      tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: config.clientId,
+        scope: GMAIL_SCOPES,
+        callback: (tokenResponse) => {
+          if(tokenResponse.error){
+            showStatus(setupStatus, tokenResponse.error, 'error');
+            return;
+          }
+
+          googleToken = tokenResponse.access_token;
+          showStatus(setupStatus, 'Gmail connected. You can load your inbox now.', 'success');
+          loadInbox();
+        }
+      });
+
+      return tokenClient;
+    }
+
+    function connectGmail(){
+      if(!hasConfig()){
+        showStatus(setupStatus, 'Save your Google client ID and API key first.', 'error');
+        return;
+      }
+
+      const client = buildTokenClient();
+
+      if(!client){
+        showStatus(setupStatus, 'Google Identity Services is not ready yet. Give it a moment and try again.', 'error');
+        return;
+      }
+
+      client.requestAccessToken({ prompt: googleToken ? '' : 'consent' });
+    }
+
+    function disconnectGmail(){
+      googleToken = null;
+      selectedMessage = null;
+      inboxMessages = [];
+      renderInbox();
+      renderThread();
+      showStatus(setupStatus, 'Gmail session cleared from this page.', 'info');
+      clearStatus(inboxStatus);
+    }
+
+    async function supportLogin(){
+      const repName = repNameInput.value.trim();
+      const accessCode = supportAccessCodeInput.value.trim();
+
+      if(!repName || !accessCode){
+        showStatus(repAccessStatus, 'Enter your rep name and the support access code.', 'error');
+        return;
+      }
+
+      supportLoginBtn.disabled = true;
+      supportLoginBtn.textContent = 'Entering...';
+
+      try{
+        const data = await fetch('/api/support/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            repName,
+            accessCode
+          })
+        }).then(async (response) => {
+          const payload = await response.json().catch(() => null);
+
+          if(!response.ok){
+            throw new Error(payload?.error || `Request failed: ${response.status}`);
+          }
+
+          return payload;
+        });
+
+        setSupportSession(data.token, data.rep?.name || repName);
+        await loadSupportWorkspaceState();
+        showSupportWorkspace(data.rep?.name || repName);
+      }catch(error){
+        console.error(error);
+        showStatus(repAccessStatus, error.message || 'Support login failed.', 'error');
+      }finally{
+        supportLoginBtn.disabled = false;
+        supportLoginBtn.textContent = 'Enter Support Desk';
+      }
+    }
+
+    async function verifySupportSession(){
+      const token = getSupportToken();
+
+      if(!token){
+        showSupportLogin();
+        return;
+      }
+
+      try{
+        const data = await supportRequest('/api/support/verify', { method: 'GET' });
+        await loadSupportWorkspaceState();
+        showSupportWorkspace(data.rep?.name || getSupportRepName());
+      }catch(error){
+        console.error(error);
+        clearSupportSession();
+        showSupportLogin();
+      }
+    }
+
+    async function supportLogout(){
+      try{
+        if(getSupportToken()){
+          await supportRequest('/api/support/logout', { method: 'POST' });
+        }
+      }catch(error){
+        console.error(error);
+      }finally{
+        clearSupportSession();
+        googleToken = null;
+        inboxMessages = [];
+        selectedMessage = null;
+        supportWorkspaceData = { threads: {} };
+        renderInbox();
+        renderThread();
+        showSupportLogin();
+      }
+    }
+
+    saveConfigBtn.addEventListener('click', saveConfig);
+    connectBtn.addEventListener('click', connectGmail);
+    disconnectBtn.addEventListener('click', disconnectGmail);
+    refreshInboxBtn.addEventListener('click', loadInbox);
+    supportLoginBtn.addEventListener('click', supportLogin);
+    supportLogoutBtn.addEventListener('click', supportLogout);
+    replyToggleBtn.addEventListener('click', () => {
+      replyPanelCollapsed = !replyPanelCollapsed;
+      applyReplyPanelState();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadConfigIntoForm();
+      renderInbox();
+      renderThread();
+      applyReplyPanelState();
+      verifySupportSession();
+    });
+  </script>
+</body>
+</html>

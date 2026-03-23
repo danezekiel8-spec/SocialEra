@@ -129,11 +129,22 @@ display:flex;
 align-items:center;
 }
 
+.header-search-icon{
+position:absolute;
+left:12px;
+top:50%;
+transform:translateY(-50%);
+font-size:14px;
+color:rgba(255,255,255,0.72);
+pointer-events:none;
+z-index:1;
+}
+
 .header-search input{
 width:240px;
 border-radius:999px;
 border:1px solid rgba(255,255,255,0.14);
-padding:11px 15px;
+padding:11px 36px 11px 36px;
 background:#222;
 color:white;
 outline:none;
@@ -147,6 +158,37 @@ box-shadow:0 0 0 3px rgba(200,169,107,0.15);
 
 .header-search input::placeholder{
 color:#aaa;
+}
+
+.header-search-clear{
+position:absolute;
+right:8px;
+top:50%;
+transform:translateY(-50%);
+width:24px;
+height:24px;
+border:none;
+border-radius:999px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:rgba(255,255,255,0.08);
+color:rgba(255,255,255,0.78);
+font-size:14px;
+cursor:pointer;
+transition:background .2s ease, color .2s ease, opacity .2s ease;
+opacity:0;
+pointer-events:none;
+}
+
+.header-search-clear.show{
+opacity:1;
+pointer-events:auto;
+}
+
+.header-search-clear:hover{
+background:rgba(200,169,107,0.18);
+color:#f2dfb8;
 }
 
 .search-suggestions{
@@ -178,10 +220,18 @@ overflow-y:auto;
 display:flex;
 align-items:center;
 gap:12px;
+width:100%;
 padding:12px 14px;
 text-decoration:none;
 color:#111111;
 border-bottom:1px solid rgba(17,17,17,0.06);
+background:transparent;
+border-left:none;
+border-right:none;
+border-top:none;
+cursor:pointer;
+font:inherit;
+text-align:left;
 }
 
 .search-suggestion-item:last-child{
@@ -189,6 +239,10 @@ border-bottom:none;
 }
 
 .search-suggestion-item:hover{
+background:#f7f2ea;
+}
+
+.search-suggestion-item.is-active{
 background:#f7f2ea;
 }
 
@@ -217,10 +271,74 @@ font-size:13px;
 color:#7a6a5c;
 }
 
+.search-suggestion-kicker{
+display:inline-flex;
+align-items:center;
+width:max-content;
+padding:3px 8px;
+border-radius:999px;
+background:rgba(17,17,17,0.06);
+font-size:10px;
+font-weight:700;
+letter-spacing:.5px;
+text-transform:uppercase;
+color:#5d5146;
+}
+
+.search-suggestion-section{
+padding:8px 0 0;
+background:linear-gradient(180deg, rgba(248,244,236,0.66) 0%, rgba(255,255,255,0) 100%);
+}
+
+.search-suggestion-section-title{
+padding:0 14px 8px;
+font-size:11px;
+font-weight:800;
+letter-spacing:.7px;
+text-transform:uppercase;
+color:#7a6a5c;
+}
+
+.search-suggestion-meta{
+display:flex;
+align-items:center;
+gap:8px;
+flex-wrap:wrap;
+}
+
+.search-suggestion-avatar{
+width:48px;
+height:48px;
+border-radius:14px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:linear-gradient(135deg, #ead29b, var(--gold));
+color:#111;
+font-size:16px;
+font-weight:800;
+flex-shrink:0;
+box-shadow:0 8px 18px rgba(200,169,107,0.22);
+}
+
+.search-suggestion-tag{
+font-size:11px;
+font-weight:700;
+color:#8b6b2f;
+}
+
+.search-suggestion-provider{
+font-size:11px;
+font-weight:700;
+color:#6c5a3a;
+}
+
 .search-empty{
 padding:14px;
 font-size:14px;
 color:#7a6a5c;
+border-bottom:1px solid rgba(17,17,17,0.06);
+background:linear-gradient(180deg, rgba(248,244,236,0.88) 0%, rgba(255,255,255,0.82) 100%);
 }
 
 /* CART ICON */
@@ -765,16 +883,18 @@ font-size:32px;
 <img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
 </a>
 
+<div class="header-search">
+<span class="header-search-icon" aria-hidden="true">⌕</span>
+<input type="text" id="search-input" placeholder="Search">
+<button type="button" id="search-clear-button" class="header-search-clear" aria-label="Clear search">×</button>
+<div id="search-suggestions" class="search-suggestions"></div>
+</div>
+
 <nav class="top-nav">
 <a href="index.html">Home</a>
 <a href="shop.html">Shop</a>
 <a href="login.html" class="auth-link static-auth-link">Login</a>
 <a href="signup.html" class="auth-link static-auth-link">Sign Up</a>
-
-<div class="header-search">
-<input type="text" id="search-input" placeholder="Search products">
-<div id="search-suggestions" class="search-suggestions"></div>
-</div>
 
 <a href="cart.html" class="cart-button" aria-label="Cart">
 <svg class="cart-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -800,16 +920,6 @@ A dedicated shopping experience with categories, filters, sorting, and full cata
 <a href="index.html" class="hero-link secondary">Back to Feed</a>
 <a href="#products" class="hero-link primary">Browse Products</a>
 </div>
-</div>
-</section>
-
-<section class="swipe-hint-wrap">
-<div class="swipe-hint">
-<div>
-<strong>App-style navigation enabled</strong>
-<span>On mobile, swipe right anywhere on this page to go back to the feed.</span>
-</div>
-<div class="swipe-pill">Swipe right → Feed</div>
 </div>
 </section>
 
@@ -872,6 +982,14 @@ A dedicated shopping experience with categories, filters, sorting, and full cata
 
 <footer>
 <p>© 2026 SocialEra</p>
+<p class="footer-links">
+<a href="about.html">About Us</a> ·
+<a href="contact.html">Contact</a> ·
+<a href="shipping-policy.html">Shipping Policy</a> ·
+<a href="returns-policy.html">Returns Policy</a> ·
+<a href="privacy-policy.html">Privacy Policy</a> ·
+<a href="terms.html">Terms</a>
+</p>
 </footer>
 
 <script>
@@ -881,10 +999,16 @@ const searchInput=document.getElementById('search-input');
 const sortSelect=document.getElementById('sort-select');
 const filterButtons=document.querySelectorAll('.filter-btn');
 const suggestionsBox=document.getElementById('search-suggestions');
+const searchClearButton=document.getElementById('search-clear-button');
 
 let cart=JSON.parse(localStorage.getItem('lovadaCart'))||[];
 let allProducts=[];
+let allSocialPosts=[];
 let currentCategory='all';
+let activeSearchResults=[];
+let highlightedSearchIndex=-1;
+
+const RECENT_SEARCHES_KEY='socialeraRecentSearches';
 
 const imageList=[
 'assets/category-accessories.jpg',
@@ -1034,6 +1158,24 @@ return String(product.image);
 return imageList[index%imageList.length];
 }
 
+function normalizeText(value){
+return String(value||'').toLowerCase().trim();
+}
+
+function getDisplayInitials(value){
+const words=String(value||'SE')
+.trim()
+.split(/\s+/)
+.filter(Boolean)
+.slice(0,2);
+
+if(!words.length){
+return 'SE';
+}
+
+return words.map((word)=>word[0]).join('').toUpperCase();
+}
+
 function isSaleActive(product){
 const regular=Number(product.price||0);
 const saleEnabled=Boolean(product.saleEnabled);
@@ -1145,40 +1287,273 @@ Add to Cart
 }).join('');
 }
 
-function renderSuggestions(){
-const query=searchInput.value.trim().toLowerCase();
+function getRecentSearches(){
+try{
+const parsed=JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY)||'[]');
+return Array.isArray(parsed) ? parsed.filter(Boolean).slice(0,5) : [];
+}catch(error){
+return [];
+}
+}
 
-if(!query){
-suggestionsBox.classList.remove('show');
+function saveRecentSearch(term){
+const value=String(term||'').trim();
+if(!value) return;
+
+const deduped=[value, ...getRecentSearches().filter(item=>normalizeText(item)!==normalizeText(value))].slice(0,5);
+localStorage.setItem(RECENT_SEARCHES_KEY,JSON.stringify(deduped));
+}
+
+function setSearchSuggestionsVisibility(visible){
+if(!suggestionsBox) return;
+suggestionsBox.classList.toggle('show',visible);
+if(!visible){
+highlightedSearchIndex=-1;
+}
+}
+
+function updateSearchClearButton(){
+if(!searchClearButton || !searchInput) return;
+searchClearButton.classList.toggle('show',Boolean(searchInput.value.trim()));
+}
+
+function getProductSearchResults(query){
+return allProducts.filter((product)=>{
+const haystack=[
+normalizeText(product.name),
+normalizeText(product.description),
+normalizeText(product.category)
+].join(' ');
+
+return haystack.includes(query);
+}).slice(0,4);
+}
+
+function getPostSearchResults(query){
+return allSocialPosts.filter((post)=>{
+const haystack=[
+normalizeText(post.captionTitle),
+normalizeText(post.captionText),
+normalizeText(post.displayName),
+normalizeText(post.userName),
+...(Array.isArray(post.tags) ? post.tags.map((tag)=>normalizeText(tag)) : [])
+].join(' ');
+
+return haystack.includes(query);
+}).slice(0,3);
+}
+
+function getProfileSearchResults(query){
+const seen=new Map();
+
+allSocialPosts.forEach((post)=>{
+const key=`${normalizeText(post.userName)}::${normalizeText(post.displayName)}`;
+if(!seen.has(key)){
+seen.set(key,{
+displayName:post.displayName,
+userName:post.userName,
+avatar:post.avatar,
+postId:post.id,
+postCount:0
+});
+}
+
+seen.get(key).postCount+=1;
+});
+
+return [...seen.values()].filter((profile)=>{
+const haystack=`${normalizeText(profile.displayName)} ${normalizeText(profile.userName)}`;
+return haystack.includes(query);
+}).slice(0,3);
+}
+
+function setHighlightedSearchResult(nextIndex){
+highlightedSearchIndex=nextIndex;
+if(!suggestionsBox) return;
+
+const items=[...suggestionsBox.querySelectorAll('.search-suggestion-item')];
+items.forEach((item,index)=>{
+item.classList.toggle('is-active',index===highlightedSearchIndex);
+});
+
+items[highlightedSearchIndex]?.scrollIntoView({block:'nearest'});
+}
+
+function openSearchResult(result){
+if(!result) return;
+
+if(result.kind==='product'){
+saveRecentSearch(result.label);
+window.location.href=`product.html?id=${encodeURIComponent(result.id)}`;
+return;
+}
+
+if(result.kind==='post'){
+saveRecentSearch(searchInput.value.trim() || result.label);
+window.location.href=`index.html?highlightPost=${encodeURIComponent(result.id)}`;
+return;
+}
+
+if(result.kind==='profile'){
+saveRecentSearch(result.label);
+window.location.href=`index.html?channel=profile&highlightPost=${encodeURIComponent(result.postId)}`;
+return;
+}
+
+if(result.kind==='recent'){
+searchInput.value=result.label;
+renderSuggestions();
+return;
+}
+
+if(result.kind==='web-link'){
+saveRecentSearch(result.label);
+window.open(result.url,'_blank','noopener');
+}
+}
+
+function renderSuggestionSection(title,items,renderer){
+if(!items.length){
+return '';
+}
+
+return `
+<div class="search-suggestion-section">
+<div class="search-suggestion-section-title">${escapeHtml(title)}</div>
+${items.map(renderer).join('')}
+</div>
+`;
+}
+
+function renderSuggestions(){
+if(!searchInput || !suggestionsBox) return;
+
+const query=searchInput.value.trim();
+const normalizedQuery=normalizeText(query);
+activeSearchResults=[];
+
+if(!normalizedQuery){
+const recent=getRecentSearches();
+
+if(!recent.length){
+setSearchSuggestionsVisibility(false);
 suggestionsBox.innerHTML='';
 return;
 }
 
-const matches=allProducts.filter(product=>
-String(product.name||'').toLowerCase().includes(query)
-).slice(0,5);
-
-if(!matches.length){
-suggestionsBox.innerHTML=`<div class="search-empty">No matching items found.</div>`;
-suggestionsBox.classList.add('show');
+activeSearchResults=recent.map((term)=>({kind:'recent',label:term}));
+suggestionsBox.innerHTML=renderSuggestionSection('Recent Searches',recent,(term,index)=>`
+<button class="search-suggestion-item" type="button" data-search-index="${index}">
+<div class="search-suggestion-avatar">↺</div>
+<div class="search-suggestion-text">
+<strong>${escapeHtml(term)}</strong>
+<span>Search again</span>
+</div>
+</button>
+`);
+setSearchSuggestionsVisibility(true);
+setHighlightedSearchResult(-1);
 return;
 }
 
-suggestionsBox.innerHTML=matches.map((product,index)=>`
-<a class="search-suggestion-item" href="product.html?id=${encodeURIComponent(product.id)}">
+const productMatches=getProductSearchResults(normalizedQuery);
+const postMatches=getPostSearchResults(normalizedQuery);
+const profileMatches=getProfileSearchResults(normalizedQuery);
+
+activeSearchResults=[
+...productMatches.map((product)=>({kind:'product',id:product.id,label:String(product.name||'Untitled Product')})),
+...postMatches.map((post)=>({kind:'post',id:post.id,label:post.captionTitle||'Post'})),
+...profileMatches.map((profile)=>({kind:'profile',label:profile.displayName||profile.userName,postId:profile.postId}))
+];
+
+if(!activeSearchResults.length){
+const webFallbacks=[
+{kind:'web-link',label:query,provider:'Google',url:`https://www.google.com/search?q=${encodeURIComponent(query)}`},
+{kind:'web-link',label:query,provider:'YouTube',url:`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`},
+{kind:'web-link',label:query,provider:'Amazon',url:`https://www.amazon.com/s?k=${encodeURIComponent(query)}`},
+{kind:'web-link',label:query,provider:'TikTok',url:`https://www.tiktok.com/search?q=${encodeURIComponent(query)}`},
+{kind:'web-link',label:query,provider:'Pinterest',url:`https://www.pinterest.com/search/pins/?q=${encodeURIComponent(query)}`}
+];
+activeSearchResults=webFallbacks;
+suggestionsBox.innerHTML=`
+<div class="search-empty">No SocialEra matches found.</div>
+${renderSuggestionSection('Search The Web',webFallbacks,(item,index)=>`
+<button class="search-suggestion-item" type="button" data-search-index="${index}">
+<div class="search-suggestion-avatar">↗</div>
+<div class="search-suggestion-text">
+<div class="search-suggestion-meta">
+<span class="search-suggestion-kicker">Web</span>
+<span class="search-suggestion-provider">${escapeHtml(item.provider)}</span>
+</div>
+<strong>${escapeHtml(item.provider)}</strong>
+<span>Find "${escapeHtml(item.label)}" on ${escapeHtml(item.provider)}</span>
+</div>
+</button>
+`)}
+`;
+setSearchSuggestionsVisibility(true);
+setHighlightedSearchResult(-1);
+return;
+}
+
+let runningIndex=0;
+suggestionsBox.innerHTML=[
+renderSuggestionSection('Products',productMatches,(product,index)=>{
+const resultIndex=runningIndex++;
+return `
+<button class="search-suggestion-item" type="button" data-search-index="${resultIndex}">
 <img
 src="${escapeHtml(getProductImage(product,index))}"
 alt="${escapeHtml(String(product.name||'Product'))}"
 onerror="this.onerror=null;this.src='${imageList[index%imageList.length]}';"
 >
 <div class="search-suggestion-text">
-<strong>${escapeHtml(String(product.name||'Untitled Product'))}</strong>
-<span>$${getEffectivePrice(product).toFixed(2)}</span>
+<div class="search-suggestion-meta">
+<span class="search-suggestion-kicker">Product</span>
+<span class="search-suggestion-tag">$${getEffectivePrice(product).toFixed(2)}</span>
 </div>
-</a>
-`).join('');
+<strong>${escapeHtml(String(product.name||'Untitled Product'))}</strong>
+<span>${escapeHtml(product.category || 'Shop item')}</span>
+</div>
+</button>
+`;
+}),
+renderSuggestionSection('Posts',postMatches,(post)=>{
+const resultIndex=runningIndex++;
+return `
+<button class="search-suggestion-item" type="button" data-search-index="${resultIndex}">
+<div class="search-suggestion-avatar">${escapeHtml(post.avatar || getDisplayInitials(post.displayName))}</div>
+<div class="search-suggestion-text">
+<div class="search-suggestion-meta">
+<span class="search-suggestion-kicker">Post</span>
+<span class="search-suggestion-tag">${escapeHtml(post.userName || '@socialera')}</span>
+</div>
+<strong>${escapeHtml(post.captionTitle || 'Untitled Post')}</strong>
+<span>${escapeHtml(post.displayName || 'SocialEra Member')}</span>
+</div>
+</button>
+`;
+}),
+renderSuggestionSection('Profiles',profileMatches,(profile)=>{
+const resultIndex=runningIndex++;
+return `
+<button class="search-suggestion-item" type="button" data-search-index="${resultIndex}">
+<div class="search-suggestion-avatar">${escapeHtml(profile.avatar || getDisplayInitials(profile.displayName))}</div>
+<div class="search-suggestion-text">
+<div class="search-suggestion-meta">
+<span class="search-suggestion-kicker">Profile</span>
+<span class="search-suggestion-tag">${escapeHtml(String(profile.postCount))} posts</span>
+</div>
+<strong>${escapeHtml(profile.displayName)}</strong>
+<span>${escapeHtml(profile.userName)}</span>
+</div>
+</button>
+`;
+})
+].filter(Boolean).join('');
 
-suggestionsBox.classList.add('show');
+setSearchSuggestionsVisibility(true);
+setHighlightedSearchResult(-1);
 }
 
 function getApiCandidates(){
@@ -1235,17 +1610,59 @@ btn.onclick=()=>activateCategory(btn.dataset.category,true);
 });
 
 searchInput.addEventListener('input',()=>{
+updateSearchClearButton();
 renderProducts();
 renderSuggestions();
 });
 
+searchInput.addEventListener('focus',()=>{
+renderSuggestions();
+});
+
+searchClearButton?.addEventListener('click',()=>{
+searchInput.value='';
+updateSearchClearButton();
+renderProducts();
+setSearchSuggestionsVisibility(false);
+searchInput.focus();
+});
+
 searchInput.addEventListener('keydown',(e)=>{
+const visibleItems=activeSearchResults.length;
+
+if(e.key==='ArrowDown' && visibleItems){
+e.preventDefault();
+setHighlightedSearchResult(Math.min(highlightedSearchIndex + 1, visibleItems - 1));
+return;
+}
+
+if(e.key==='ArrowUp' && visibleItems){
+e.preventDefault();
+setHighlightedSearchResult(Math.max(highlightedSearchIndex - 1, 0));
+return;
+}
+
 if(e.key==='Enter'){
 e.preventDefault();
-renderProducts();
+if(highlightedSearchIndex >= 0 && activeSearchResults[highlightedSearchIndex]){
+openSearchResult(activeSearchResults[highlightedSearchIndex]);
+return;
+}
 renderSuggestions();
-suggestionsBox.classList.remove('show');
+if(activeSearchResults.length && activeSearchResults.every((result)=>result.kind==='web-link')){
+setSearchSuggestionsVisibility(true);
+setHighlightedSearchResult(0);
+return;
+}
+saveRecentSearch(searchInput.value.trim());
+renderProducts();
+setSearchSuggestionsVisibility(false);
 productsContainer.scrollIntoView({behavior:'smooth',block:'start'});
+return;
+}
+
+if(e.key==='Escape'){
+setSearchSuggestionsVisibility(false);
 }
 });
 
@@ -1253,7 +1670,14 @@ sortSelect.addEventListener('change',renderProducts);
 
 document.addEventListener('click',(e)=>{
 if(!e.target.closest('.header-search')){
-suggestionsBox.classList.remove('show');
+setSearchSuggestionsVisibility(false);
+return;
+}
+
+const suggestionItem=e.target.closest('[data-search-index]');
+if(suggestionItem){
+const result=activeSearchResults[Number(suggestionItem.dataset.searchIndex)];
+openSearchResult(result);
 }
 });
 
@@ -1316,6 +1740,27 @@ Open the site through the backend server instead of double-clicking the HTML fil
 
 if(lastError){
 console.error('Final product loading error:',lastError);
+}
+}
+
+async function loadSocialPosts(){
+try{
+const response=await fetch('/api/social/posts',{
+method:'GET',
+headers:{
+'Accept':'application/json'
+}
+});
+
+if(!response.ok){
+throw new Error(`Request failed: ${response.status} ${response.statusText}`);
+}
+
+const data=await response.json();
+allSocialPosts=Array.isArray(data) ? data : [];
+}catch(error){
+allSocialPosts=[];
+console.warn('Failed to load social posts for search:',error);
 }
 }
 
@@ -1391,6 +1836,8 @@ window.location.href='index.html';
 document.addEventListener('DOMContentLoaded',()=>{
 updateCartCount();
 applySearchFromUrl();
+updateSearchClearButton();
+loadSocialPosts();
 loadProducts();
 });
 </script>
