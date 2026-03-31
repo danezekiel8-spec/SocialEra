@@ -1,0 +1,17 @@
+{
+  "name": "SocialEra App",
+  "short_name": "SocialEra",
+  "description": "Standalone mobile-first SocialEra app shell.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4efe8",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

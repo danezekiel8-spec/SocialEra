@@ -45,7 +45,7 @@
       display:flex;
       justify-content:space-between;
       align-items:center;
-      background:rgba(17,17,17,0.84);
+      background:#ffffff;
       color:white;
       padding:14px 30px;
       position:sticky;
@@ -817,6 +817,25 @@
       .top-nav{
         justify-content:center;
       }
+
+      .page{
+        padding:24px 16px 40px;
+      }
+
+      .panel,
+      .access-card,
+      .hero-card,
+      .summary-card{
+        padding:20px;
+      }
+
+      .layout{
+        gap:18px;
+      }
+
+      .inbox-list{
+        max-height:none;
+      }
     }
 
     @media(max-width:600px){
@@ -826,6 +845,71 @@
 
       .hero-card h2{
         font-size:34px;
+      }
+
+      .page{
+        padding:18px 12px 34px;
+      }
+
+      .button-row{
+        flex-direction:column;
+      }
+
+      .button-row .btn{
+        width:100%;
+      }
+
+      .panel,
+      .access-card,
+      .hero-card,
+      .summary-card{
+        border-radius:22px;
+        padding:18px;
+      }
+
+      .thread-shell{
+        max-height:52vh;
+      }
+
+      .access-card h2{
+        font-size:28px;
+      }
+
+      .rep-bar{
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .rep-bar .btn{
+        width:100%;
+      }
+
+      .panel-head{
+        align-items:flex-start;
+      }
+
+      .message-meta{
+        flex-direction:column;
+        gap:4px;
+      }
+
+      .thread-subject{
+        font-size:22px;
+      }
+
+      .thread-conversation-box{
+        padding:14px 14px 8px;
+        border-radius:20px;
+        max-height:56vh;
+      }
+
+      .thread-message{
+        max-width:100%;
+      }
+
+      .field input,
+      .field textarea{
+        padding:12px 13px;
       }
     }
   </style>
@@ -1024,7 +1108,7 @@
   <script src="public-page.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script>
-    const SUPPORT_STORAGE = {
+    const LEGACY_SUPPORT_STORAGE = {
       token: 'socialera-support-token',
       repName: 'socialera-support-rep-name'
     };
@@ -1066,6 +1150,7 @@
     let inboxMessages = [];
     let selectedMessage = null;
     let supportWorkspaceData = { threads: {} };
+    let supportRepName = '';
     let replyPanelCollapsed = false;
     let threadBodyExpanded = false;
 
@@ -1098,22 +1183,18 @@
       };
     }
 
-    function getSupportToken(){
-      return localStorage.getItem(SUPPORT_STORAGE.token) || '';
-    }
-
     function getSupportRepName(){
-      return localStorage.getItem(SUPPORT_STORAGE.repName) || '';
+      return supportRepName || repNameInput.value.trim() || 'Support Rep';
     }
 
-    function setSupportSession(token, repName){
-      localStorage.setItem(SUPPORT_STORAGE.token, token);
-      localStorage.setItem(SUPPORT_STORAGE.repName, repName);
+    function setSupportSession(repName){
+      supportRepName = String(repName || '').trim();
     }
 
     function clearSupportSession(){
-      localStorage.removeItem(SUPPORT_STORAGE.token);
-      localStorage.removeItem(SUPPORT_STORAGE.repName);
+      supportRepName = '';
+      localStorage.removeItem(LEGACY_SUPPORT_STORAGE.token);
+      localStorage.removeItem(LEGACY_SUPPORT_STORAGE.repName);
     }
 
     function showSupportWorkspace(repName){
@@ -1315,13 +1396,11 @@
     }
 
     async function supportRequest(path, options = {}){
-      const token = getSupportToken();
-
       const response = await fetch(path, {
+        credentials: 'same-origin',
         ...options,
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...(options.headers || {})
         }
       });
@@ -1741,6 +1820,7 @@
 
       try{
         const data = await fetch('/api/support/login', {
+          credentials: 'same-origin',
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -1759,9 +1839,9 @@
           return payload;
         });
 
-        setSupportSession(data.token, data.rep?.name || repName);
+        setSupportSession(data.rep?.name || repName);
         await loadSupportWorkspaceState();
-        showSupportWorkspace(data.rep?.name || repName);
+        showSupportWorkspace(getSupportRepName());
       }catch(error){
         console.error(error);
         showStatus(repAccessStatus, error.message || 'Support login failed.', 'error');
@@ -1772,17 +1852,13 @@
     }
 
     async function verifySupportSession(){
-      const token = getSupportToken();
-
-      if(!token){
-        showSupportLogin();
-        return;
-      }
+      clearSupportSession();
 
       try{
         const data = await supportRequest('/api/support/verify', { method: 'GET' });
+        setSupportSession(data.rep?.name || '');
         await loadSupportWorkspaceState();
-        showSupportWorkspace(data.rep?.name || getSupportRepName());
+        showSupportWorkspace(getSupportRepName());
       }catch(error){
         console.error(error);
         clearSupportSession();
@@ -1792,9 +1868,7 @@
 
     async function supportLogout(){
       try{
-        if(getSupportToken()){
-          await supportRequest('/api/support/logout', { method: 'POST' });
-        }
+        await supportRequest('/api/support/logout', { method: 'POST' });
       }catch(error){
         console.error(error);
       }finally{

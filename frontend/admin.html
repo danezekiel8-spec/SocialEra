@@ -41,7 +41,7 @@ min-height:100vh;
 }
 
 header{
-background:rgba(17,17,17,0.95);
+background:#ffffff;
 color:white;
 padding:22px 28px;
 display:flex;
@@ -745,6 +745,7 @@ font-size:30px;
 <body>
 
 <header>
+<div class="header-main">
 <a href="index.html" class="logo">
 <div class="logo-copy">
 <h1>SocialEra Admin</h1>
@@ -753,10 +754,22 @@ font-size:30px;
 <img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
 </a>
 
-<div class="header-right">
+<div class="header-search admin-header-search">
+<input type="search" id="admin-section-search" placeholder="Jump to section" aria-label="Jump to section">
+</div>
+
+<div class="top-nav header-right">
 <a class="header-link" href="index.html">View Store</a>
 <a class="header-link" href="support.html">Support Desk</a>
 <button id="logout-btn" class="header-link hidden" type="button">Logout</button>
+</div>
+
+<div class="header-channels admin-header-channels">
+<a class="channel-pill active" href="#dashboard">Dashboard</a>
+<a class="channel-pill" href="#product-form">Catalog</a>
+<a class="channel-pill" href="#launch-health">Health</a>
+<a class="channel-pill" href="#admin-products">Products</a>
+</div>
 </div>
 </header>
 
@@ -1040,12 +1053,15 @@ Make sure your admin password is changed from the current local setup, your cont
 </p>
 </footer>
 
+<script src="public-page.js"></script>
 <script>
 const API_BASE='';
+const LEGACY_ADMIN_TOKEN_KEY='lovadaAdminToken';
 
 const loginSection=document.getElementById('login-section');
 const dashboard=document.getElementById('dashboard');
 const logoutBtn=document.getElementById('logout-btn');
+const adminSectionSearch=document.getElementById('admin-section-search');
 
 const loginForm=document.getElementById('login-form');
 const loginUsernameInput=document.getElementById('login-username');
@@ -1101,16 +1117,31 @@ adminConfigured:true,
 checkoutEnabled:false
 };
 
-function getAdminToken(){
-return localStorage.getItem('lovadaAdminToken') || '';
+function jumpToAdminSection(query){
+const value=String(query || '').trim().toLowerCase();
+
+if(!value){
+return;
 }
 
-function setAdminToken(token){
-localStorage.setItem('lovadaAdminToken', token);
+const sectionMap=[
+{ keywords:['dashboard','home','overview'], selector:'#dashboard' },
+{ keywords:['catalog','product','products','form','inventory'], selector:'#product-form' },
+{ keywords:['health','launch','status'], selector:'#launch-health' },
+{ keywords:['list','items'], selector:'#admin-products' },
+{ keywords:['login','auth'], selector:'#login-section' }
+];
+
+const match=sectionMap.find((entry)=>entry.keywords.some((keyword)=>value.includes(keyword)));
+const target=document.querySelector(match ? match.selector : '#dashboard');
+
+if(target){
+target.scrollIntoView({ behavior:'smooth', block:'start' });
+}
 }
 
-function clearAdminToken(){
-localStorage.removeItem('lovadaAdminToken');
+function clearLegacyAdminToken(){
+localStorage.removeItem(LEGACY_ADMIN_TOKEN_KEY);
 }
 
 function escapeHtml(value){
@@ -1332,12 +1363,10 @@ clearStatus();
 }
 
 async function fetchJson(url,options={}){
-const token=getAdminToken();
-
 const response=await fetch(url,{
+credentials:'same-origin',
 headers:{
 'Content-Type':'application/json',
-...(token ? { Authorization:`Bearer ${token}` } : {}),
 ...(options.headers || {})
 },
 ...options
@@ -1347,7 +1376,7 @@ const data=await response.json().catch(()=>null);
 
 if(!response.ok){
 if(response.status===401 && !url.includes('/api/admin/login')){
-clearAdminToken();
+clearLegacyAdminToken();
 showLoginView();
 }
 throw new Error(data?.error || `Request failed: ${response.status}`);
@@ -1570,10 +1599,6 @@ method:'POST',
 body:JSON.stringify({ username, password })
 });
 
-if(data.token){
-setAdminToken(data.token);
-}
-
 loginPasswordInput.value='';
 showDashboardView();
 await loadProducts();
@@ -1592,7 +1617,7 @@ method:'POST'
 console.error(error);
 }
 
-clearAdminToken();
+clearLegacyAdminToken();
 showLoginView();
 clearLoginStatus();
 showLoginStatus('Logged out successfully.','success');
@@ -1699,10 +1724,7 @@ showLoginStatus('Admin login is disabled until ADMIN_USERNAME and ADMIN_PASSWORD
 return;
 }
 
-const token=getAdminToken();
-if(!token){
-return;
-}
+clearLegacyAdminToken();
 
 try{
 await fetchJson(`${API_BASE}/api/admin/verify`,{
@@ -1711,11 +1733,8 @@ method:'GET'
 showDashboardView();
 await loadProducts();
 }catch(error){
-clearAdminToken();
 showLoginView();
-showLoginStatus('Please log in again.','info');
 renderLaunchOverview();
-console.error(error);
 }
 }
 
@@ -1723,6 +1742,14 @@ toggleSaleFields();
 toggleDropshipFields();
 updateSalePreview();
 updateProfitPreview();
+adminSectionSearch?.addEventListener('keydown',(event)=>{
+if(event.key!=='Enter'){
+return;
+}
+
+event.preventDefault();
+jumpToAdminSection(adminSectionSearch.value);
+});
 bootAdmin();
 </script>
 

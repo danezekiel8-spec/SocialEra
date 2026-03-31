@@ -46,348 +46,7 @@ color:var(--text);
 overflow-x:hidden;
 }
 
-/* HEADER */
-
-header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-background:rgba(17,17,17,0.94);
-color:white;
-padding:8px 16px;
-position:sticky;
-top:0;
-z-index:1000;
-backdrop-filter:blur(12px);
-border-bottom:1px solid rgba(255,255,255,0.08);
-box-shadow:0 12px 32px rgba(0,0,0,0.18);
-}
-
-.logo{
-text-decoration:none;
-color:white;
-display:inline-flex;
-align-items:center;
-gap:8px;
-flex-shrink:0;
-}
-
-.logo h1{
-font-family:Georgia, serif;
-font-size:20px;
-font-weight:bold;
-line-height:1;
-margin-bottom:0;
-}
-
-.logo-mark-image{
-width:42px;
-height:42px;
-object-fit:contain;
-flex-shrink:0;
-border-radius:50%;
-}
-
-.logo p{
-font-size:8px;
-letter-spacing:1px;
-text-transform:uppercase;
-color:var(--gold);
-}
-
-.logo-word{
-display:inline-flex;
-gap:0;
-}
-
-.logo-word span{
-display:inline-block;
-}
-
-/* NAV */
-
-.top-nav{
-display:flex;
-align-items:center;
-gap:10px;
-flex-wrap:wrap;
-}
-
-.top-nav a{
-color:#f5f1ea;
-text-decoration:none;
-font-weight:bold;
-font-size:12px;
-transition:color .25s ease;
-}
-
-.top-nav a:hover{
-color:var(--gold);
-}
-
-/* SEARCH */
-
-.header-search{
-position:relative;
-display:flex;
-align-items:center;
-}
-
-.header-search-icon{
-position:absolute;
-left:14px;
-top:50%;
-transform:translateY(-50%);
-font-size:14px;
-color:rgba(255,255,255,0.72);
-pointer-events:none;
-z-index:1;
-}
-
-.header-search input{
-width:170px;
-border-radius:999px;
-border:1px solid rgba(255,255,255,0.14);
-padding:7px 34px 7px 40px;
-background:#222;
-color:white;
-outline:none;
-transition:all .2s ease;
-}
-
-.header-search input:focus{
-border-color:var(--gold);
-box-shadow:0 0 0 3px rgba(200,169,107,0.15);
-}
-
-.header-search input::placeholder{
-color:#aaa;
-}
-
-.header-search-clear{
-position:absolute;
-right:8px;
-top:50%;
-transform:translateY(-50%);
-width:22px;
-height:22px;
-border:none;
-border-radius:999px;
-display:flex;
-align-items:center;
-justify-content:center;
-background:rgba(255,255,255,0.08);
-color:rgba(255,255,255,0.78);
-font-size:14px;
-cursor:pointer;
-transition:background .2s ease, color .2s ease, opacity .2s ease;
-opacity:0;
-pointer-events:none;
-}
-
-.header-search-clear.show{
-opacity:1;
-pointer-events:auto;
-}
-
-.header-search-clear:hover{
-background:rgba(200,169,107,0.18);
-color:#f2dfb8;
-}
-
-.search-suggestions{
-position:absolute;
-top:42px;
-right:0;
-width:320px;
-max-height:0;
-overflow:hidden;
-opacity:0;
-transform:translateY(-4px);
-background:#ffffff;
-color:#111111;
-border-radius:16px;
-box-shadow:0 14px 30px rgba(0,0,0,0.16);
-border:1px solid rgba(17,17,17,0.08);
-transition:max-height .25s ease, opacity .25s ease, transform .25s ease;
-z-index:2000;
-}
-
-.search-suggestions.show{
-max-height:320px;
-opacity:1;
-transform:translateY(0);
-overflow-y:auto;
-}
-
-.search-suggestion-item{
-display:flex;
-align-items:center;
-gap:12px;
-width:100%;
-padding:12px 14px;
-text-decoration:none;
-color:#111111;
-border-bottom:1px solid rgba(17,17,17,0.06);
-background:transparent;
-border-left:none;
-border-right:none;
-border-top:none;
-cursor:pointer;
-font:inherit;
-text-align:left;
-}
-
-.search-suggestion-item:last-child{
-border-bottom:none;
-}
-
-.search-suggestion-item:hover{
-background:#f7f2ea;
-}
-
-.search-suggestion-item.is-active{
-background:#f7f2ea;
-}
-
-.search-suggestion-item img{
-width:48px;
-height:48px;
-object-fit:cover;
-border-radius:10px;
-flex-shrink:0;
-}
-
-.search-suggestion-text{
-display:flex;
-flex-direction:column;
-gap:4px;
-min-width:0;
-}
-
-.search-suggestion-text strong{
-font-size:14px;
-line-height:1.3;
-}
-
-.search-suggestion-text span{
-font-size:13px;
-color:#7a6a5c;
-}
-
-.search-suggestion-kicker{
-display:inline-flex;
-align-items:center;
-width:max-content;
-padding:3px 8px;
-border-radius:999px;
-background:rgba(17,17,17,0.06);
-font-size:10px;
-font-weight:700;
-letter-spacing:.5px;
-text-transform:uppercase;
-color:#5d5146;
-}
-
-.search-suggestion-section{
-padding:8px 0 0;
-background:linear-gradient(180deg, rgba(248,244,236,0.66) 0%, rgba(255,255,255,0) 100%);
-}
-
-.search-suggestion-section-title{
-padding:0 14px 8px;
-font-size:11px;
-font-weight:800;
-letter-spacing:.7px;
-text-transform:uppercase;
-color:#7a6a5c;
-}
-
-.search-suggestion-meta{
-display:flex;
-align-items:center;
-gap:8px;
-flex-wrap:wrap;
-}
-
-.search-suggestion-avatar{
-width:48px;
-height:48px;
-border-radius:14px;
-display:flex;
-align-items:center;
-justify-content:center;
-background:linear-gradient(135deg, #ead29b, var(--gold));
-color:#111;
-font-size:16px;
-font-weight:800;
-flex-shrink:0;
-box-shadow:0 8px 18px rgba(200,169,107,0.22);
-}
-
-.search-suggestion-tag{
-font-size:11px;
-font-weight:700;
-color:#8b6b2f;
-}
-
-.search-suggestion-provider{
-font-size:11px;
-font-weight:700;
-color:#6c5a3a;
-}
-
-.search-empty{
-padding:14px;
-font-size:14px;
-color:#7a6a5c;
-border-bottom:1px solid rgba(17,17,17,0.06);
-background:linear-gradient(180deg, rgba(248,244,236,0.88) 0%, rgba(255,255,255,0.82) 100%);
-}
-
-/* CART ICON */
-
-.cart-button{
-display:flex;
-align-items:center;
-justify-content:center;
-gap:8px;
-padding:9px 13px;
-background:linear-gradient(135deg, #d8bf8a, var(--gold));
-color:#111111;
-border-radius:10px;
-font-weight:bold;
-flex-shrink:0;
-box-shadow:0 10px 24px rgba(200,169,107,0.3);
-transition:transform .2s ease, box-shadow .2s ease;
-}
-
-.cart-button:hover{
-transform:translateY(-1px);
-box-shadow:0 14px 28px rgba(200,169,107,0.35);
-color:#111111;
-}
-
-.cart-icon{
-width:18px;
-height:18px;
-fill:#111111;
-}
-
-.cart-count{
-background:#ff4b4b;
-color:white;
-font-size:11px;
-min-width:18px;
-height:18px;
-padding:0 5px;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-font-weight:bold;
-line-height:1;
-}
+/* Shared header shell now lives in theme.css; richer storefront search UI lives in storefront-search.css. */
 
 /* HERO */
 
@@ -608,67 +267,7 @@ font-weight:700;
 white-space:nowrap;
 }
 
-/* CHANNELS */
-
-.channels-section{
-padding:8px 24px 10px;
-position:sticky;
-top:68px;
-z-index:950;
-background:none !important;
-backdrop-filter:none !important;
-box-shadow:none !important;
-border:none !important;
-}
-
-.channels-inner{
-max-width:1380px;
-margin:auto;
-display:flex;
-gap:12px;
-overflow:auto;
-padding:2px 10px 2px 0;
-scrollbar-width:none;
-background:none !important;
-}
-
-.channels-inner::-webkit-scrollbar{
-display:none;
-}
-
-.channel-pill{
-border:none;
-padding:6px 10px;
-min-height:34px;
-border-radius:999px;
-background:white;
-border:1px solid rgba(17,17,17,0.08);
-box-shadow:var(--shadow-soft);
-cursor:pointer;
-font-weight:600;
-font-size:13px;
-line-height:1.2;
-display:inline-flex;
-align-items:center;
-justify-content:center;
-color:#2c2521;
-white-space:nowrap;
-transition:all .2s ease;
-}
-
-.channel-pill:hover{
-border-color:var(--gold);
-transform:translateY(-1px);
-}
-
-.channel-pill.active{
-background:linear-gradient(135deg, #d8bf8a, var(--gold));
-border-color:var(--gold);
-color:#111;
-box-shadow:0 10px 24px rgba(200,169,107,0.26);
-padding:6px 10px;
-min-height:34px;
-}
+/* Shared channel/header interaction styles now live in theme.css. */
 
 /* FEED */
 
@@ -888,6 +487,16 @@ color:#5f534a;
 padding:0 4px;
 }
 
+.header-cart-circle:hover{
+transform:none;
+box-shadow:none;
+color:inherit;
+}
+
+.header-cart-circle:hover .cart-icon{
+fill:var(--gold);
+}
+
 .post-modal-file-name.drag-active{
 color:#8b6b2f;
 font-weight:700;
@@ -968,118 +577,13 @@ border:1px solid rgba(185,28,28,0.14);
 color:#b91c1c;
 }
 
-.home-plus-button{
-width:36px;
-height:36px;
-border:1px solid rgba(234,199,110,0.96);
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-position:relative;
-overflow:hidden;
-background:
-radial-gradient(circle at 30% 28%, rgba(255,255,255,0.12), transparent 40%),
-linear-gradient(135deg, #1b1a18, #0b0b0b 72%);
-color:#f3d98c;
-font-size:18px;
-font-weight:800;
-line-height:1;
-text-shadow:0 0 10px rgba(243,217,140,0.28);
-box-shadow:
-0 12px 24px rgba(0,0,0,0.22),
-0 0 0 1px rgba(234,199,110,0.22),
-0 0 0 rgba(200,169,107,0);
-cursor:pointer;
-transition:transform .2s ease, box-shadow .2s ease, filter .2s ease;
-flex-shrink:0;
-margin-left:-14px;
-animation:homePlusPulse 2.4s ease-in-out infinite;
-}
-
-.home-plus-button::after{
-content:'';
-position:absolute;
-inset:-10%;
-border-radius:50%;
-border:2px solid rgba(234,199,110,0.5);
-pointer-events:none;
-animation:homePlusRing 2.4s ease-out infinite;
-}
-
-.home-plus-button::before{
-content:'';
-position:absolute;
-inset:28%;
-border-radius:50%;
-background:radial-gradient(circle, rgba(248,223,154,0.58) 0%, rgba(248,223,154,0.22) 42%, rgba(248,223,154,0) 72%);
-pointer-events:none;
-animation:homePlusCore 2.4s ease-in-out infinite;
-}
-
-.profile-end-pill{
-margin-left:auto;
-transform:translateX(-8px);
-}
-
-.home-plus-button:hover{
-transform:translateY(-2px) scale(1.06);
-box-shadow:
-0 16px 30px rgba(0,0,0,0.26),
-0 0 0 1px rgba(234,199,110,0.36),
-0 0 32px rgba(234,199,110,0.34);
-filter:brightness(1.12);
-}
-
-@keyframes homePlusPulse{
-0%, 100%{
-transform:scale(1);
-box-shadow:
-0 12px 24px rgba(0,0,0,0.22),
-0 0 0 1px rgba(234,199,110,0.22),
-0 0 0 0 rgba(234,199,110,0.0);
-filter:brightness(1);
-}
-45%{
-transform:scale(1.12);
-box-shadow:
-0 16px 32px rgba(0,0,0,0.26),
-0 0 0 1px rgba(234,199,110,0.5),
-0 0 34px rgba(234,199,110,0.38);
-filter:brightness(1.16);
-}
-}
-
-@keyframes homePlusRing{
-0%{
-transform:scale(.88);
-opacity:.0;
-}
-20%{
-opacity:.52;
-}
-100%{
-transform:scale(1.55);
-opacity:0;
-}
-}
-
-@keyframes homePlusCore{
-0%, 100%{
-opacity:.22;
-transform:scale(.88);
-}
-45%{
-opacity:.72;
-transform:scale(1.26);
-}
-}
+/* Shared header plus-button treatment now lives in theme.css. */
 
 .feed-layout{
 max-width:1380px;
 margin:auto;
 display:grid;
-grid-template-columns:240px minmax(0,1.35fr) 280px;
+grid-template-columns:280px minmax(0,1.3fr) 280px;
 gap:24px;
 align-items:start;
 }
@@ -1089,9 +593,10 @@ display:flex;
 flex-direction:column;
 gap:18px;
 position:sticky;
-top:128px;
+top:74px;
 align-self:start;
 height:max-content;
+margin-top:0;
 }
 
 .feed-column{
@@ -1222,7 +727,7 @@ transform:translateY(-1px);
 
 .feed-media-wrap{
 position:relative;
-padding:0 18px 18px;
+padding:10px 18px 18px;
 }
 
 .feed-media{
@@ -1311,45 +816,12 @@ line-height:1.45;
 color:var(--muted);
 }
 
-.feed-post-meta-row{
-display:flex;
-align-items:center;
-gap:8px;
-flex-wrap:wrap;
-}
-
-.feed-post-pill{
-display:inline-flex;
-align-items:center;
-justify-content:center;
-padding:5px 9px;
-border-radius:999px;
-font-size:11px;
-font-weight:700;
-line-height:1;
-}
-
-.feed-post-pill.category{
-background:rgba(17,17,17,0.06);
-color:#4f4338;
-}
-
-.feed-post-pill.media{
-background:rgba(200,169,107,0.16);
-color:#7d5e24;
-}
-
-.feed-post-pill.tag{
-background:rgba(139,92,246,0.08);
-color:#5b3fa8;
-}
-
 .feed-actions{
 display:flex;
 align-items:center;
 justify-content:space-between;
 gap:14px;
-padding:12px 18px;
+padding:6px 18px 12px;
 flex-wrap:wrap;
 }
 
@@ -1662,6 +1134,66 @@ font-weight:700;
 color:#2b2520;
 }
 
+.likes-modal-section{
+display:grid;
+gap:10px;
+padding-top:2px;
+}
+
+.likes-modal-head{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:12px;
+flex-wrap:wrap;
+}
+
+.likes-modal-head h4{
+font-size:15px;
+color:#181512;
+}
+
+.likes-modal-head span{
+font-size:12px;
+color:var(--muted);
+font-weight:700;
+}
+
+.likes-modal-list{
+display:grid;
+gap:8px;
+}
+
+.likes-modal-row{
+display:flex;
+align-items:center;
+gap:10px;
+padding:10px 0;
+border-bottom:1px solid rgba(17,17,17,0.08);
+}
+
+.likes-modal-row:last-child{
+border-bottom:none;
+}
+
+.likes-modal-copy{
+display:grid;
+gap:3px;
+min-width:0;
+}
+
+.likes-modal-copy strong{
+font-size:14px;
+color:#181512;
+line-height:1.2;
+}
+
+.likes-modal-copy span{
+font-size:12px;
+color:var(--muted);
+line-height:1.2;
+}
+
 .comments-modal-list{
 display:grid;
 gap:10px;
@@ -1706,6 +1238,41 @@ font-size:13px;
 font-size:14px;
 line-height:1.55;
 color:#2b2520;
+}
+
+.feed-comment-actions{
+display:flex;
+align-items:center;
+gap:14px;
+flex-wrap:wrap;
+margin-top:2px;
+}
+
+.feed-comment-action{
+border:none;
+background:transparent;
+padding:0;
+font-size:12px;
+font-weight:700;
+color:var(--muted);
+cursor:pointer;
+transition:color .2s ease;
+}
+
+.feed-comment-action:hover{
+color:#7c5e27;
+}
+
+.feed-comment-action.active{
+color:#8a6420;
+}
+
+.feed-comment-replies{
+display:grid;
+gap:8px;
+margin-top:10px;
+padding-left:18px;
+border-left:1px solid rgba(17,17,17,0.08);
 }
 
 .feed-comment-form{
@@ -2017,9 +1584,10 @@ display:flex;
 flex-direction:column;
 gap:18px;
 position:sticky;
-top:128px;
+top:74px;
 align-self:start;
 height:max-content;
+margin-top:0;
 }
 
 .sidebar-card{
@@ -2252,6 +1820,19 @@ grid-template-columns:1fr;
 .feed-sidebar{
 position:static;
 top:auto;
+margin-top:0;
+}
+
+.feed-column{
+order:1;
+}
+
+.feed-left-rail{
+order:2;
+}
+
+.feed-sidebar{
+order:3;
 }
 }
 
@@ -2268,26 +1849,6 @@ grid-template-columns:repeat(2,1fr);
 }
 
 @media(max-width:900px){
-header{
-flex-direction:column;
-gap:10px;
-padding:10px 14px;
-}
-
-.top-nav{
-justify-content:center;
-}
-
-.header-search input{
-width:220px;
-}
-
-.search-suggestions{
-left:0;
-right:auto;
-width:280px;
-}
-
 .feed-hero-main h2{
 font-size:42px;
 }
@@ -2297,14 +1858,10 @@ grid-template-columns:1fr;
 }
 
 .channels-section{
-top:86px;
+top:112px;
+padding-top:10px;
 }
 
-.home-plus-button{
-width:34px;
-height:34px;
-font-size:16px;
-}
 }
 
 @media(max-width:760px){
@@ -2316,8 +1873,36 @@ padding-left:16px;
 padding-right:16px;
 }
 
+.swipe-hint{
+padding:12px 14px;
+border-radius:20px;
+}
+
+.hero-btn{
+width:100%;
+}
+
 .feed-post-head{
 align-items:flex-start;
+padding:16px 16px 12px 48px;
+gap:12px;
+}
+
+.feed-post-collapse{
+top:16px;
+left:14px;
+}
+
+.feed-post{
+border-radius:24px;
+}
+
+.feed-media-wrap{
+padding:8px 14px 16px;
+}
+
+.feed-caption{
+padding:0 14px;
 }
 
 .match-preview{
@@ -2334,8 +1919,22 @@ justify-content:space-between;
 grid-template-columns:1fr;
 }
 
+.feed-layout{
+gap:18px;
+}
+
+.feed-left-rail,
+.feed-sidebar{
+gap:14px;
+}
+
 .comments-modal-post{
 grid-template-columns:1fr;
+}
+
+.comments-modal{
+padding:18px;
+border-radius:22px;
 }
 
 .comments-modal-media{
@@ -2345,57 +1944,85 @@ height:180px;
 .feed-actions{
 align-items:flex-start;
 flex-direction:column;
+padding:4px 14px 14px;
+gap:10px;
 }
 
 .swipe-hint{
 flex-direction:column;
 align-items:flex-start;
 }
+
+.post-modal{
+border-radius:24px;
+}
 }
 
 @media(max-width:600px){
-.logo h1{
-font-size:18px;
-}
-
-.header-search{
-width:100%;
-}
-
-.header-search input{
-width:100%;
-}
-
-.search-suggestions{
-width:100%;
-left:0;
-right:0;
-}
-
-.logo-mark-image{
-width:38px;
-height:38px;
+.feed-section,
+.feed-hero,
+.channels-section,
+.swipe-hint-wrap{
+padding-left:12px;
+padding-right:12px;
 }
 
 .feed-hero-main{
-padding:26px 22px;
+padding:22px 18px;
 min-height:auto;
 }
 
 .feed-hero-side{
-padding:20px;
+padding:18px;
 }
 
 .feed-hero-main h2{
 font-size:34px;
 }
 
+.feed-hero-main p{
+font-size:15px;
+line-height:1.65;
+}
+
+.feed-hero-actions{
+gap:10px;
+}
+
+.hero-stat{
+padding:14px;
+}
+
+.hero-side-card{
+padding:16px;
+}
+
 .feed-caption h3{
-font-size:22px;
+font-size:20px;
 }
 
 .feed-post-head{
 padding:16px 16px 12px;
+}
+
+.feed-post{
+border-radius:22px;
+}
+
+.feed-user{
+gap:10px;
+align-items:flex-start;
+}
+
+.feed-avatar{
+width:42px;
+height:42px;
+font-size:15px;
+}
+
+.feed-caption{
+padding-top:2px;
+gap:6px;
 }
 
 .feed-media-wrap,
@@ -2407,13 +2034,37 @@ padding-right:16px;
 }
 
 .channels-section{
-top:92px;
+top:124px;
+padding-top:8px;
+padding-bottom:8px;
 }
 
-.home-plus-button{
-width:32px;
-height:32px;
-font-size:15px;
+.channels-inner{
+padding-left:0;
+padding-right:0;
+}
+
+.feed-follow{
+margin-left:auto;
+padding:8px 12px;
+font-size:13px;
+}
+
+.feed-action-group{
+width:100%;
+justify-content:space-between;
+gap:8px;
+}
+
+.feed-action{
+flex:1 1 calc(50% - 4px);
+justify-content:center;
+min-width:0;
+}
+
+.feed-meta-right{
+width:100%;
+font-size:12px;
 }
 
 .post-modal-overlay{
@@ -2421,16 +2072,77 @@ padding:16px;
 }
 
 .post-modal{
-padding:18px;
+padding:16px;
+max-height:min(88vh, 860px);
+border-radius:22px;
 }
 
 .post-modal-grid{
 grid-template-columns:1fr;
 }
+
+.post-modal-head{
+align-items:flex-start;
+gap:12px;
+}
+
+.post-modal-copy h3{
+font-size:24px;
+}
+
+.post-modal-upload-trigger{
+padding:12px 14px;
+}
+
+.post-modal-actions{
+flex-direction:column;
+align-items:stretch;
+}
+
+.post-modal-actions .hero-btn{
+width:100%;
+}
+
+.comments-modal-overlay{
+padding:16px;
+}
+
+.comments-modal{
+padding:16px;
+max-height:min(88vh, 860px);
+border-radius:22px;
+}
+
+.comments-modal-head{
+align-items:flex-start;
+gap:12px;
+}
+
+.comments-modal-copy h3{
+font-size:24px;
+}
+
+.comments-modal-stats{
+gap:8px;
+}
+
+.comments-modal-stat{
+font-size:12px;
+}
+
+.feed-comment-form{
+gap:10px;
+}
+
+.feed-comment-form button{
+width:100%;
+}
 }
 </style>
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="storefront-search.css">
 <script src="theme.js"></script>
+<script src="storefront-shared.js"></script>
 </head>
 
 <body>
@@ -2438,6 +2150,7 @@ grid-template-columns:1fr;
 <div id="runtime-error-banner" style="display:none;position:sticky;top:0;z-index:5000;padding:12px 16px;background:#7f1d1d;color:#fff;font:600 13px/1.5 Inter, Arial, sans-serif;border-bottom:1px solid rgba(255,255,255,0.18);"></div>
 
 <header>
+<div class="header-main">
 <a href="index.html" class="logo">
 <div>
 <h1 class="logo-word">
@@ -2448,43 +2161,70 @@ grid-template-columns:1fr;
 <img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
 </a>
 
+<button type="button" class="header-search-toggle" aria-label="Open search" aria-expanded="false">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+  <circle cx="11" cy="11" r="6"></circle>
+  <path d="M20 20l-4.35-4.35"></path>
+</svg>
+</button>
+
 <div class="header-search">
-<span class="header-search-icon" aria-hidden="true">⌕</span>
 <input type="text" id="search-input" placeholder="Search">
 <button type="button" id="search-clear-button" class="header-search-clear" aria-label="Clear search">×</button>
 <div id="search-suggestions" class="search-suggestions"></div>
 </div>
 
 <nav class="top-nav">
-<a href="index.html">Home</a>
-<a href="shop.html">Shop</a>
-<a href="login.html" class="auth-link static-auth-link">Login</a>
-<a href="signup.html" class="auth-link static-auth-link">Sign Up</a>
-
-<a href="cart.html" class="cart-button" aria-label="Cart">
-<svg class="cart-icon" viewBox="0 0 24 24" aria-hidden="true">
-<path d="M7 4H5L4 6v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H10.58c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.72c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H7.42L6.48 6H4.42"></path>
-<circle cx="10" cy="20" r="2"></circle>
-<circle cx="20" cy="20" r="2"></circle>
+<a href="#" class="header-utility-link" aria-label="Notifications" title="Notifications">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true">
+  <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"/>
 </svg>
-<span>Cart</span>
+</a>
+<a href="account.html" class="header-profile-link" id="header-profile-link">Profile</a>
+<a href="cart.html" class="cart-button header-cart-circle" aria-label="Cart">
+<svg class="cart-icon" viewBox="0 0 16 16" aria-hidden="true">
+  <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0m7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-1.646-7.646-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L8 8.293l2.646-2.647a.5.5 0 0 1 .708.708"/>
+</svg>
 <span id="cart-count" class="cart-count">0</span>
 </a>
 </nav>
-</header>
-
-<section class="channels-section">
-<div class="channels-inner" id="channel-pills">
-<button class="channel-pill active" data-channel="all">All</button>
-<button class="channel-pill" data-channel="videos">Videos</button>
-<button class="channel-pill" data-channel="shop">Shop</button>
-<button class="channel-pill" data-channel="sell">Sell</button>
-<button class="channel-pill profile-end-pill" data-channel="profile">Profile</button>
+<div class="channels-inner header-channels" id="channel-pills">
+<button class="channel-pill active" data-channel="all" data-label="Home" aria-label="Home" title="Home">
+<span class="channel-pill-icon" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L8 2.207l6.646 6.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293z"/>
+  <path d="m8 3.293 6 6V13.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 13.5V9.293z"/>
+</svg>
+</span>
+</button>
+<button class="channel-pill" data-channel="videos" data-label="Videos" aria-label="Videos" title="Videos">
+<span class="channel-pill-icon" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.79 5.093A.5.5 0 0 0 6 5.5v5a.5.5 0 0 0 .79.407l3.5-2.5a.5.5 0 0 0 0-.814z"/>
+</svg>
+</span>
+</button>
+<button class="channel-pill" data-channel="shop" data-label="Shop" aria-label="Shop" title="Shop">
+<span class="channel-pill-icon" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1m3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4z"/>
+</svg>
+</span>
+</button>
+<button class="channel-pill" data-channel="sell" data-label="Sell" aria-label="Sell" title="Sell">
+<span class="channel-pill-icon" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h3.793a1.5 1.5 0 0 1 1.06.44l4.207 4.207a1.5 1.5 0 0 1 0 2.121l-3.793 3.793a1.5 1.5 0 0 1-2.121 0L2.44 8.354A1.5 1.5 0 0 1 2 7.293z"/>
+  <path d="M5.25 4.75a1 1 0 1 0 0 2a1 1 0 0 0 0-2"/>
+</svg>
+</span>
+</button>
 <button id="home-plus-button" class="home-plus-button" type="button" aria-label="Create post">
 &plus;
 </button>
 </div>
-</section>
+</div>
+</header>
 
 <div id="post-modal-overlay" class="post-modal-overlay" aria-hidden="true">
 <div class="post-modal" role="dialog" aria-modal="true" aria-labelledby="post-modal-title">
@@ -2616,8 +2356,8 @@ grid-template-columns:1fr;
 <div class="feed-layout">
 <aside class="feed-left-rail">
 <div class="sidebar-card">
-<h3>Top 10 Posts This Week</h3>
-<p>Ranks update live from total engagement across likes, comments, and saves.</p>
+<h3>Spotlight</h3>
+<p>Ranks update live from total engagement across likes, comments, and shares.</p>
 <div id="top-posts-list" class="top-posts-list">
 <div class="loading-products">Loading rankings...</div>
 </div>
@@ -2731,6 +2471,7 @@ const collapsedPostIds=new Set();
 let postModalMediaDataUrl='';
 let postModalMediaType='image';
 let activeCommentPostId=null;
+let activeReplyCommentId=null;
 let activeMediaPostId=null;
 let activeMediaIndex=0;
 
@@ -2760,7 +2501,7 @@ captionText:'Structured layers, dark textures, metallic accents and a premium si
 tags:['women','accessories','watch','bag','heels','dress'],
 likes:'18.4k',
 comments:'402',
-saves:'3.1k',
+shares:'3.1k',
 timeLabel:'2h ago',
 matchTitle:'Seen in this post'
 },
@@ -2777,7 +2518,7 @@ captionText:'Quiet luxury, neutral lines and pieces that work in motion — made
 tags:['women','home','accessories','bag','clutch'],
 likes:'9.7k',
 comments:'188',
-saves:'1.4k',
+shares:'1.4k',
 timeLabel:'4h ago',
 matchTitle:'Shop the match'
 },
@@ -2794,7 +2535,7 @@ captionText:'Tailored outerwear and sharper utilitarian details for a more engin
 tags:['men','watch','accessories','bag'],
 likes:'12.9k',
 comments:'296',
-saves:'2.0k',
+shares:'2.0k',
 timeLabel:'6h ago',
 matchTitle:'Matched to this look'
 },
@@ -2811,7 +2552,7 @@ captionText:'A colder palette, glossy edges and accessories that feel more like 
 tags:['women','accessories','watch','heels','bag'],
 likes:'21.3k',
 comments:'511',
-saves:'4.6k',
+shares:'4.6k',
 timeLabel:'9h ago',
 matchTitle:'SocialEra Matches'
 },
@@ -2828,7 +2569,7 @@ captionText:'Elegant shapes, fluid structure and subtle authority — a look tha
 tags:['women','dress','bag','accessories'],
 likes:'8.8k',
 comments:'145',
-saves:'1.2k',
+shares:'1.2k',
 timeLabel:'12h ago',
 matchTitle:'Seen in this post'
 }
@@ -2911,11 +2652,11 @@ matchTitle:'Feed-first styling picks'
 ];
 
 const generatedChannels=[
-{key:'tech-luxe',label:'Tech Luxe',mediaUrl:'assets/hero-1.jpg',tag:'watch',likesBase:8200,commentsBase:120,savesBase:980},
-{key:'minimal-mode',label:'Minimal Mode',mediaUrl:'assets/product-1.jpg',tag:'home',likesBase:7600,commentsBase:108,savesBase:840},
-{key:'street-precision',label:'Street Precision',mediaUrl:'assets/hero-3.jpg',tag:'bag',likesBase:9100,commentsBase:144,savesBase:1100},
-{key:'night-code',label:'Night Code',mediaUrl:'assets/product-4.jpg',tag:'heels',likesBase:10400,commentsBase:176,savesBase:1320},
-{key:'soft-power',label:'Soft Power',mediaUrl:'assets/product-2.jpg',tag:'dress',likesBase:8800,commentsBase:132,savesBase:1020}
+{key:'tech-luxe',label:'Tech Luxe',mediaUrl:'assets/hero-1.jpg',tag:'watch',likesBase:8200,commentsBase:120,sharesBase:980},
+{key:'minimal-mode',label:'Minimal Mode',mediaUrl:'assets/product-1.jpg',tag:'home',likesBase:7600,commentsBase:108,sharesBase:840},
+{key:'street-precision',label:'Street Precision',mediaUrl:'assets/hero-3.jpg',tag:'bag',likesBase:9100,commentsBase:144,sharesBase:1100},
+{key:'night-code',label:'Night Code',mediaUrl:'assets/product-4.jpg',tag:'heels',likesBase:10400,commentsBase:176,sharesBase:1320},
+{key:'soft-power',label:'Soft Power',mediaUrl:'assets/product-2.jpg',tag:'dress',likesBase:8800,commentsBase:132,sharesBase:1020}
 ];
 
 const generatedSocialPosts=generatedChannels.flatMap((channel,channelIndex)=>
@@ -2923,7 +2664,7 @@ generatedConcepts.map((concept,conceptIndex)=>{
 const profile=generatedProfiles[(channelIndex*2+conceptIndex)%generatedProfiles.length];
 const likes=channel.likesBase + (conceptIndex*470) + (channelIndex*310);
 const comments=channel.commentsBase + (conceptIndex*17) + (channelIndex*9);
-const saves=channel.savesBase + (conceptIndex*66) + (channelIndex*34);
+const shares=channel.sharesBase + (conceptIndex*66) + (channelIndex*34);
 const hourAgo=14 + (channelIndex*10) + conceptIndex;
 
 return {
@@ -2939,7 +2680,7 @@ captionText:concept.text,
 tags:[...new Set([...concept.tags, channel.tag])],
 likes:formatCount(likes),
 comments:formatCount(comments),
-saves:formatCount(saves),
+shares:formatCount(shares),
 timeLabel:`${hourAgo}h ago`,
 matchTitle:concept.matchTitle
 };
@@ -2953,10 +2694,13 @@ let socialPosts=[
 ...post,
 likes:parseCount(post.likes),
 comments:parseCount(post.comments||post.commentsCount||0),
-saves:parseCount(post.saves),
+shares:parseCount(post.shares ?? post.saves),
+saves:parseCount(post.shares ?? post.saves),
 commentPreview:Array.isArray(post.commentPreview)?post.commentPreview:[],
 likeActorIds:Array.isArray(post.likeActorIds)?post.likeActorIds:[],
-saveActorIds:Array.isArray(post.saveActorIds)?post.saveActorIds:[],
+likeActors:Array.isArray(post.likeActors)?post.likeActors:[],
+shareActorIds:Array.isArray(post.shareActorIds)?post.shareActorIds:(Array.isArray(post.saveActorIds)?post.saveActorIds:[]),
+saveActorIds:Array.isArray(post.shareActorIds)?post.shareActorIds:(Array.isArray(post.saveActorIds)?post.saveActorIds:[]),
 timeLabel:post.timeLabel||'Just now'
 }));
 
@@ -3070,33 +2814,15 @@ return socialPosts.find(post=>post.id===postId);
 }
 
 function getEngagementScore(post){
-return parseCount(post.likes)+(parseCount(post.comments)*2)+(parseCount(post.saves)*3);
+return parseCount(post.likes)+(parseCount(post.comments)*2)+(parseCount(post.shares ?? post.saves)*3);
 }
 
 function getLocalSocialActorId(){
-const existing=localStorage.getItem('socialeraActorId');
-
-if(existing){
-return existing;
-}
-
-const created=`guest-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
-localStorage.setItem('socialeraActorId',created);
-return created;
+return window.SocialEraStorefrontShared.getLocalSocialActorId();
 }
 
 function getDisplayInitials(value){
-const words=String(value||'SE')
-.trim()
-.split(/\s+/)
-.filter(Boolean)
-.slice(0,2);
-
-if(!words.length){
-return 'SE';
-}
-
-return words.map((word)=>word[0]).join('').toUpperCase();
+return window.SocialEraStorefrontShared.getDisplayInitials(value);
 }
 
 function formatTimeAgo(value){
@@ -3146,55 +2872,21 @@ commentsData:Array.isArray(post.commentsData)
 : Array.isArray(post.comments)
 ? post.comments
 : [],
-saves:parseCount(post.saves),
+shares:parseCount(post.shares ?? post.saves),
+saves:parseCount(post.shares ?? post.saves),
 commentPreview:Array.isArray(post.commentPreview)?post.commentPreview:[],
 likeActorIds:Array.isArray(post.likeActorIds)?post.likeActorIds:[],
-saveActorIds:Array.isArray(post.saveActorIds)?post.saveActorIds:[],
+likeActors:Array.isArray(post.likeActors)?post.likeActors:[],
+shareActorIds:Array.isArray(post.shareActorIds)?post.shareActorIds:(Array.isArray(post.saveActorIds)?post.saveActorIds:[]),
+saveActorIds:Array.isArray(post.shareActorIds)?post.shareActorIds:(Array.isArray(post.saveActorIds)?post.saveActorIds:[]),
 createdAt:post.createdAt||null,
 timeLabel:formatTimeAgo(post.createdAt||post.timeLabel)
 };
 }
 
 async function loadSocialIdentity(){
-const guestActorId=getLocalSocialActorId();
-const fallback={
-actorId:guestActorId,
-displayName:'SocialEra Member',
-userName:'@socialera.member',
-avatar:'SE'
-};
-
-if(!window.supabase){
-socialIdentity=fallback;
-return fallback;
-}
-
-try{
-const { data } = await window.supabase.auth.getUser();
-const user=data?.user;
-
-if(!user){
-socialIdentity=fallback;
-return fallback;
-}
-
-const meta=user.user_metadata||{};
-const fullName=String(meta.full_name||meta.display_name||user.email?.split('@')[0]||'SocialEra Member').trim() || 'SocialEra Member';
-const usernameBase=String(meta.username||user.email?.split('@')[0]||'socialera.member').trim().replace(/^@+/,'') || 'socialera.member';
-
-socialIdentity={
-actorId:`user-${user.id}`,
-displayName:fullName,
-userName:`@${usernameBase}`,
-avatar:getDisplayInitials(fullName)
-};
-
+socialIdentity=await window.SocialEraStorefrontShared.loadSocialIdentity();
 return socialIdentity;
-}catch(error){
-console.warn('Failed to load social identity:',error);
-socialIdentity=fallback;
-return fallback;
-}
 }
 
 function getSocialIdentity(){
@@ -3202,14 +2894,15 @@ if(socialIdentity){
 return socialIdentity;
 }
 
-socialIdentity={
-actorId:getLocalSocialActorId(),
-displayName:'SocialEra Member',
-userName:'@socialera.member',
-avatar:'SE'
-};
-
+socialIdentity=window.SocialEraStorefrontShared.getSocialIdentity();
 return socialIdentity;
+}
+
+function renderHeaderProfile(identity){
+window.SocialEraStorefrontShared.renderHeaderProfile(
+document.getElementById('header-profile-link'),
+identity || getSocialIdentity()
+);
 }
 
 function getActiveReactionState(post,metric){
@@ -3220,11 +2913,17 @@ if(metric==='likes'){
 return Array.isArray(post.likeActorIds) && post.likeActorIds.includes(actorId);
 }
 
-if(metric==='saves'){
-return Array.isArray(post.saveActorIds) && post.saveActorIds.includes(actorId);
+if(metric==='shares' || metric==='saves'){
+return Array.isArray(post.shareActorIds) && post.shareActorIds.includes(actorId);
 }
 
 return false;
+}
+
+function getActiveCommentReactionState(comment){
+const identity=getSocialIdentity();
+const actorId=identity.actorId;
+return Array.isArray(comment.likeActorIds) && comment.likeActorIds.includes(actorId);
 }
 
 function getPostMediaList(post){
@@ -3239,6 +2938,102 @@ return [post.mediaUrl];
 }
 
 return [];
+}
+
+function buildPostShareUrl(post){
+const shareUrl=new URL('index.html',window.location.href);
+shareUrl.searchParams.set('highlightPost',String(post?.id||'').trim());
+return shareUrl.toString();
+}
+
+async function recordPostShare(post,identity){
+if(!post || !identity?.actorId){
+return false;
+}
+
+post.shareActorIds=Array.isArray(post.shareActorIds)?post.shareActorIds:[];
+if(post.shareActorIds.includes(identity.actorId)){
+return false;
+}
+
+const response=await fetch(`/api/social/posts/${encodeURIComponent(post.id)}/reactions`,{
+method:'POST',
+headers:{
+'Content-Type':'application/json',
+'Accept':'application/json'
+},
+body:JSON.stringify({
+metric:'shares',
+actorId:identity.actorId,
+authorName:identity.displayName,
+userName:identity.userName,
+avatar:identity.avatar
+})
+});
+
+const data=await response.json().catch(()=>({}));
+
+if(!response.ok){
+throw new Error(data.error||'Failed to record share');
+}
+
+post.shares=Number(data.count||0);
+post.saves=post.shares;
+const index=post.shareActorIds.indexOf(identity.actorId);
+if(data.active && index===-1) post.shareActorIds.push(identity.actorId);
+if(!data.active && index!==-1) post.shareActorIds.splice(index,1);
+post.saveActorIds=[...post.shareActorIds];
+
+window.SocialEraStorefrontShared.syncSocialPostReactionsToSupabase(post,identity).catch((syncError)=>{
+console.warn('Supabase social post share sync failed:',syncError);
+});
+
+renderFeed();
+renderTopPosts();
+if(activeCommentPostId===post.id){
+renderCommentsModal();
+}
+
+return true;
+}
+
+async function sharePost(postId){
+const post=getPostById(postId);
+if(!post) return;
+
+const identity=await loadSocialIdentity();
+const shareUrl=buildPostShareUrl(post);
+const shareData={
+title:post.captionTitle || 'SocialEra post',
+text:post.captionText || 'Check out this post on SocialEra.',
+url:shareUrl
+};
+
+try{
+if(typeof navigator.share==='function'){
+await navigator.share(shareData);
+}else if(navigator.clipboard?.writeText){
+await navigator.clipboard.writeText(shareUrl);
+alert('Post link copied to clipboard.');
+}else{
+window.prompt('Copy this post link:',shareUrl);
+return;
+}
+}catch(error){
+if(error?.name==='AbortError'){
+return;
+}
+
+console.warn('Share failed:',error);
+alert(error.message||'Could not share that post');
+return;
+}
+
+try{
+await recordPostShare(post,identity);
+}catch(error){
+console.warn('Share record failed:',error);
+}
 }
 
 function focusCommentInput(postId){
@@ -3389,8 +3184,31 @@ postModalPromotedTitle?.focus();
 return;
 }
 
-const identity=getSocialIdentity();
+const identity=await loadSocialIdentity();
 const mediaUrl=postModalMediaDataUrl || '';
+const postId=window.crypto && typeof window.crypto.randomUUID==='function'
+? window.crypto.randomUUID()
+: `post-${Date.now()}`;
+const createdAt=new Date().toISOString();
+const postPayload={
+id:postId,
+actorId:identity.actorId,
+userId:identity.userId || '',
+displayName:identity.displayName,
+userName:identity.userName,
+avatar:identity.avatar,
+channel:currentChannel==='all' ? 'all' : currentChannel,
+mediaType:postModalMediaType,
+mediaUrl,
+captionTitle:title,
+captionText:caption,
+tags,
+promoteEnabled,
+promotedTitle,
+promotedPrice,
+promotedText,
+createdAt
+};
 
 setPostModalStatus('Publishing post...','success');
 if(postModalSubmit) postModalSubmit.disabled=true;
@@ -3404,18 +3222,7 @@ headers:{
 'Accept':'application/json'
 },
 body:JSON.stringify({
-displayName:identity.displayName,
-userName:identity.userName,
-avatar:identity.avatar,
-mediaType:postModalMediaType,
-mediaUrl,
-captionTitle:title,
-captionText:caption,
-tags,
-promoteEnabled,
-promotedTitle,
-promotedPrice,
-promotedText
+...postPayload
 })
 });
 
@@ -3427,6 +3234,9 @@ throw new Error(data.error||'Could not publish the post');
 
 const createdPost=normalizeSocialPost(data);
 socialPosts.unshift(createdPost);
+window.SocialEraStorefrontShared.syncSocialPostToSupabase(postPayload).catch((syncError)=>{
+console.warn('Supabase social post sync failed:',syncError);
+});
 const createdPostCategory=getPostFeedCategory(createdPost);
 
 if(currentChannel!=='all' && currentChannel!==createdPostCategory){
@@ -3448,7 +3258,72 @@ if(postModalSubmit) postModalSubmit.textContent='Publish Post';
 }
 }
 
-function handlePostModalFileChange(event){
+function readFileAsDataUrl(file){
+return new Promise((resolve,reject)=>{
+const reader=new FileReader();
+reader.onload=()=>resolve(typeof reader.result==='string' ? reader.result : '');
+reader.onerror=()=>reject(new Error('Could not read that media file.'));
+reader.readAsDataURL(file);
+});
+}
+
+function getFileExtension(file){
+const name=String(file?.name||'').toLowerCase();
+const parts=name.split('.');
+return parts.length>1 ? parts.pop() : '';
+}
+
+function isImageFile(file){
+const type=String(file?.type||'').toLowerCase();
+const extension=getFileExtension(file);
+return type.startsWith('image/') || ['jpg','jpeg','png','webp','gif','bmp','heic','heif'].includes(extension);
+}
+
+function isVideoFile(file){
+const type=String(file?.type||'').toLowerCase();
+const extension=getFileExtension(file);
+return type.startsWith('video/') || ['mp4','mov','m4v','webm','ogg'].includes(extension);
+}
+
+function loadImageFromDataUrl(dataUrl){
+return new Promise((resolve,reject)=>{
+const image=new Image();
+image.onload=()=>resolve(image);
+image.onerror=()=>reject(new Error('Could not prepare that image.'));
+image.src=dataUrl;
+});
+}
+
+async function compressImageFile(file){
+const originalDataUrl=await readFileAsDataUrl(file);
+let image=null;
+
+try{
+image=await loadImageFromDataUrl(originalDataUrl);
+}catch(error){
+return originalDataUrl;
+}
+
+const sourceWidth=image.naturalWidth || image.width || 1600;
+const sourceHeight=image.naturalHeight || image.height || 1600;
+const maxDimension=1600;
+const scale=Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
+const width=Math.max(1, Math.round(sourceWidth * scale));
+const height=Math.max(1, Math.round(sourceHeight * scale));
+const canvas=document.createElement('canvas');
+canvas.width=width;
+canvas.height=height;
+const context=canvas.getContext('2d');
+
+if(!context){
+return originalDataUrl;
+}
+
+context.drawImage(image,0,0,width,height);
+return canvas.toDataURL('image/jpeg',0.82);
+}
+
+async function handlePostModalFileChange(event){
 const file=event.target.files?.[0];
 
 if(!file){
@@ -3471,11 +3346,17 @@ postModalUploadShell?.classList.remove('drag-active');
 return;
 }
 
-const isImage=file.type.startsWith('image/');
-const isVideo=file.type.startsWith('video/');
+const isImage=isImageFile(file);
+const isVideo=isVideoFile(file);
 
 if(!isImage && !isVideo){
 setPostModalStatus('Please upload an image or video file.','error');
+event.target.value='';
+return;
+}
+
+if(isVideo && file.size > 25 * 1024 * 1024){
+setPostModalStatus('That video is too large for phone upload right now. Try a shorter clip or a file under 25MB.','error');
 event.target.value='';
 return;
 }
@@ -3485,9 +3366,11 @@ postModalFileName.textContent=file.name;
 postModalFileName.classList.remove('drag-active');
 }
 
-const reader=new FileReader();
-reader.onload=()=>{
-const result=typeof reader.result==='string' ? reader.result : '';
+try{
+if(postModalFileName){
+postModalFileName.textContent=isImage ? 'Optimizing image for mobile upload...' : file.name;
+}
+const result=isImage ? await compressImageFile(file) : await readFileAsDataUrl(file);
 postModalMediaDataUrl=result;
 postModalMediaType=isVideo ? 'video' : 'image';
 if(postModalPreview){
@@ -3508,10 +3391,12 @@ if(postModalVideoPreview && result && isVideo){
 postModalVideoPreview.src=result;
 postModalVideoPreview.classList.add('show');
 }
+if(postModalFileName){
+postModalFileName.textContent=isImage ? `${file.name} · optimized for upload` : file.name;
+}
 setPostModalStatus('');
 postModalUploadShell?.classList.remove('drag-active');
-};
-reader.onerror=()=>{
+}catch(error){
 postModalMediaDataUrl='';
 postModalMediaType='image';
 if(postModalFileName){
@@ -3520,8 +3405,7 @@ postModalFileName.classList.remove('drag-active');
 }
 setPostModalStatus('Could not read that media file.','error');
 postModalUploadShell?.classList.remove('drag-active');
-};
-reader.readAsDataURL(file);
+}
 }
 
 function handlePostModalDrop(event){
@@ -3545,19 +3429,29 @@ if(!comments.length){
 return `<div class="match-empty">No comments yet. Start the conversation.</div>`;
 }
 
-return comments.map((comment)=>`
+const renderCommentThread=(comment,depth=0)=>`
 <div class="feed-comment">
 <div class="feed-avatar">${escapeHtml(getDisplayInitials(comment.avatar||comment.authorName||'SE'))}</div>
 <div class="feed-comment-body">
 <div class="feed-comment-meta">
 <strong>${escapeHtml(comment.authorName||'SocialEra Member')}</strong>
-<span>${escapeHtml(comment.userName||'@socialera')}</span>
 <span>${escapeHtml(formatTimeAgo(comment.createdAt))}</span>
 </div>
 <p>${escapeHtml(comment.text||'')}</p>
+<div class="feed-comment-actions">
+<button class="feed-comment-action${getActiveCommentReactionState(comment) ? ' active' : ''}" type="button" onclick="toggleCommentReaction('${escapeHtml(post.id)}','${escapeHtml(comment.id)}')">Like ${escapeHtml(formatCount(comment.likes||0))}</button>
+<button class="feed-comment-action" type="button" onclick="startCommentReply('${escapeHtml(comment.id)}','${escapeHtml(comment.authorName||'SocialEra Member')}')">Reply</button>
+</div>
+${Array.isArray(comment.replies) && comment.replies.length ? `
+<div class="feed-comment-replies">
+${comment.replies.map((reply)=>renderCommentThread(reply,depth+1)).join('')}
+</div>
+` : ''}
 </div>
 </div>
-`).join('');
+`;
+
+return comments.map((comment)=>renderCommentThread(comment)).join('');
 }
 
 function renderCommentsModal(){
@@ -3587,7 +3481,7 @@ commentsModalPostPreview.innerHTML=`
 <div class="feed-avatar">${escapeHtml(post.avatar || getDisplayInitials(post.displayName || 'SE'))}</div>
 <div class="comments-modal-post-meta-text">
 <strong>${escapeHtml(post.displayName || 'SocialEra Member')}</strong>
-<span>${escapeHtml(post.userName || '@socialera')} · ${escapeHtml(post.timeLabel || 'Just now')}</span>
+<span>${escapeHtml(post.timeLabel || 'Just now')}</span>
 </div>
 </div>
 <p>${escapeHtml(post.captionText || 'See the conversation around this post.')}</p>
@@ -3604,21 +3498,48 @@ if(commentsModalStats){
 commentsModalStats.innerHTML=`
 <span class="comments-modal-stat">Likes ${escapeHtml(formatCount(post.likes))}</span>
 <span class="comments-modal-stat">Comments ${escapeHtml(formatCount(post.comments))}</span>
-<span class="comments-modal-stat">Saves ${escapeHtml(formatCount(post.saves))}</span>
+<span class="comments-modal-stat">Shares ${escapeHtml(formatCount(post.shares ?? post.saves))}</span>
 `;
 }
 
+const likeActors=Array.isArray(post.likeActors) ? post.likeActors : [];
+const likeActorsMarkup=likeActors.length
+? likeActors.map((actor)=>`
+<div class="likes-modal-row">
+<div class="feed-avatar">${escapeHtml(getDisplayInitials(actor.avatar||actor.authorName||'SE'))}</div>
+<div class="likes-modal-copy">
+<strong>${escapeHtml(actor.authorName||'SocialEra Member')}</strong>
+</div>
+</div>
+`).join('')
+: `<div class="match-empty">No visible likes yet. New likes will appear here with names.</div>`;
+
 if(commentsModalList){
-commentsModalList.innerHTML=renderCommentList(post);
+commentsModalList.innerHTML=`
+<section class="likes-modal-section">
+<div class="likes-modal-head">
+<h4>Liked by</h4>
+<span>${escapeHtml(formatCount(post.likes))} total</span>
+</div>
+<div class="likes-modal-list">
+${likeActorsMarkup}
+</div>
+</section>
+${renderCommentList(post)}
+`;
 }
 }
 
 function openCommentModal(postId){
 activeCommentPostId=postId;
+activeReplyCommentId=null;
 renderCommentsModal();
 commentsModalOverlay?.classList.add('show');
 commentsModalOverlay?.setAttribute('aria-hidden','false');
 document.body.style.overflow='hidden';
+if(commentsModalInput){
+commentsModalInput.placeholder='Add a comment to this post';
+}
 setTimeout(()=>{
 commentsModalInput?.focus();
 },30);
@@ -3626,11 +3547,86 @@ commentsModalInput?.focus();
 
 function closeCommentModal(){
 activeCommentPostId=null;
+activeReplyCommentId=null;
 commentsModalOverlay?.classList.remove('show');
 commentsModalOverlay?.setAttribute('aria-hidden','true');
 document.body.style.overflow='';
 if(commentsModalInput){
 commentsModalInput.value='';
+commentsModalInput.placeholder='Add a comment to this post';
+}
+}
+
+function startCommentReply(commentId, authorName){
+activeReplyCommentId=commentId;
+if(commentsModalInput){
+commentsModalInput.placeholder=`Reply to ${authorName}`;
+commentsModalInput.focus();
+}
+}
+
+function findCommentById(comments,commentId){
+for(const comment of Array.isArray(comments) ? comments : []){
+if(comment?.id===commentId){
+return comment;
+}
+
+const nestedComment=findCommentById(comment?.replies,commentId);
+if(nestedComment){
+return nestedComment;
+}
+}
+
+return null;
+}
+
+async function toggleCommentReaction(postId,commentId){
+const post=getPostById(postId);
+if(!post) return;
+
+const identity=await loadSocialIdentity();
+
+try{
+const response=await fetch(`/api/social/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}/reactions`,{
+method:'POST',
+headers:{
+'Content-Type':'application/json',
+'Accept':'application/json'
+},
+body:JSON.stringify({
+actorId:identity.actorId,
+authorName:identity.displayName,
+userName:identity.userName,
+avatar:identity.avatar
+})
+});
+
+const data=await response.json().catch(()=>({}));
+
+if(!response.ok){
+throw new Error(data.error||'Failed to update comment like');
+}
+
+if(Array.isArray(data.comments)){
+post.commentsData=data.comments;
+post.commentPreview=Array.isArray(data.comments) ? data.comments.slice(-3) : [];
+
+const syncedComment=findCommentById(post.commentsData,commentId);
+if(syncedComment){
+window.SocialEraStorefrontShared.syncSocialCommentReactionsToSupabase(syncedComment,identity).catch((syncError)=>{
+console.warn('Supabase social comment reaction sync failed:',syncError);
+});
+}
+}
+
+renderFeed();
+renderTopPosts();
+if(activeCommentPostId===postId){
+renderCommentsModal();
+}
+}catch(error){
+console.warn('Comment reaction update failed:',error);
+alert(error.message||'Could not update comment like');
 }
 }
 
@@ -3730,7 +3726,7 @@ async function toggleReaction(postId,metric){
 const post=getPostById(postId);
 if(!post) return;
 
-const identity=getSocialIdentity();
+const identity=await loadSocialIdentity();
 
 try{
 const response=await fetch(`/api/social/posts/${encodeURIComponent(postId)}/reactions`,{
@@ -3741,7 +3737,10 @@ headers:{
 },
 body:JSON.stringify({
 metric,
-actorId:identity.actorId
+actorId:identity.actorId,
+authorName:identity.displayName,
+userName:identity.userName,
+avatar:identity.avatar
 })
 });
 
@@ -3755,17 +3754,28 @@ post[metric]=Number(data.count||0);
 
 if(metric==='likes'){
 post.likeActorIds=Array.isArray(post.likeActorIds)?post.likeActorIds:[];
+post.likeActors=Array.isArray(post.likeActors)?post.likeActors:[];
 const index=post.likeActorIds.indexOf(identity.actorId);
 if(data.active && index===-1) post.likeActorIds.push(identity.actorId);
 if(!data.active && index!==-1) post.likeActorIds.splice(index,1);
+if(Array.isArray(data.actors)){
+post.likeActors=data.actors;
+}
 }
 
-if(metric==='saves'){
-post.saveActorIds=Array.isArray(post.saveActorIds)?post.saveActorIds:[];
-const index=post.saveActorIds.indexOf(identity.actorId);
-if(data.active && index===-1) post.saveActorIds.push(identity.actorId);
-if(!data.active && index!==-1) post.saveActorIds.splice(index,1);
+if(metric==='shares' || metric==='saves'){
+post.shareActorIds=Array.isArray(post.shareActorIds)?post.shareActorIds:[];
+const index=post.shareActorIds.indexOf(identity.actorId);
+if(data.active && index===-1) post.shareActorIds.push(identity.actorId);
+if(!data.active && index!==-1) post.shareActorIds.splice(index,1);
+post.saveActorIds=[...post.shareActorIds];
+post.shares=post[metric];
+post.saves=post.shares;
 }
+
+window.SocialEraStorefrontShared.syncSocialPostReactionsToSupabase(post,identity).catch((syncError)=>{
+console.warn('Supabase social post reaction sync failed:',syncError);
+});
 
 renderFeed();
 renderTopPosts();
@@ -3786,7 +3796,20 @@ if(!text){
 return;
 }
 
-const identity=getSocialIdentity();
+const identity=await loadSocialIdentity();
+const commentPayload={
+id:window.crypto && typeof window.crypto.randomUUID==='function'
+? window.crypto.randomUUID()
+: `comment-${Date.now()}`,
+actorId:identity.actorId,
+userId:identity.userId || '',
+authorName:identity.displayName,
+userName:identity.userName,
+avatar:identity.avatar,
+text,
+parentCommentId:activeReplyCommentId||'',
+createdAt:new Date().toISOString()
+};
 
 try{
 const response=await fetch(`/api/social/posts/${encodeURIComponent(postId)}/comments`,{
@@ -3796,11 +3819,7 @@ headers:{
 'Accept':'application/json'
 },
 body:JSON.stringify({
-text,
-actorId:identity.actorId,
-authorName:identity.displayName,
-userName:identity.userName,
-avatar:identity.avatar
+...commentPayload
 })
 });
 
@@ -3814,13 +3833,24 @@ const post=getPostById(postId);
 if(post){
 post.comments=Number(data.commentsCount||post.comments||0);
 post.commentPreview=Array.isArray(data.commentPreview)?data.commentPreview:[];
-post.commentsData = Array.isArray(post.commentsData) ? post.commentsData : [];
-if(data.comment){
-post.commentsData.push(data.comment);
+post.commentsData = Array.isArray(data.comments) ? data.comments : (Array.isArray(post.commentsData) ? post.commentsData : []);
 }
+
+if(data.comment){
+window.SocialEraStorefrontShared.syncSocialCommentToSupabase(postId, {
+...data.comment,
+userId: commentPayload.userId,
+parentCommentId: commentPayload.parentCommentId
+}).catch((syncError)=>{
+console.warn('Supabase social comment sync failed:',syncError);
+});
 }
 
 input.value='';
+activeReplyCommentId=null;
+if(commentsModalInput){
+commentsModalInput.placeholder='Add a comment to this post';
+}
 renderFeed();
 renderTopPosts();
 if(activeCommentPostId===postId){
@@ -3835,20 +3865,8 @@ alert(error.message||'Could not add comment');
 
 async function loadSocialPosts(){
 try{
-const response=await fetch('/api/social/posts',{
-method:'GET',
-headers:{ 'Accept':'application/json' }
-});
-
-if(!response.ok){
-throw new Error(`Request failed: ${response.status}`);
-}
-
-const data=await response.json();
-
-if(Array.isArray(data) && data.length){
-socialPosts=data.map(normalizeSocialPost);
-}
+const data=await window.SocialEraStorefrontShared.fetchSocialPostsArray();
+socialPosts=Array.isArray(data) ? data.map(normalizeSocialPost) : [];
 }catch(error){
 console.warn('Failed to load social posts, using local seed data:',error);
 socialPosts=socialPosts.map(normalizeSocialPost);
@@ -3998,6 +4016,13 @@ normalizeText(post.captionText),
 return gadgetTerms.reduce((score,term)=>score + (haystack.includes(term) ? 1 : 0),0);
 };
 
+const aCreatedAt=new Date(a.createdAt || 0).getTime();
+const bCreatedAt=new Date(b.createdAt || 0).getTime();
+
+if(aCreatedAt!==bCreatedAt){
+return bCreatedAt-aCreatedAt;
+}
+
 const aGadgetScore=getGadgetScore(a);
 const bGadgetScore=getGadgetScore(b);
 
@@ -4015,7 +4040,7 @@ const matches=getPostMatches(post,4);
 const previewMatches=matches.slice(0,3);
 const postClass=index%2===1 ? 'feed-post feed-post-alt' : 'feed-post';
 const likesActive=getActiveReactionState(post,'likes') ? ' active' : '';
-const savesActive=getActiveReactionState(post,'saves') ? ' active' : '';
+const sharesActive=getActiveReactionState(post,'shares') ? ' active' : '';
 const collapsed=collapsedPostIds.has(post.id);
 const postChannelLabel=String(post.channel || getPostFeedCategory(post) || 'profile').replace(/-/g,' ');
 const postTags=Array.isArray(post.tags)
@@ -4043,7 +4068,7 @@ return `
 <div class="feed-avatar">${escapeHtml(post.avatar)}</div>
 <div class="feed-user-meta">
 <strong>${escapeHtml(post.displayName)}</strong>
-<span>${escapeHtml(post.userName)} · ${escapeHtml(post.timeLabel)}</span>
+<span>${escapeHtml(post.timeLabel)}</span>
 </div>
 </div>
 <button class="feed-follow" type="button">Follow</button>
@@ -4051,11 +4076,6 @@ return `
 
 <div class="feed-caption">
 <h3>${escapeHtml(post.captionTitle)}</h3>
-<div class="feed-post-meta-row">
-<span class="feed-post-pill category">${escapeHtml(postChannelLabel)}</span>
-<span class="feed-post-pill media">${post.mediaType==='video' ? 'Video' : 'Post'}</span>
-${postTags.slice(0,3).map((tag)=>`<span class="feed-post-pill tag">${escapeHtml(tag)}</span>`).join('')}
-</div>
 <p>${escapeHtml(post.captionText)}</p>
 </div>
 
@@ -4088,9 +4108,9 @@ poster="${escapeHtml(post.posterUrl || '')}"
 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H4C2.9 2 2.01 2.9 2.01 4L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
 <span>${escapeHtml(formatCount(post.comments))}</span>
 </button>
-<button class="feed-action${savesActive}" type="button" onclick="toggleReaction('${escapeHtml(post.id)}','saves')">
-<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3H7c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2z"></path></svg>
-<span>${escapeHtml(formatCount(post.saves))}</span>
+<button class="feed-action${sharesActive}" type="button" onclick="sharePost('${escapeHtml(post.id)}')" aria-label="Share post">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.98 2.98 0 0 0 0-1.39l7-4.11A2.99 2.99 0 1 0 15 5a2.8 2.8 0 0 0 .04.49l-7 4.11a3 3 0 1 0 0 4.8l7.05 4.14c-.03.15-.05.3-.05.46a3 3 0 1 0 3-3z"></path></svg>
+<span>${escapeHtml(formatCount(post.shares ?? post.saves))}</span>
 </button>
 </div>
 <div class="feed-meta-right">Premium match preview</div>
@@ -4211,7 +4231,10 @@ function scrollToPost(postId){
 const postEl=document.querySelector(`[data-post-id="${postId}"]`);
 if(postEl){
 postEl.scrollIntoView({behavior:'smooth',block:'start'});
+return true;
 }
+
+return false;
 }
 
 function renderTopPosts(){
@@ -4555,7 +4578,7 @@ return `
 <span class="search-suggestion-tag">${escapeHtml(String(profile.postCount))} posts</span>
 </div>
 <strong>${escapeHtml(profile.displayName)}</strong>
-<span>${escapeHtml(profile.userName)}</span>
+<span>Profile</span>
 </div>
 </button>
 `;
@@ -4612,8 +4635,44 @@ btn.classList.toggle('active',btn.dataset.channel===channel);
 renderFeed();
 }
 
+function applyFeedStateFromUrl(){
+const params=new URLSearchParams(window.location.search);
+const requestedChannel=params.get('channel');
+const highlightPostId=params.get('highlightPost');
+const allowedChannels=new Set(['all','videos','sell','profile']);
+
+if(requestedChannel && allowedChannels.has(requestedChannel)){
+activateChannel(requestedChannel);
+}
+
+if(!highlightPostId){
+return;
+}
+
+if(scrollToPost(highlightPostId)){
+return;
+}
+
+window.setTimeout(()=>{
+scrollToPost(highlightPostId);
+},180);
+}
+
 channelPills.forEach(btn=>{
-btn.onclick=()=>activateChannel(btn.dataset.channel);
+btn.onclick=()=>{
+if(btn.dataset.channel==='shop'){
+window.location.href='shop.html';
+return;
+}
+
+if(btn.dataset.channel==='profile'){
+const identity=getSocialIdentity();
+window.location.href=identity?.actorId?.startsWith('user-') ? 'account.html' : 'login.html';
+return;
+}
+
+activateChannel(btn.dataset.channel);
+};
 });
 
 searchInput.addEventListener('input',()=>{
@@ -4701,104 +4760,41 @@ return [
 }
 
 async function fetchProductsFrom(url){
-const response=await fetch(url,{
-method:'GET',
-headers:{ 'Accept':'application/json' }
-});
-
-if(!response.ok){
-throw new Error(`Request failed: ${response.status} ${response.statusText}`);
-}
-
-const data=await response.json();
-
-if(!Array.isArray(data)){
-throw new Error('API did not return an array of products.');
-}
-
+const data=await window.SocialEraStorefrontShared.fetchProductsArray();
+if(Array.isArray(data)){
 return data;
+}
+throw new Error(`Request failed: ${url}`);
 }
 
 async function loadProducts(){
-const apiCandidates=getApiCandidates();
-
-for(const url of apiCandidates){
 try{
-const data=await fetchProductsFrom(url);
-
-allProducts=data.map((product,index)=>({
-id:product.id ?? index + 1,
-name:product.name ?? 'Untitled Product',
-price:Number(product.price ?? 0),
-category:product.category ?? '',
-description:product.description ?? '',
-image:product.image ?? '',
-stock:Number(product.stock ?? 0),
-featured:Boolean(product.featured),
-saleEnabled:Boolean(product.saleEnabled),
-salePrice:Number(product.salePrice ?? 0),
-saleLabel:product.saleLabel ?? 'Sale',
-fulfillmentType:product.fulfillmentType ?? 'inhouse',
-supplierName:product.supplierName ?? '',
-supplierSku:product.supplierSku ?? '',
-supplierCost:Number(product.supplierCost ?? 0),
-supplierLink:product.supplierLink ?? '',
-processingTime:product.processingTime ?? '',
-shippingTime:product.shippingTime ?? ''
-}));
-
-renderFeed();
-renderSidebarProducts();
-return;
+const data=await fetchProductsFrom('/api/products');
+allProducts=data.map((product,index)=>window.SocialEraStorefrontShared.mapProductRecord(product,index));
 }catch(error){
-console.warn('Failed loading from:',url,error);
-}
-}
-
+console.warn('Failed loading products:',error);
+}finally{
 renderFeed();
 renderSidebarProducts();
+}
 }
 
 async function updateAuthNavigation(){
-if(!window.supabase){
-return;
-}
-
 const nav=document.querySelector('.top-nav');
 if(!nav) return;
-
-const cartButton=nav.querySelector('.cart-button');
-if(!cartButton) return;
-
 nav.querySelectorAll('.auth-link').forEach(link=>link.remove());
+const profileLink=document.getElementById('header-profile-link');
+if(!profileLink) return;
 
 try{
-const { data } = await window.supabase.auth.getUser();
-const user=data?.user;
-
-if(user){
-const accountLink=document.createElement('a');
-accountLink.href='account.html';
-accountLink.textContent='Account';
-accountLink.classList.add('auth-link');
-nav.insertBefore(accountLink, cartButton);
-}else{
-const loginLink=document.createElement('a');
-loginLink.href='login.html';
-loginLink.textContent='Login';
-loginLink.classList.add('auth-link');
-
-const signupLink=document.createElement('a');
-signupLink.href='signup.html';
-signupLink.textContent='Sign Up';
-signupLink.classList.add('auth-link');
-
-nav.insertBefore(loginLink, cartButton);
-nav.insertBefore(signupLink, cartButton);
-}
+socialIdentity=await window.SocialEraStorefrontShared.updateAuthNavigation(profileLink);
+return socialIdentity;
 }catch(error){
-console.warn('Auth navigation update failed:', error);
+console.warn('Failed updating header profile:',error);
 }
+
+profileLink.setAttribute('href','login.html');
+renderHeaderProfile(getSocialIdentity());
 }
 
 /* SWIPE LEFT TO SHOP */
@@ -4916,9 +4912,10 @@ updateCartCount();
 updateSearchClearButton();
 renderSidebarProducts();
 loadSocialIdentity();
-loadSocialPosts();
+loadSocialPosts().then(applyFeedStateFromUrl);
 loadProducts();
 syncPostModalPromotionFields();
+applyFeedStateFromUrl();
 });
 </script>
 

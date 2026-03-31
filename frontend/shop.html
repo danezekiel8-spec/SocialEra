@@ -42,348 +42,298 @@ color:var(--text);
 overflow-x:hidden;
 }
 
-/* HEADER */
+/* Shared storefront header/search shell now lives in theme.css and storefront-search.css. */
 
-header{
+.post-modal-overlay{
+position:fixed;
+inset:0;
+display:none;
+align-items:center;
+justify-content:center;
+padding:28px;
+background:rgba(17,17,17,0.42);
+backdrop-filter:blur(10px);
+z-index:1400;
+}
+
+.post-modal-overlay.show{
+display:flex;
+}
+
+.post-modal{
+width:min(760px, 100%);
+max-height:min(86vh, 920px);
+overflow:auto;
+background:linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(252,247,239,0.96) 100%);
+border:1px solid rgba(17,17,17,0.08);
+border-radius:28px;
+box-shadow:0 24px 60px rgba(0,0,0,0.18);
+padding:24px;
+display:grid;
+gap:18px;
+}
+
+.post-modal-head{
+display:flex;
+justify-content:space-between;
+align-items:flex-start;
+gap:16px;
+}
+
+.post-modal-copy{
+display:grid;
+gap:6px;
+}
+
+.post-modal-copy h3{
+font-size:28px;
+line-height:1.1;
+}
+
+.post-modal-copy p{
+font-size:14px;
+line-height:1.7;
+color:var(--muted);
+}
+
+.post-modal-close{
+width:42px;
+height:42px;
+border:none;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+background:#f1dfb7;
+color:#775a24;
+font-size:22px;
+font-weight:800;
+cursor:pointer;
+box-shadow:0 10px 22px rgba(200,169,107,0.22);
+}
+
+.post-modal-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:14px;
+}
+
+.post-modal-field{
+display:grid;
+gap:8px;
+}
+
+.post-modal-field.full{
+grid-column:1/-1;
+}
+
+.post-modal-field label{
+font-size:13px;
+font-weight:700;
+color:#221d19;
+}
+
+.post-modal-field-head{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:12px;
+}
+
+.post-modal-counter{
+font-size:11px;
+font-weight:700;
+color:#8a7660;
+}
+
+.post-modal-field input,
+.post-modal-field textarea{
+width:100%;
+border-radius:16px;
+border:1px solid rgba(17,17,17,0.08);
+padding:12px 14px;
+font:inherit;
+background:#fff;
+outline:none;
+transition:border-color .2s ease, box-shadow .2s ease;
+}
+
+.post-modal-field input:focus,
+.post-modal-field textarea:focus{
+border-color:var(--gold);
+box-shadow:0 0 0 3px rgba(200,169,107,0.14);
+}
+
+.post-modal-field textarea{
+resize:vertical;
+min-height:112px;
+}
+
+.post-modal-upload{
+display:grid;
+gap:10px;
+}
+
+.post-modal-upload input[type="file"]{
+position:absolute;
+opacity:0;
+pointer-events:none;
+width:1px;
+height:1px;
+}
+
+.post-modal-upload-shell{
+display:grid;
+gap:12px;
+padding:16px;
+border-radius:20px;
+border:1px dashed rgba(200,169,107,0.55);
+background:linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(250,246,238,0.92) 100%);
+box-shadow:inset 0 1px 0 rgba(255,255,255,0.65);
+}
+
+.post-modal-upload-shell.drag-active{
+border-color:rgba(200,169,107,0.9);
+background:linear-gradient(180deg, rgba(255,250,239,0.98) 0%, rgba(247,239,219,0.92) 100%);
+box-shadow:0 16px 30px rgba(200,169,107,0.16), inset 0 1px 0 rgba(255,255,255,0.74);
+}
+
+.post-modal-upload-trigger{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:14px;
+padding:14px 16px;
+border-radius:18px;
+background:linear-gradient(135deg, rgba(234,210,155,0.34), rgba(200,169,107,0.18));
+border:1px solid rgba(200,169,107,0.34);
+cursor:pointer;
+transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.post-modal-upload-trigger:hover{
+transform:translateY(-1px);
+box-shadow:0 12px 24px rgba(200,169,107,0.18);
+border-color:rgba(200,169,107,0.48);
+}
+
+.post-modal-upload-copy{
+display:grid;
+gap:4px;
+}
+
+.post-modal-upload-copy strong{
+font-size:14px;
+color:#171310;
+}
+
+.post-modal-upload-copy span{
+font-size:12px;
+line-height:1.5;
+color:var(--muted);
+}
+
+.post-modal-upload-badge{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+padding:10px 14px;
+border-radius:999px;
+background:#111;
+color:#fff;
+font-size:12px;
+font-weight:700;
+white-space:nowrap;
+}
+
+.post-modal-file-name{
+font-size:12px;
+line-height:1.5;
+color:#5f534a;
+padding:0 4px;
+}
+
+.post-modal-file-name.drag-active{
+color:#8b6b2f;
+font-weight:700;
+}
+
+.post-modal-helper{
+font-size:12px;
+line-height:1.5;
+color:#7a6a5c;
+padding:0 4px;
+}
+
+.post-modal-preview{
+display:none;
+max-width:100%;
+border-radius:18px;
+border:1px solid rgba(17,17,17,0.08);
+box-shadow:var(--shadow-soft);
+background:#f5f0e7;
+}
+
+.post-modal-preview.show{
+display:block;
+}
+
+.post-modal-checkbox{
+display:flex;
+align-items:center;
+gap:10px;
+padding:10px 12px;
+border-radius:16px;
+border:1px solid rgba(17,17,17,0.08);
+background:#fff;
+font-size:14px;
+font-weight:700;
+color:#221d19;
+}
+
+.post-modal-checkbox input{
+width:18px;
+height:18px;
+accent-color:var(--gold);
+}
+
+.post-modal-field.hidden{
+display:none;
+}
+
+.post-modal-actions{
 display:flex;
 justify-content:space-between;
 align-items:center;
-background:rgba(17,17,17,0.94);
-color:white;
-padding:20px 44px;
-position:sticky;
-top:0;
-z-index:1000;
-backdrop-filter:blur(12px);
-border-bottom:1px solid rgba(255,255,255,0.08);
-box-shadow:0 12px 32px rgba(0,0,0,0.18);
-}
-
-.logo{
-text-decoration:none;
-color:white;
-display:inline-flex;
-align-items:center;
 gap:14px;
-flex-shrink:0;
-}
-
-.logo h1{
-font-family:Georgia, serif;
-font-size:40px;
-font-weight:bold;
-line-height:1;
-margin-bottom:0;
-}
-
-.logo-mark-image{
-width:96px;
-height:96px;
-object-fit:contain;
-flex-shrink:0;
-border-radius:50%;
-}
-
-.logo p{
-font-size:12px;
-letter-spacing:2px;
-text-transform:uppercase;
-color:var(--gold);
-}
-
-.logo-word{
-display:inline-flex;
-gap:0;
-}
-
-.logo-word span{
-display:inline-block;
-}
-
-/* NAV */
-
-.top-nav{
-display:flex;
-align-items:center;
-gap:18px;
 flex-wrap:wrap;
 }
 
-.top-nav a{
-color:#f5f1ea;
-text-decoration:none;
-font-weight:bold;
-font-size:15px;
-transition:color .25s ease;
-}
-
-.top-nav a:hover{
-color:var(--gold);
-}
-
-/* SEARCH */
-
-.header-search{
-position:relative;
-display:flex;
-align-items:center;
-}
-
-.header-search-icon{
-position:absolute;
-left:12px;
-top:50%;
-transform:translateY(-50%);
-font-size:14px;
-color:rgba(255,255,255,0.72);
-pointer-events:none;
-z-index:1;
-}
-
-.header-search input{
-width:240px;
-border-radius:999px;
-border:1px solid rgba(255,255,255,0.14);
-padding:11px 36px 11px 36px;
-background:#222;
-color:white;
-outline:none;
-transition:all .2s ease;
-}
-
-.header-search input:focus{
-border-color:var(--gold);
-box-shadow:0 0 0 3px rgba(200,169,107,0.15);
-}
-
-.header-search input::placeholder{
-color:#aaa;
-}
-
-.header-search-clear{
-position:absolute;
-right:8px;
-top:50%;
-transform:translateY(-50%);
-width:24px;
-height:24px;
-border:none;
-border-radius:999px;
-display:flex;
-align-items:center;
-justify-content:center;
-background:rgba(255,255,255,0.08);
-color:rgba(255,255,255,0.78);
-font-size:14px;
-cursor:pointer;
-transition:background .2s ease, color .2s ease, opacity .2s ease;
-opacity:0;
-pointer-events:none;
-}
-
-.header-search-clear.show{
-opacity:1;
-pointer-events:auto;
-}
-
-.header-search-clear:hover{
-background:rgba(200,169,107,0.18);
-color:#f2dfb8;
-}
-
-.search-suggestions{
-position:absolute;
-top:48px;
-right:0;
-width:320px;
-max-height:0;
-overflow:hidden;
-opacity:0;
-transform:translateY(-4px);
-background:#ffffff;
-color:#111111;
-border-radius:16px;
-box-shadow:0 14px 30px rgba(0,0,0,0.16);
-border:1px solid rgba(17,17,17,0.08);
-transition:max-height .25s ease, opacity .25s ease, transform .25s ease;
-z-index:2000;
-}
-
-.search-suggestions.show{
-max-height:320px;
-opacity:1;
-transform:translateY(0);
-overflow-y:auto;
-}
-
-.search-suggestion-item{
-display:flex;
-align-items:center;
-gap:12px;
-width:100%;
+.post-modal-status{
+display:none;
 padding:12px 14px;
-text-decoration:none;
-color:#111111;
-border-bottom:1px solid rgba(17,17,17,0.06);
-background:transparent;
-border-left:none;
-border-right:none;
-border-top:none;
-cursor:pointer;
-font:inherit;
-text-align:left;
-}
-
-.search-suggestion-item:last-child{
-border-bottom:none;
-}
-
-.search-suggestion-item:hover{
-background:#f7f2ea;
-}
-
-.search-suggestion-item.is-active{
-background:#f7f2ea;
-}
-
-.search-suggestion-item img{
-width:48px;
-height:48px;
-object-fit:cover;
-border-radius:10px;
-flex-shrink:0;
-}
-
-.search-suggestion-text{
-display:flex;
-flex-direction:column;
-gap:4px;
-min-width:0;
-}
-
-.search-suggestion-text strong{
+border-radius:16px;
 font-size:14px;
-line-height:1.3;
+line-height:1.6;
 }
 
-.search-suggestion-text span{
-font-size:13px;
-color:#7a6a5c;
+.post-modal-status.show{
+display:block;
 }
 
-.search-suggestion-kicker{
-display:inline-flex;
-align-items:center;
-width:max-content;
-padding:3px 8px;
-border-radius:999px;
-background:rgba(17,17,17,0.06);
-font-size:10px;
-font-weight:700;
-letter-spacing:.5px;
-text-transform:uppercase;
-color:#5d5146;
+.post-modal-status.success{
+background:rgba(22,101,52,0.08);
+border:1px solid rgba(22,101,52,0.14);
+color:#166534;
 }
 
-.search-suggestion-section{
-padding:8px 0 0;
-background:linear-gradient(180deg, rgba(248,244,236,0.66) 0%, rgba(255,255,255,0) 100%);
+.post-modal-status.error{
+background:rgba(185,28,28,0.08);
+border:1px solid rgba(185,28,28,0.14);
+color:#b91c1c;
 }
 
-.search-suggestion-section-title{
-padding:0 14px 8px;
-font-size:11px;
-font-weight:800;
-letter-spacing:.7px;
-text-transform:uppercase;
-color:#7a6a5c;
-}
-
-.search-suggestion-meta{
-display:flex;
-align-items:center;
-gap:8px;
-flex-wrap:wrap;
-}
-
-.search-suggestion-avatar{
-width:48px;
-height:48px;
-border-radius:14px;
-display:flex;
-align-items:center;
-justify-content:center;
-background:linear-gradient(135deg, #ead29b, var(--gold));
-color:#111;
-font-size:16px;
-font-weight:800;
-flex-shrink:0;
-box-shadow:0 8px 18px rgba(200,169,107,0.22);
-}
-
-.search-suggestion-tag{
-font-size:11px;
-font-weight:700;
-color:#8b6b2f;
-}
-
-.search-suggestion-provider{
-font-size:11px;
-font-weight:700;
-color:#6c5a3a;
-}
-
-.search-empty{
-padding:14px;
-font-size:14px;
-color:#7a6a5c;
-border-bottom:1px solid rgba(17,17,17,0.06);
-background:linear-gradient(180deg, rgba(248,244,236,0.88) 0%, rgba(255,255,255,0.82) 100%);
-}
-
-/* CART ICON */
-
-.cart-button{
-display:flex;
-align-items:center;
-justify-content:center;
-gap:10px;
-padding:11px 16px;
-background:linear-gradient(135deg, #d8bf8a, var(--gold));
-color:#111111;
-border-radius:12px;
-font-weight:bold;
-flex-shrink:0;
-box-shadow:0 10px 24px rgba(200,169,107,0.3);
-transition:transform .2s ease, box-shadow .2s ease;
-}
-
-.cart-button:hover{
-transform:translateY(-1px);
-box-shadow:0 14px 28px rgba(200,169,107,0.35);
-color:#111111;
-}
-
-.cart-icon{
-width:22px;
-height:22px;
-fill:#111111;
-}
-
-.cart-count{
-background:#ff4b4b;
-color:white;
-font-size:12px;
-min-width:20px;
-height:20px;
-padding:0 6px;
-border-radius:50%;
-display:flex;
-align-items:center;
-justify-content:center;
-font-weight:bold;
-line-height:1;
-}
+/* Shared storefront search-result presentation now lives in storefront-search.css. */
 
 /* HERO */
 
@@ -424,6 +374,104 @@ max-width:720px;
 display:flex;
 gap:12px;
 flex-wrap:wrap;
+}
+
+.shop-lanes{
+padding:0 24px 12px;
+}
+
+.shop-lanes-inner{
+max-width:1200px;
+margin:auto;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+.shop-lane-card{
+background:linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(252,247,239,0.92) 100%);
+border:1px solid rgba(17,17,17,0.07);
+border-radius:24px;
+padding:22px 22px 20px;
+box-shadow:var(--shadow);
+display:grid;
+gap:14px;
+}
+
+.shop-lane-kicker{
+font-size:11px;
+letter-spacing:1px;
+text-transform:uppercase;
+font-weight:800;
+color:var(--gold-dark);
+}
+
+.shop-lane-card h2{
+font-size:28px;
+line-height:1.08;
+}
+
+.shop-lane-card p{
+font-size:14px;
+line-height:1.65;
+color:var(--muted);
+}
+
+.shop-lane-meta{
+display:flex;
+align-items:center;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.shop-lane-pill{
+display:inline-flex;
+align-items:center;
+padding:7px 11px;
+border-radius:999px;
+background:rgba(200,169,107,0.12);
+color:#7c5e27;
+font-size:12px;
+font-weight:700;
+}
+
+.shop-lane-count{
+font-size:13px;
+font-weight:700;
+color:#5b4d3d;
+}
+
+.shop-lane-actions{
+display:flex;
+align-items:center;
+gap:12px;
+flex-wrap:wrap;
+}
+
+.shop-lane-link{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+padding:10px 14px;
+border-radius:12px;
+text-decoration:none;
+font-weight:800;
+font-size:13px;
+border:1px solid rgba(17,17,17,0.08);
+background:#111;
+color:#fff;
+cursor:pointer;
+transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+
+.shop-lane-link.secondary{
+background:#fff;
+color:#181512;
+}
+
+.shop-lane-link:hover{
+transform:translateY(-1px);
+box-shadow:0 10px 18px rgba(0,0,0,0.10);
 }
 
 .hero-link{
@@ -626,6 +674,94 @@ max-width:1200px;
 margin:auto;
 }
 
+.user-market-grid{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:24px;
+max-width:1200px;
+margin:auto;
+}
+
+.user-market-card{
+background:white;
+border-radius:18px;
+overflow:hidden;
+box-shadow:0 8px 18px rgba(0,0,0,.06);
+border:1px solid rgba(17,17,17,0.05);
+display:flex;
+flex-direction:column;
+}
+
+.user-market-card img,
+.user-market-card video{
+width:100%;
+height:250px;
+object-fit:cover;
+display:block;
+background:#efe9df;
+}
+
+.user-market-info{
+padding:18px;
+display:grid;
+gap:10px;
+}
+
+.user-market-top{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+}
+
+.user-market-byline{
+font-size:12px;
+font-weight:700;
+color:#7a6a5c;
+}
+
+.user-market-price{
+font-size:14px;
+font-weight:800;
+color:#6b4d14;
+}
+
+.user-market-info h3{
+font-size:19px;
+line-height:1.2;
+}
+
+.user-market-info p{
+font-size:13px;
+line-height:1.55;
+color:var(--muted);
+}
+
+.user-market-actions{
+display:flex;
+align-items:center;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.user-market-action{
+display:inline-flex;
+align-items:center;
+justify-content:center;
+padding:9px 12px;
+border-radius:10px;
+text-decoration:none;
+font-weight:700;
+font-size:12px;
+background:#111;
+color:#fff;
+}
+
+.user-market-action.secondary{
+background:#f7f2ea;
+color:#2d2521;
+}
+
 .product-card{
 background:white;
 border-radius:18px;
@@ -785,32 +921,20 @@ margin-top:44px;
 grid-template-columns:repeat(2,1fr);
 }
 
+.user-market-grid{
+grid-template-columns:repeat(2,1fr);
+}
+
 .categories-grid{
 grid-template-columns:repeat(2,1fr);
+}
+
+.shop-lanes-inner{
+grid-template-columns:1fr;
 }
 }
 
 @media(max-width:900px){
-header{
-flex-direction:column;
-gap:16px;
-padding:20px;
-}
-
-.top-nav{
-justify-content:center;
-}
-
-.header-search input{
-width:220px;
-}
-
-.search-suggestions{
-left:0;
-right:auto;
-width:280px;
-}
-
 .shop-hero-copy h1{
 font-size:38px;
 }
@@ -819,6 +943,7 @@ font-size:38px;
 @media(max-width:760px){
 .swipe-hint-wrap,
 .shop-hero,
+.shop-lanes,
 .section{
 padding-left:16px;
 padding-right:16px;
@@ -827,34 +952,76 @@ padding-right:16px;
 .swipe-hint{
 flex-direction:column;
 align-items:flex-start;
+padding:12px 14px;
+border-radius:20px;
+}
+
+.shop-toolbar{
+align-items:stretch;
+}
+
+.shop-filters{
+flex-wrap:nowrap;
+overflow-x:auto;
+padding-bottom:4px;
+scrollbar-width:none;
+}
+
+.shop-filters::-webkit-scrollbar{
+display:none;
+}
+
+.filter-btn{
+flex:0 0 auto;
+white-space:nowrap;
+}
+
+.shop-sort{
+width:100%;
+}
+
+.shop-sort select{
+width:100%;
+}
+
+.shop-lane-card{
+padding:18px;
+border-radius:20px;
+}
+
+.shop-lane-card h2{
+font-size:24px;
+}
+
+.user-market-actions{
+display:grid;
+grid-template-columns:1fr;
+}
+
+.user-market-action{
+width:100%;
 }
 }
 
 @media(max-width:600px){
+.swipe-hint-wrap,
+.shop-hero,
+.shop-lanes,
+.section{
+padding-left:12px;
+padding-right:12px;
+}
+
 .products-grid{
+grid-template-columns:1fr;
+}
+
+.user-market-grid{
 grid-template-columns:1fr;
 }
 
 .categories-grid{
 grid-template-columns:1fr;
-}
-
-.logo h1{
-font-size:34px;
-}
-
-.header-search{
-width:100%;
-}
-
-.header-search input{
-width:100%;
-}
-
-.search-suggestions{
-width:100%;
-left:0;
-right:0;
 }
 
 .shop-hero-inner{
@@ -864,15 +1031,65 @@ padding:26px 22px;
 .shop-hero-copy h1{
 font-size:32px;
 }
+
+.shop-hero-copy p{
+font-size:15px;
+line-height:1.65;
+}
+
+.shop-hero-actions{
+gap:10px;
+}
+
+.hero-link{
+width:100%;
+}
+
+.shop-lane-card,
+.product-card,
+.user-market-card{
+border-radius:18px;
+}
+
+.shop-lane-card{
+padding:16px;
+}
+
+.section h2{
+font-size:28px;
+margin-bottom:24px;
+}
+
+.category-card{
+height:200px;
+}
+
+.product-card img,
+.user-market-card img,
+.user-market-card video{
+height:220px;
+}
+
+.product-info,
+.user-market-info{
+padding:16px;
+}
+
+.product-sub{
+min-height:0;
+}
 }
 </style>
 <link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="storefront-search.css">
 <script src="theme.js"></script>
+<script src="storefront-shared.js"></script>
 </head>
 
 <body>
 
 <header>
+<div class="header-main">
 <a href="index.html" class="logo">
 <div>
 <h1 class="logo-word">
@@ -883,30 +1100,160 @@ font-size:32px;
 <img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
 </a>
 
+<button type="button" class="header-search-toggle" aria-label="Open search" aria-expanded="false">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+  <circle cx="11" cy="11" r="6"></circle>
+  <path d="M20 20l-4.35-4.35"></path>
+</svg>
+</button>
+
 <div class="header-search">
-<span class="header-search-icon" aria-hidden="true">⌕</span>
 <input type="text" id="search-input" placeholder="Search">
 <button type="button" id="search-clear-button" class="header-search-clear" aria-label="Clear search">×</button>
 <div id="search-suggestions" class="search-suggestions"></div>
 </div>
 
 <nav class="top-nav">
-<a href="index.html">Home</a>
-<a href="shop.html">Shop</a>
-<a href="login.html" class="auth-link static-auth-link">Login</a>
-<a href="signup.html" class="auth-link static-auth-link">Sign Up</a>
-
-<a href="cart.html" class="cart-button" aria-label="Cart">
-<svg class="cart-icon" viewBox="0 0 24 24" aria-hidden="true">
-<path d="M7 4H5L4 6v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H10.58c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.72c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H7.42L6.48 6H4.42"></path>
-<circle cx="10" cy="20" r="2"></circle>
-<circle cx="20" cy="20" r="2"></circle>
+<a href="#" class="header-utility-link" aria-label="Notifications" title="Notifications">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true">
+  <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2m.995-14.901a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"/>
 </svg>
-<span>Cart</span>
+</a>
+<a href="account.html" class="header-profile-link" id="header-profile-link">Profile</a>
+<a href="cart.html" class="cart-button header-cart-circle" aria-label="Cart">
+<svg class="cart-icon" viewBox="0 0 16 16" aria-hidden="true">
+  <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0m7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0m-1.646-7.646-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L8 8.293l2.646-2.647a.5.5 0 0 1 .708.708"/>
+</svg>
 <span id="cart-count" class="cart-count">0</span>
 </a>
 </nav>
+
+<div class="channels-inner header-channels" id="channel-pills">
+<button class="channel-pill" type="button" data-channel="all" data-label="Home" aria-label="Home" title="Home">
+<span class="channel-pill-icon" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L8 2.207l6.646 6.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293z"/>
+  <path d="m8 3.293 6 6V13.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 13.5V9.293z"/>
+</svg>
+</span>
+</button>
+<button class="channel-pill" type="button" data-channel="videos" data-label="Videos" aria-label="Videos" title="Videos">
+<span class="channel-pill-icon" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M6.79 5.093A.5.5 0 0 0 6 5.5v5a.5.5 0 0 0 .79.407l3.5-2.5a.5.5 0 0 0 0-.814z"/>
+</svg>
+</span>
+</button>
+<button class="channel-pill active" type="button" data-channel="shop" data-label="Shop" aria-label="Shop" title="Shop">
+<span class="channel-pill-icon" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1m3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4z"/>
+</svg>
+</span>
+</button>
+<button class="channel-pill" type="button" data-channel="sell" data-label="Sell" aria-label="Sell" title="Sell">
+<span class="channel-pill-icon" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h3.793a1.5 1.5 0 0 1 1.06.44l4.207 4.207a1.5 1.5 0 0 1 0 2.121l-3.793 3.793a1.5 1.5 0 0 1-2.121 0L2.44 8.354A1.5 1.5 0 0 1 2 7.293z"/>
+  <path d="M5.25 4.75a1 1 0 1 0 0 2a1 1 0 0 0 0-2"/>
+</svg>
+</span>
+</button>
+<button id="home-plus-button" class="home-plus-button" type="button" aria-label="Create post">
+&plus;
+</button>
+</div>
+</div>
 </header>
+
+<div id="post-modal-overlay" class="post-modal-overlay" aria-hidden="true">
+<div class="post-modal" role="dialog" aria-modal="true" aria-labelledby="post-modal-title">
+<div class="post-modal-head">
+<div class="post-modal-copy">
+<h3 id="post-modal-title">Post to the SocialEra feed</h3>
+<p>Share a look, thought, or product angle and let the feed update live for everyone else.</p>
+</div>
+<button id="post-modal-close" class="post-modal-close" type="button" aria-label="Close composer">&times;</button>
+</div>
+
+<div class="post-modal-grid">
+<div class="post-modal-field full">
+<label for="post-modal-media">Upload image or video</label>
+<div class="post-modal-upload">
+<input id="post-modal-media" type="file" accept="image/*,video/*">
+<div class="post-modal-upload-shell">
+<label class="post-modal-upload-trigger" for="post-modal-media">
+<span class="post-modal-upload-copy">
+<strong>Choose media for your post</strong>
+<span>Drop in a photo or video to make the post feel alive in the feed.</span>
+</span>
+<span class="post-modal-upload-badge">Browse</span>
+</label>
+<div id="post-modal-file-name" class="post-modal-file-name">No file selected yet.</div>
+<img id="post-modal-preview" class="post-modal-preview" alt="Post preview">
+<video id="post-modal-video-preview" class="post-modal-preview" controls playsinline preload="metadata"></video>
+</div>
+</div>
+</div>
+
+<div class="post-modal-field full">
+<div class="post-modal-field-head">
+<label for="post-modal-title-input">Post title</label>
+<span id="post-modal-title-counter" class="post-modal-counter">0/90</span>
+</div>
+<input id="post-modal-title-input" type="text" maxlength="90" placeholder="What should this post be called?">
+</div>
+
+<div class="post-modal-field full">
+<div class="post-modal-field-head">
+<label for="post-modal-caption">Caption</label>
+<span id="post-modal-caption-counter" class="post-modal-counter">0/340</span>
+</div>
+<textarea id="post-modal-caption" maxlength="340" placeholder="Write something worth stopping the scroll for."></textarea>
+</div>
+
+<div class="post-modal-field full">
+<label>Promotion</label>
+<label class="post-modal-checkbox">
+<input id="post-modal-promote-toggle" type="checkbox">
+<span>Promote or sell something in this post</span>
+</label>
+</div>
+
+<div id="post-modal-promoted-title-field" class="post-modal-field hidden">
+<label for="post-modal-promoted-title">Promoted item</label>
+<input id="post-modal-promoted-title" type="text" maxlength="70" placeholder="SocialEra Watch Drop">
+</div>
+
+<div id="post-modal-promoted-price-field" class="post-modal-field hidden">
+<label for="post-modal-promoted-price">Price</label>
+<input id="post-modal-promoted-price" type="text" maxlength="24" placeholder="$129.00">
+</div>
+
+<div id="post-modal-promoted-text-field" class="post-modal-field full hidden">
+<div class="post-modal-field-head">
+<label for="post-modal-promoted-text">Promo note</label>
+<span id="post-modal-promoted-text-counter" class="post-modal-counter">0/180</span>
+</div>
+<textarea id="post-modal-promoted-text" maxlength="180" placeholder="Short promo copy that should appear in the match layer."></textarea>
+</div>
+
+<div class="post-modal-field full">
+<div class="post-modal-field-head">
+<label for="post-modal-tags">Tags</label>
+<span id="post-modal-tags-counter" class="post-modal-counter">0 tags</span>
+</div>
+<input id="post-modal-tags" type="text" placeholder="watch, bag, accessories">
+<div class="post-modal-helper">Use a few short tags so SocialEra can place the post better in the feed.</div>
+</div>
+</div>
+
+<div class="post-modal-actions">
+<button id="post-modal-submit" class="hero-link primary" type="button">Publish Post</button>
+<div id="post-modal-status" class="post-modal-status" aria-live="polite"></div>
+</div>
+</div>
+</div>
 
 <section class="shop-hero">
 <div class="shop-hero-inner">
@@ -919,6 +1266,41 @@ A dedicated shopping experience with categories, filters, sorting, and full cata
 <div class="shop-hero-actions">
 <a href="index.html" class="hero-link secondary">Back to Feed</a>
 <a href="#products" class="hero-link primary">Browse Products</a>
+</div>
+</div>
+</section>
+
+<section class="shop-lanes">
+<div class="shop-lanes-inner">
+<div class="shop-lane-card">
+<div class="shop-lane-kicker">SocialEra Store</div>
+<h2>Shop</h2>
+<p>Browse SocialEra’s own catalog across both in-house stock and dropship selections, all in one cleaner storefront flow.</p>
+<div class="shop-lane-meta">
+<span class="shop-lane-pill">In-house</span>
+<span class="shop-lane-pill">Dropship</span>
+<span class="shop-lane-count" id="shop-lane-shop-count">Loading catalog count...</span>
+</div>
+<div class="shop-lane-actions">
+<button class="shop-lane-link" type="button" onclick="setFulfillmentFilter('all', true)">Browse all</button>
+<button class="shop-lane-link secondary" type="button" onclick="setFulfillmentFilter('inhouse', true)">In-house only</button>
+<button class="shop-lane-link secondary" type="button" onclick="setFulfillmentFilter('dropship', true)">Dropship only</button>
+</div>
+</div>
+
+<div class="shop-lane-card">
+<div class="shop-lane-kicker">Creator Marketplace</div>
+<h2>From the Users (SocialEras)</h2>
+<p>See products and promos surfaced from SocialEra creators and users, so the social layer can feed into shopping too.</p>
+<div class="shop-lane-meta">
+<span class="shop-lane-pill">Creator picks</span>
+<span class="shop-lane-pill">User promos</span>
+<span class="shop-lane-count" id="shop-lane-social-count">Loading creator posts...</span>
+</div>
+<div class="shop-lane-actions">
+<a href="#user-marketplace" class="shop-lane-link">Browse SocialEras</a>
+<a href="index.html" class="shop-lane-link secondary">Back to feed</a>
+</div>
 </div>
 </div>
 </section>
@@ -980,6 +1362,13 @@ A dedicated shopping experience with categories, filters, sorting, and full cata
 </div>
 </section>
 
+<section class="section" id="user-marketplace">
+<h2>From the Users (SocialEras)</h2>
+<div id="user-market-grid" class="user-market-grid">
+<div class="loading-products">Loading SocialEra creator listings...</div>
+</div>
+</section>
+
 <footer>
 <p>© 2026 SocialEra</p>
 <p class="footer-links">
@@ -994,19 +1383,52 @@ A dedicated shopping experience with categories, filters, sorting, and full cata
 
 <script>
 const productsContainer=document.getElementById('products');
+const userMarketGrid=document.getElementById('user-market-grid');
 const cartCount=document.getElementById('cart-count');
 const searchInput=document.getElementById('search-input');
 const sortSelect=document.getElementById('sort-select');
 const filterButtons=document.querySelectorAll('.filter-btn');
 const suggestionsBox=document.getElementById('search-suggestions');
 const searchClearButton=document.getElementById('search-clear-button');
+const shopLaneShopCount=document.getElementById('shop-lane-shop-count');
+const shopLaneSocialCount=document.getElementById('shop-lane-social-count');
+const channelPills=document.querySelectorAll('.channel-pill');
+const headerProfileLink=document.getElementById('header-profile-link');
+const homePlusButton=document.querySelector('.home-plus-button');
+const postModalOverlay=document.getElementById('post-modal-overlay');
+const postModalClose=document.getElementById('post-modal-close');
+const postModalTags=document.getElementById('post-modal-tags');
+const postModalTitleInput=document.getElementById('post-modal-title-input');
+const postModalCaption=document.getElementById('post-modal-caption');
+const postModalMedia=document.getElementById('post-modal-media');
+const postModalUploadShell=document.querySelector('.post-modal-upload-shell');
+const postModalPreview=document.getElementById('post-modal-preview');
+const postModalVideoPreview=document.getElementById('post-modal-video-preview');
+const postModalFileName=document.getElementById('post-modal-file-name');
+const postModalPromoteToggle=document.getElementById('post-modal-promote-toggle');
+const postModalPromotedTitle=document.getElementById('post-modal-promoted-title');
+const postModalPromotedPrice=document.getElementById('post-modal-promoted-price');
+const postModalPromotedText=document.getElementById('post-modal-promoted-text');
+const postModalPromotedTitleField=document.getElementById('post-modal-promoted-title-field');
+const postModalPromotedPriceField=document.getElementById('post-modal-promoted-price-field');
+const postModalPromotedTextField=document.getElementById('post-modal-promoted-text-field');
+const postModalSubmit=document.getElementById('post-modal-submit');
+const postModalStatus=document.getElementById('post-modal-status');
+const postModalTitleCounter=document.getElementById('post-modal-title-counter');
+const postModalCaptionCounter=document.getElementById('post-modal-caption-counter');
+const postModalPromotedTextCounter=document.getElementById('post-modal-promoted-text-counter');
+const postModalTagsCounter=document.getElementById('post-modal-tags-counter');
 
 let cart=JSON.parse(localStorage.getItem('lovadaCart'))||[];
 let allProducts=[];
 let allSocialPosts=[];
 let currentCategory='all';
+let currentFulfillment='all';
 let activeSearchResults=[];
 let highlightedSearchIndex=-1;
+let socialIdentity=null;
+let postModalMediaDataUrl='';
+let postModalMediaType='image';
 
 const RECENT_SEARCHES_KEY='socialeraRecentSearches';
 
@@ -1127,6 +1549,10 @@ if(currentCategory!=='all'){
 filtered=filtered.filter(p=>normalizeCategory(p)===currentCategory);
 }
 
+if(currentFulfillment!=='all'){
+filtered=filtered.filter(p=>String(p.fulfillmentType||'inhouse').toLowerCase()===currentFulfillment);
+}
+
 if(sort==='low-high'){
 filtered.sort((a,b)=>getEffectivePrice(a)-getEffectivePrice(b));
 }
@@ -1140,6 +1566,84 @@ filtered.sort((a,b)=>String(a.name).localeCompare(String(b.name)));
 }
 
 return filtered;
+}
+
+function getUserMarketplacePosts(){
+return allSocialPosts.filter((post)=>{
+const promotedTitle=String(post.promotedTitle||'').trim();
+const promotedPrice=String(post.promotedPrice||'').trim();
+const category=String(post.channel||post.category||'').toLowerCase();
+return Boolean(promotedTitle || promotedPrice || category==='sell' || category==='shop');
+});
+}
+
+function updateShopLaneCounts(){
+if(shopLaneShopCount){
+const inhouseCount=allProducts.filter((product)=>String(product.fulfillmentType||'inhouse').toLowerCase()==='inhouse').length;
+const dropshipCount=allProducts.filter((product)=>String(product.fulfillmentType||'inhouse').toLowerCase()==='dropship').length;
+shopLaneShopCount.textContent=`${allProducts.length} total · ${inhouseCount} in-house · ${dropshipCount} dropship`;
+}
+
+if(shopLaneSocialCount){
+const marketCount=getUserMarketplacePosts().length;
+shopLaneSocialCount.textContent=marketCount ? `${marketCount} creator listings live` : 'No creator listings live yet';
+}
+}
+
+function setFulfillmentFilter(type,shouldScroll=false){
+currentFulfillment=type;
+renderProducts();
+if(shouldScroll){
+document.getElementById('products')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+}
+
+function renderUserMarketplace(){
+if(!userMarketGrid) return;
+
+const entries=getUserMarketplacePosts();
+if(!entries.length){
+userMarketGrid.innerHTML=`
+<div class="no-products">
+No creator listings yet.<br><br>
+Once users start promoting items in their posts, they’ll appear here.
+</div>
+`;
+return;
+}
+
+userMarketGrid.innerHTML=entries.map((post)=>{
+const media=String(post.mediaUrl||post.image||'').trim();
+const isVideo=String(post.mediaType||'').toLowerCase()==='video';
+const promotedTitle=String(post.promotedTitle||post.captionTitle||'SocialEra User Listing');
+const promotedPrice=String(post.promotedPrice||'Offer');
+const creator=String(post.displayName||'SocialEra Member');
+const caption=String(post.promotedText||post.captionText||'Creator-promoted product from the SocialEra feed.');
+const creatorContact=encodeURIComponent(String(post.userName||post.displayName||'').trim());
+const creatorDraft=encodeURIComponent(`Hi, I'm interested in ${promotedTitle}.`);
+const feedLink=post.id ? `index.html?highlightPost=${encodeURIComponent(String(post.id))}` : 'index.html';
+return `
+<article class="user-market-card">
+${media ? (
+isVideo
+? `<video src="${escapeHtml(media)}" muted playsinline preload="metadata"></video>`
+: `<img src="${escapeHtml(media)}" alt="${escapeHtml(promotedTitle)}">`
+) : `<div class="loading-products">No preview available</div>`}
+<div class="user-market-info">
+<div class="user-market-top">
+<span class="user-market-byline">From ${escapeHtml(creator)}</span>
+<span class="user-market-price">${escapeHtml(promotedPrice)}</span>
+</div>
+<h3>${escapeHtml(promotedTitle)}</h3>
+<p>${escapeHtml(caption)}</p>
+<div class="user-market-actions">
+<a href="${feedLink}" class="user-market-action">View in feed</a>
+<a href="messages.html?contact=${creatorContact}&draft=${creatorDraft}" class="user-market-action secondary">Message creator</a>
+</div>
+</div>
+</article>
+`;
+}).join('');
 }
 
 function escapeHtml(value){
@@ -1163,17 +1667,357 @@ return String(value||'').toLowerCase().trim();
 }
 
 function getDisplayInitials(value){
-const words=String(value||'SE')
-.trim()
-.split(/\s+/)
-.filter(Boolean)
-.slice(0,2);
-
-if(!words.length){
-return 'SE';
+return window.SocialEraStorefrontShared.getDisplayInitials(value);
 }
 
-return words.map((word)=>word[0]).join('').toUpperCase();
+function getLocalSocialActorId(){
+return window.SocialEraStorefrontShared.getLocalSocialActorId();
+}
+
+async function loadSocialIdentity(){
+socialIdentity=await window.SocialEraStorefrontShared.loadSocialIdentity();
+return socialIdentity;
+}
+
+function getSocialIdentity(){
+if(socialIdentity){
+return socialIdentity;
+}
+
+socialIdentity=window.SocialEraStorefrontShared.getSocialIdentity();
+return socialIdentity;
+}
+
+function setPostModalStatus(message,type=''){
+if(!postModalStatus) return;
+postModalStatus.textContent=message||'';
+postModalStatus.className='post-modal-status';
+if(message){
+postModalStatus.classList.add('show');
+if(type){
+postModalStatus.classList.add(type);
+}
+}
+}
+
+function updatePostModalCounters(){
+if(postModalTitleCounter){
+postModalTitleCounter.textContent=`${String(postModalTitleInput?.value||'').trim().length}/90`;
+}
+if(postModalCaptionCounter){
+postModalCaptionCounter.textContent=`${String(postModalCaption?.value||'').trim().length}/340`;
+}
+if(postModalPromotedTextCounter){
+postModalPromotedTextCounter.textContent=`${String(postModalPromotedText?.value||'').trim().length}/180`;
+}
+if(postModalTagsCounter){
+const tagCount=String(postModalTags?.value||'').split(',').map((entry)=>entry.trim()).filter(Boolean).length;
+postModalTagsCounter.textContent=`${tagCount} ${tagCount===1?'tag':'tags'}`;
+}
+}
+
+function syncPostModalPromotionFields(){
+const visible=Boolean(postModalPromoteToggle?.checked);
+postModalPromotedTitleField?.classList.toggle('hidden',!visible);
+postModalPromotedPriceField?.classList.toggle('hidden',!visible);
+postModalPromotedTextField?.classList.toggle('hidden',!visible);
+}
+
+function resetPostModal(){
+if(postModalTags) postModalTags.value='';
+if(postModalTitleInput) postModalTitleInput.value='';
+if(postModalCaption) postModalCaption.value='';
+if(postModalMedia) postModalMedia.value='';
+postModalMediaDataUrl='';
+postModalMediaType='image';
+if(postModalFileName){
+postModalFileName.textContent='No file selected yet.';
+postModalFileName.classList.remove('drag-active');
+}
+if(postModalPreview){
+postModalPreview.removeAttribute('src');
+postModalPreview.classList.remove('show');
+}
+if(postModalVideoPreview){
+postModalVideoPreview.removeAttribute('src');
+postModalVideoPreview.classList.remove('show');
+postModalVideoPreview.pause();
+postModalVideoPreview.load();
+}
+if(postModalPromoteToggle) postModalPromoteToggle.checked=false;
+if(postModalPromotedTitle) postModalPromotedTitle.value='';
+if(postModalPromotedPrice) postModalPromotedPrice.value='';
+if(postModalPromotedText) postModalPromotedText.value='';
+setPostModalStatus('');
+syncPostModalPromotionFields();
+updatePostModalCounters();
+postModalUploadShell?.classList.remove('drag-active');
+}
+
+function openPostModal(){
+if(!postModalOverlay) return;
+postModalOverlay.classList.add('show');
+postModalOverlay.setAttribute('aria-hidden','false');
+document.body.style.overflow='hidden';
+setPostModalStatus('');
+syncPostModalPromotionFields();
+updatePostModalCounters();
+setTimeout(()=>{ postModalMedia?.focus(); },30);
+}
+
+function closePostModal(){
+if(!postModalOverlay) return;
+postModalOverlay.classList.remove('show');
+postModalOverlay.setAttribute('aria-hidden','true');
+document.body.style.overflow='';
+setPostModalStatus('');
+}
+
+function readFileAsDataUrl(file){
+return new Promise((resolve,reject)=>{
+const reader=new FileReader();
+reader.onload=()=>resolve(typeof reader.result==='string' ? reader.result : '');
+reader.onerror=()=>reject(new Error('Could not read that media file.'));
+reader.readAsDataURL(file);
+});
+}
+
+function getFileExtension(file){
+const name=String(file?.name||'').toLowerCase();
+const parts=name.split('.');
+return parts.length>1 ? parts.pop() : '';
+}
+
+function isImageFile(file){
+const type=String(file?.type||'').toLowerCase();
+const extension=getFileExtension(file);
+return type.startsWith('image/') || ['jpg','jpeg','png','webp','gif','bmp','heic','heif'].includes(extension);
+}
+
+function isVideoFile(file){
+const type=String(file?.type||'').toLowerCase();
+const extension=getFileExtension(file);
+return type.startsWith('video/') || ['mp4','mov','m4v','webm','ogg'].includes(extension);
+}
+
+function loadImageFromDataUrl(dataUrl){
+return new Promise((resolve,reject)=>{
+const image=new Image();
+image.onload=()=>resolve(image);
+image.onerror=()=>reject(new Error('Could not prepare that image.'));
+image.src=dataUrl;
+});
+}
+
+async function compressImageFile(file){
+const originalDataUrl=await readFileAsDataUrl(file);
+let image=null;
+try{
+image=await loadImageFromDataUrl(originalDataUrl);
+}catch(error){
+return originalDataUrl;
+}
+const sourceWidth=image.naturalWidth || image.width || 1600;
+const sourceHeight=image.naturalHeight || image.height || 1600;
+const maxDimension=1600;
+const scale=Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
+const width=Math.max(1, Math.round(sourceWidth * scale));
+const height=Math.max(1, Math.round(sourceHeight * scale));
+const canvas=document.createElement('canvas');
+canvas.width=width;
+canvas.height=height;
+const context=canvas.getContext('2d');
+if(!context){
+return originalDataUrl;
+}
+context.drawImage(image,0,0,width,height);
+return canvas.toDataURL('image/jpeg',0.82);
+}
+
+async function handlePostModalFileChange(event){
+const file=event.target.files?.[0];
+if(!file){
+postModalMediaDataUrl='';
+postModalMediaType='image';
+if(postModalFileName) postModalFileName.textContent='No file selected yet.';
+if(postModalPreview){
+postModalPreview.removeAttribute('src');
+postModalPreview.classList.remove('show');
+}
+if(postModalVideoPreview){
+postModalVideoPreview.removeAttribute('src');
+postModalVideoPreview.classList.remove('show');
+postModalVideoPreview.pause();
+postModalVideoPreview.load();
+}
+postModalUploadShell?.classList.remove('drag-active');
+return;
+}
+
+const isImage=isImageFile(file);
+const isVideo=isVideoFile(file);
+
+if(!isImage && !isVideo){
+setPostModalStatus('Please upload an image or video file.','error');
+event.target.value='';
+return;
+}
+
+if(isVideo && file.size > 25 * 1024 * 1024){
+setPostModalStatus('That video is too large for phone upload right now. Try a shorter clip or a file under 25MB.','error');
+event.target.value='';
+return;
+}
+
+if(postModalFileName){
+postModalFileName.textContent=file.name;
+postModalFileName.classList.remove('drag-active');
+}
+
+try{
+if(postModalFileName){
+postModalFileName.textContent=isImage ? 'Optimizing image for mobile upload...' : file.name;
+}
+const result=isImage ? await compressImageFile(file) : await readFileAsDataUrl(file);
+postModalMediaDataUrl=result;
+postModalMediaType=isVideo ? 'video' : 'image';
+if(postModalPreview){
+postModalPreview.removeAttribute('src');
+postModalPreview.classList.remove('show');
+}
+if(postModalVideoPreview){
+postModalVideoPreview.removeAttribute('src');
+postModalVideoPreview.classList.remove('show');
+postModalVideoPreview.pause();
+postModalVideoPreview.load();
+}
+if(postModalPreview && result && isImage){
+postModalPreview.src=result;
+postModalPreview.classList.add('show');
+}
+if(postModalVideoPreview && result && isVideo){
+postModalVideoPreview.src=result;
+postModalVideoPreview.classList.add('show');
+}
+if(postModalFileName){
+postModalFileName.textContent=isImage ? `${file.name} · optimized for upload` : file.name;
+}
+setPostModalStatus('');
+postModalUploadShell?.classList.remove('drag-active');
+}catch(error){
+postModalMediaDataUrl='';
+postModalMediaType='image';
+if(postModalFileName){
+postModalFileName.textContent='Could not load that file.';
+postModalFileName.classList.remove('drag-active');
+}
+setPostModalStatus('Could not read that media file.','error');
+postModalUploadShell?.classList.remove('drag-active');
+}
+}
+
+function handlePostModalDrop(event){
+event.preventDefault();
+postModalUploadShell?.classList.remove('drag-active');
+const file=event.dataTransfer?.files?.[0];
+if(!file || !postModalMedia) return;
+const transfer=new DataTransfer();
+transfer.items.add(file);
+postModalMedia.files=transfer.files;
+handlePostModalFileChange({ target: postModalMedia });
+}
+
+async function submitPostFromModal(){
+const title=String(postModalTitleInput?.value||'').trim();
+const caption=String(postModalCaption?.value||'').trim();
+const tags=String(postModalTags?.value||'').split(',').map((entry)=>entry.trim()).filter(Boolean);
+
+if(!title){
+setPostModalStatus('Add a post title first.','error');
+postModalTitleInput?.focus();
+return;
+}
+
+if(!caption){
+setPostModalStatus('Add a caption before publishing.','error');
+postModalCaption?.focus();
+return;
+}
+
+const promoteEnabled=Boolean(postModalPromoteToggle?.checked);
+const promotedTitle=String(postModalPromotedTitle?.value||'').trim();
+const promotedPrice=String(postModalPromotedPrice?.value||'').trim();
+const promotedText=String(postModalPromotedText?.value||'').trim();
+
+if(promoteEnabled && !promotedTitle){
+setPostModalStatus('Add the promoted item title.','error');
+postModalPromotedTitle?.focus();
+return;
+}
+
+const identity=await loadSocialIdentity();
+const mediaUrl=postModalMediaDataUrl || '';
+const postId=window.crypto && typeof window.crypto.randomUUID==='function'
+? window.crypto.randomUUID()
+: `post-${Date.now()}`;
+const createdAt=new Date().toISOString();
+const postPayload={
+id:postId,
+actorId:identity.actorId,
+userId:identity.userId || '',
+displayName:identity.displayName,
+userName:identity.userName,
+avatar:identity.avatar,
+channel:'shop',
+mediaType:postModalMediaType,
+mediaUrl,
+captionTitle:title,
+captionText:caption,
+tags,
+promoteEnabled,
+promotedTitle,
+promotedPrice,
+promotedText,
+createdAt
+};
+
+setPostModalStatus('Publishing post...','success');
+if(postModalSubmit) postModalSubmit.disabled=true;
+if(postModalSubmit) postModalSubmit.textContent='Publishing...';
+
+try{
+const response=await fetch('/api/social/posts',{
+method:'POST',
+headers:{
+'Content-Type':'application/json',
+'Accept':'application/json'
+},
+body:JSON.stringify({
+...postPayload
+})
+});
+
+const data=await response.json().catch(()=>({}));
+
+if(!response.ok){
+throw new Error(data.error||'Could not publish the post');
+}
+
+allSocialPosts.unshift(data);
+window.SocialEraStorefrontShared.syncSocialPostToSupabase(postPayload).catch((syncError)=>{
+console.warn('Supabase social post sync failed:',syncError);
+});
+renderUserMarketplace();
+updateShopLaneCounts();
+resetPostModal();
+closePostModal();
+}catch(error){
+console.warn('Post publish failed:',error);
+setPostModalStatus(error.message||'Could not publish the post','error');
+}finally{
+if(postModalSubmit) postModalSubmit.disabled=false;
+if(postModalSubmit) postModalSubmit.textContent='Publish Post';
+}
 }
 
 function isSaleActive(product){
@@ -1379,6 +2223,21 @@ item.classList.toggle('is-active',index===highlightedSearchIndex);
 items[highlightedSearchIndex]?.scrollIntoView({block:'nearest'});
 }
 
+function buildFeedUrl(channel='all',highlightPost=''){
+const params=new URLSearchParams();
+
+if(channel && channel!=='all'){
+params.set('channel',channel);
+}
+
+if(highlightPost){
+params.set('highlightPost',highlightPost);
+}
+
+const query=params.toString();
+return query ? `index.html?${query}` : 'index.html';
+}
+
 function openSearchResult(result){
 if(!result) return;
 
@@ -1390,13 +2249,13 @@ return;
 
 if(result.kind==='post'){
 saveRecentSearch(searchInput.value.trim() || result.label);
-window.location.href=`index.html?highlightPost=${encodeURIComponent(result.id)}`;
+window.location.href=buildFeedUrl('all',result.id);
 return;
 }
 
 if(result.kind==='profile'){
 saveRecentSearch(result.label);
-window.location.href=`index.html?channel=profile&highlightPost=${encodeURIComponent(result.postId)}`;
+window.location.href=buildFeedUrl('profile',result.postId);
 return;
 }
 
@@ -1526,7 +2385,7 @@ return `
 <div class="search-suggestion-text">
 <div class="search-suggestion-meta">
 <span class="search-suggestion-kicker">Post</span>
-<span class="search-suggestion-tag">${escapeHtml(post.userName || '@socialera')}</span>
+<span class="search-suggestion-tag">${escapeHtml(post.displayName || 'SocialEra Member')}</span>
 </div>
 <strong>${escapeHtml(post.captionTitle || 'Untitled Post')}</strong>
 <span>${escapeHtml(post.displayName || 'SocialEra Member')}</span>
@@ -1545,7 +2404,7 @@ return `
 <span class="search-suggestion-tag">${escapeHtml(String(profile.postCount))} posts</span>
 </div>
 <strong>${escapeHtml(profile.displayName)}</strong>
-<span>${escapeHtml(profile.userName)}</span>
+<span>Profile</span>
 </div>
 </button>
 `;
@@ -1690,46 +2549,19 @@ searchInput.value=search;
 }
 
 async function loadProducts(){
-const apiCandidates=getApiCandidates();
-let lastError=null;
-
 showDebugStatus('Loading products...');
 
-for(const url of apiCandidates){
 try{
-showDebugStatus(`Trying: ${url}`);
-
-const data=await fetchProductsFrom(url);
-
-allProducts=data.map((product,index)=>({
-id:product.id ?? index + 1,
-name:product.name ?? 'Untitled Product',
-price:Number(product.price ?? 0),
-category:product.category ?? '',
-description:product.description ?? '',
-image:product.image ?? '',
-stock:Number(product.stock ?? 0),
-featured:Boolean(product.featured),
-saleEnabled:Boolean(product.saleEnabled),
-salePrice:Number(product.salePrice ?? 0),
-saleLabel:product.saleLabel ?? 'Sale',
-fulfillmentType:product.fulfillmentType ?? 'inhouse',
-supplierName:product.supplierName ?? '',
-supplierSku:product.supplierSku ?? '',
-supplierCost:Number(product.supplierCost ?? 0),
-supplierLink:product.supplierLink ?? '',
-processingTime:product.processingTime ?? '',
-shippingTime:product.shippingTime ?? ''
-}));
-
+showDebugStatus('Trying shared storefront product loader...');
+const data=await window.SocialEraStorefrontShared.fetchProductsArray();
+allProducts=Array.isArray(data)
+? data.map((product,index)=>window.SocialEraStorefrontShared.mapProductRecord(product,index))
+: [];
 renderProducts();
+updateShopLaneCounts();
 return;
 }catch(error){
-lastError=error;
-console.warn('Failed loading from:',url,error);
-}
-}
-
+console.error('Final product loading error:',error);
 productsContainer.innerHTML=`
 <div class="no-products">
 Failed to load products.<br><br>
@@ -1737,73 +2569,38 @@ Make sure the backend is running and that <strong>/api/products</strong> returns
 Open the site through the backend server instead of double-clicking the HTML file.
 </div>
 `;
-
-if(lastError){
-console.error('Final product loading error:',lastError);
 }
 }
 
 async function loadSocialPosts(){
 try{
-const response=await fetch('/api/social/posts',{
-method:'GET',
-headers:{
-'Accept':'application/json'
-}
-});
-
-if(!response.ok){
-throw new Error(`Request failed: ${response.status} ${response.statusText}`);
-}
-
-const data=await response.json();
+const data=await window.SocialEraStorefrontShared.fetchSocialPostsArray();
 allSocialPosts=Array.isArray(data) ? data : [];
+renderUserMarketplace();
+updateShopLaneCounts();
 }catch(error){
 allSocialPosts=[];
 console.warn('Failed to load social posts for search:',error);
+renderUserMarketplace();
+updateShopLaneCounts();
 }
 }
 
 async function updateAuthNavigation(){
-if(!window.supabase){
-return;
-}
-
 const nav=document.querySelector('.top-nav');
 if(!nav) return;
-
-const cartButton=nav.querySelector('.cart-button');
-if(!cartButton) return;
-
-nav.querySelectorAll('.auth-link').forEach(link=>link.remove());
+const profileLink=document.getElementById('header-profile-link');
+if(!profileLink) return;
 
 try{
-const { data } = await window.supabase.auth.getUser();
-const user=data?.user;
-
-if(user){
-const accountLink=document.createElement('a');
-accountLink.href='account.html';
-accountLink.textContent='Account';
-accountLink.classList.add('auth-link');
-nav.insertBefore(accountLink, cartButton);
-}else{
-const loginLink=document.createElement('a');
-loginLink.href='login.html';
-loginLink.textContent='Login';
-loginLink.classList.add('auth-link');
-
-const signupLink=document.createElement('a');
-signupLink.href='signup.html';
-signupLink.textContent='Sign Up';
-signupLink.classList.add('auth-link');
-
-nav.insertBefore(loginLink, cartButton);
-nav.insertBefore(signupLink, cartButton);
-}
+socialIdentity=await window.SocialEraStorefrontShared.updateAuthNavigation(profileLink);
+return socialIdentity;
 }catch(error){
 console.warn('Auth navigation update failed:', error);
 }
+
+profileLink.href='login.html';
+window.SocialEraStorefrontShared.renderHeaderProfile(profileLink,getSocialIdentity());
 }
 
 /* SWIPE RIGHT TO FEED */
@@ -1811,15 +2608,33 @@ let touchStartX=0;
 let touchStartY=0;
 let touchEndX=0;
 let touchEndY=0;
+let blockSwipeNavigation=false;
+
+function shouldBlockSwipeNavigation(target){
+if(!(target instanceof Element)){
+return false;
+}
+
+return Boolean(
+target.closest('a, button, input, textarea, select, label, .header-search, .top-nav, .header-channels, .search-suggestion-item, .post-modal')
+);
+}
 
 document.addEventListener('touchstart',(e)=>{
 if(e.touches.length!==1) return;
+blockSwipeNavigation=shouldBlockSwipeNavigation(e.target);
 touchStartX=e.touches[0].clientX;
 touchStartY=e.touches[0].clientY;
 },{passive:true});
 
 document.addEventListener('touchend',(e)=>{
 if(e.changedTouches.length!==1) return;
+
+if(blockSwipeNavigation){
+blockSwipeNavigation=false;
+return;
+}
+
 touchEndX=e.changedTouches[0].clientX;
 touchEndY=e.changedTouches[0].clientY;
 
@@ -1833,12 +2648,84 @@ window.location.href='index.html';
 }
 },{passive:true});
 
+headerProfileLink?.addEventListener('click',(event)=>{
+event.preventDefault();
+event.stopPropagation();
+const destination=headerProfileLink.getAttribute('href') || 'login.html';
+window.location.href=destination;
+});
+
+homePlusButton?.addEventListener('click',(event)=>{
+event.preventDefault();
+openPostModal();
+});
+channelPills.forEach((button)=>{
+button.addEventListener('click',()=>{
+const channel=button.dataset.channel || 'all';
+
+if(channel==='shop'){
+return;
+}
+
+window.location.href=buildFeedUrl(channel);
+});
+});
+postModalClose?.addEventListener('click',closePostModal);
+postModalMedia?.addEventListener('change',handlePostModalFileChange);
+postModalTitleInput?.addEventListener('input',updatePostModalCounters);
+postModalCaption?.addEventListener('input',updatePostModalCounters);
+postModalPromotedText?.addEventListener('input',updatePostModalCounters);
+postModalTags?.addEventListener('input',updatePostModalCounters);
+postModalPromoteToggle?.addEventListener('change',syncPostModalPromotionFields);
+postModalSubmit?.addEventListener('click',submitPostFromModal);
+
+postModalOverlay?.addEventListener('click',(event)=>{
+if(event.target===postModalOverlay){
+closePostModal();
+}
+});
+
+postModalUploadShell?.addEventListener('dragenter',(event)=>{
+event.preventDefault();
+postModalUploadShell.classList.add('drag-active');
+if(postModalFileName){
+postModalFileName.textContent='Drop image or video to upload.';
+postModalFileName.classList.add('drag-active');
+}
+});
+
+postModalUploadShell?.addEventListener('dragover',(event)=>{
+event.preventDefault();
+postModalUploadShell.classList.add('drag-active');
+});
+
+postModalUploadShell?.addEventListener('dragleave',(event)=>{
+if(event.target===postModalUploadShell){
+postModalUploadShell.classList.remove('drag-active');
+if(postModalFileName && !postModalMediaDataUrl){
+postModalFileName.textContent='No file selected yet.';
+postModalFileName.classList.remove('drag-active');
+}
+}
+});
+
+postModalUploadShell?.addEventListener('drop',handlePostModalDrop);
+
+document.addEventListener('keydown',(event)=>{
+if(event.key==='Escape' && postModalOverlay?.classList.contains('show')){
+closePostModal();
+}
+});
+
 document.addEventListener('DOMContentLoaded',()=>{
 updateCartCount();
 applySearchFromUrl();
 updateSearchClearButton();
+loadSocialIdentity();
 loadSocialPosts();
 loadProducts();
+syncPostModalPromotionFields();
+updatePostModalCounters();
 });
 </script>
 

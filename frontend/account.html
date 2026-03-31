@@ -4,515 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SocialEra - My Account</title>
-
-  <style>
-    *{
-      box-sizing:border-box;
-      margin:0;
-      padding:0;
-    }
-
-    html{
-      scroll-behavior:smooth;
-    }
-
-    :root{
-      --bg:#f8f5f0;
-      --surface:#ffffff;
-      --text:#1a1a1a;
-      --muted:#6f6257;
-      --gold:#c8a96b;
-      --gold-dark:#b89554;
-      --dark:#111111;
-      --border:rgba(17,17,17,0.08);
-      --shadow:0 10px 30px rgba(0,0,0,0.08);
-      --shadow-soft:0 6px 14px rgba(0,0,0,0.06);
-      --radius:18px;
-      --success:#166534;
-      --success-soft:rgba(22,101,52,0.08);
-      --error:#b91c1c;
-      --error-soft:rgba(185,28,28,0.08);
-    }
-
-    body{
-      font-family:Inter, "Helvetica Neue", Arial, sans-serif;
-      min-height:100vh;
-      background:
-        radial-gradient(circle at top left, rgba(139,92,246,0.04), transparent 20%),
-        linear-gradient(180deg, #fcfaf7 0%, var(--bg) 100%);
-      color:var(--text);
-      display:flex;
-      flex-direction:column;
-    }
-
-    header{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      background:rgba(17,17,17,0.94);
-      color:white;
-      padding:20px 44px;
-      position:sticky;
-      top:0;
-      z-index:1000;
-      backdrop-filter:blur(12px);
-      border-bottom:1px solid rgba(255,255,255,0.08);
-      box-shadow:0 12px 32px rgba(0,0,0,0.18);
-    }
-
-    .logo{
-      text-decoration:none;
-      color:white;
-      display:inline-flex;
-      align-items:center;
-      gap:14px;
-      flex-shrink:0;
-    }
-
-    .logo h1{
-      font-family:Georgia, serif;
-      font-size:40px;
-      font-weight:bold;
-      line-height:1;
-      margin-bottom:0;
-    }
-
-    .logo-mark-image{
-      width:96px;
-      height:96px;
-      object-fit:contain;
-      flex-shrink:0;
-      border-radius:50%;
-    }
-
-    .logo p{
-      font-size:12px;
-      letter-spacing:2px;
-      text-transform:uppercase;
-      color:var(--gold);
-    }
-
-    .logo-word{
-      display:inline-flex;
-      gap:0;
-    }
-
-    .logo-word span{
-      display:inline-block;
-    }
-
-    .top-nav{
-      display:flex;
-      align-items:center;
-      gap:18px;
-      flex-wrap:wrap;
-    }
-
-    .top-nav a{
-      color:#f5f1ea;
-      text-decoration:none;
-      font-weight:bold;
-      font-size:15px;
-      transition:color .25s ease;
-    }
-
-    .top-nav a:hover{
-      color:var(--gold);
-    }
-
-    .cart-button{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      padding:11px 16px;
-      background:linear-gradient(135deg, #d8bf8a, var(--gold));
-      color:#111111;
-      border-radius:12px;
-      font-weight:bold;
-      box-shadow:0 10px 24px rgba(200,169,107,0.3);
-      transition:transform .2s ease, box-shadow .2s ease;
-    }
-
-    .cart-button:hover{
-      transform:translateY(-1px);
-      box-shadow:0 14px 28px rgba(200,169,107,0.35);
-      color:#111111;
-    }
-
-    .page-wrap{
-      flex:1;
-      padding:48px 20px;
-      display:flex;
-      justify-content:center;
-    }
-
-    .account-shell{
-      width:100%;
-      max-width:1100px;
-      display:grid;
-      grid-template-columns:320px 1fr;
-      gap:24px;
-    }
-
-    .account-card,
-    .account-panel{
-      background:rgba(255,255,255,0.92);
-      border:1px solid rgba(17,17,17,0.06);
-      border-radius:28px;
-      box-shadow:0 18px 45px rgba(0,0,0,0.09);
-      backdrop-filter:blur(8px);
-    }
-
-    .account-card{
-      padding:28px;
-      height:max-content;
-    }
-
-    .avatar{
-      width:92px;
-      height:92px;
-      border-radius:50%;
-      background:linear-gradient(135deg, #e7d3a8, var(--gold));
-      color:#111;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:30px;
-      font-weight:700;
-      box-shadow:0 14px 30px rgba(200,169,107,0.24);
-      margin-bottom:18px;
-    }
-
-    .account-name{
-      font-size:28px;
-      line-height:1.1;
-      margin-bottom:8px;
-    }
-
-    .account-email{
-      color:var(--muted);
-      font-size:15px;
-      line-height:1.6;
-      margin-bottom:18px;
-      word-break:break-word;
-    }
-
-    .account-pill{
-      display:inline-flex;
-      align-items:center;
-      padding:8px 12px;
-      border-radius:999px;
-      background:rgba(200,169,107,0.12);
-      color:#7c5e27;
-      font-size:12px;
-      font-weight:700;
-      letter-spacing:.4px;
-      text-transform:uppercase;
-      margin-bottom:20px;
-    }
-
-    .account-meta{
-      display:grid;
-      gap:12px;
-      margin-top:8px;
-    }
-
-    .appearance-card{
-      margin-top:18px;
-      padding:16px 18px;
-      border-radius:20px;
-      background:rgba(17,17,17,0.03);
-      border:1px solid rgba(17,17,17,0.06);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-    }
-
-    .appearance-copy{
-      display:grid;
-      gap:4px;
-    }
-
-    .appearance-title{
-      font-size:12px;
-      font-weight:700;
-      letter-spacing:1.4px;
-      text-transform:uppercase;
-      color:var(--gold-dark);
-    }
-
-    .appearance-copy p{
-      font-size:13px;
-      line-height:1.5;
-      color:var(--muted);
-    }
-
-    .theme-toggle-slot{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex-shrink:0;
-    }
-
-    .meta-row{
-      display:flex;
-      justify-content:space-between;
-      gap:14px;
-      padding:12px 0;
-      border-bottom:1px solid rgba(17,17,17,0.06);
-      font-size:14px;
-    }
-
-    .meta-row:last-child{
-      border-bottom:none;
-    }
-
-    .meta-label{
-      color:var(--muted);
-      font-weight:700;
-    }
-
-    .meta-value{
-      color:#1a1a1a;
-      text-align:right;
-      word-break:break-word;
-    }
-
-    .logout-button{
-      width:100%;
-      border:none;
-      border-radius:14px;
-      padding:14px 18px;
-      background:#111;
-      color:white;
-      font-size:15px;
-      font-weight:700;
-      cursor:pointer;
-      transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
-      box-shadow:0 14px 30px rgba(17,17,17,0.14);
-      margin-top:22px;
-    }
-
-    .logout-button:hover{
-      transform:translateY(-1px);
-      background:#222;
-    }
-
-    .logout-button:disabled{
-      opacity:.65;
-      cursor:not-allowed;
-      transform:none;
-      box-shadow:none;
-    }
-
-    .account-panel{
-      padding:30px;
-    }
-
-    .panel-eyebrow{
-      display:inline-block;
-      font-size:12px;
-      letter-spacing:2px;
-      text-transform:uppercase;
-      color:var(--gold-dark);
-      margin-bottom:12px;
-      font-weight:700;
-    }
-
-    .panel-title{
-      font-size:38px;
-      line-height:1.05;
-      margin-bottom:12px;
-    }
-
-    .panel-subtitle{
-      color:var(--muted);
-      font-size:15px;
-      line-height:1.7;
-      margin-bottom:24px;
-      max-width:680px;
-    }
-
-    .status{
-      display:none;
-      margin-bottom:18px;
-      padding:14px 16px;
-      border-radius:16px;
-      font-size:14px;
-      line-height:1.6;
-    }
-
-    .status.show{
-      display:block;
-    }
-
-    .status.success{
-      background:var(--success-soft);
-      color:var(--success);
-      border:1px solid rgba(22,101,52,0.14);
-    }
-
-    .status.error{
-      background:var(--error-soft);
-      color:var(--error);
-      border:1px solid rgba(185,28,28,0.14);
-    }
-
-    .status.loading{
-      display:block;
-      background:rgba(17,17,17,0.04);
-      color:#43372f;
-      border:1px solid rgba(17,17,17,0.06);
-    }
-
-    .account-grid{
-      display:grid;
-      grid-template-columns:repeat(2,1fr);
-      gap:18px;
-      margin-top:14px;
-    }
-
-    .info-card{
-      background:#fff;
-      border:1px solid rgba(17,17,17,0.06);
-      border-radius:22px;
-      padding:20px;
-      box-shadow:var(--shadow-soft);
-    }
-
-    .info-card h3{
-      font-size:18px;
-      margin-bottom:10px;
-    }
-
-    .info-card p{
-      color:var(--muted);
-      font-size:14px;
-      line-height:1.7;
-    }
-
-    .account-actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:12px;
-      margin-top:22px;
-    }
-
-    .action-link{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:160px;
-      padding:13px 16px;
-      border-radius:14px;
-      text-decoration:none;
-      font-weight:700;
-      font-size:14px;
-      transition:transform .2s ease, box-shadow .2s ease, background .2s ease, color .2s ease;
-    }
-
-    .action-link.primary{
-      background:#111;
-      color:#fff;
-      box-shadow:0 14px 30px rgba(17,17,17,0.14);
-    }
-
-    .action-link.primary:hover{
-      transform:translateY(-1px);
-      background:#222;
-    }
-
-    .action-link.secondary{
-      background:#fff;
-      color:#111;
-      border:1px solid rgba(17,17,17,0.08);
-    }
-
-    .action-link.secondary:hover{
-      transform:translateY(-1px);
-      box-shadow:0 12px 24px rgba(0,0,0,0.08);
-    }
-
-    footer{
-      background:#111;
-      color:white;
-      text-align:center;
-      padding:22px;
-      margin-top:auto;
-    }
-
-    @media(max-width:980px){
-      .account-shell{
-        grid-template-columns:1fr;
-      }
-    }
-
-    @media(max-width:900px){
-      header{
-        flex-direction:column;
-        gap:16px;
-        padding:20px;
-      }
-
-      .top-nav{
-        justify-content:center;
-      }
-    }
-
-    @media(max-width:700px){
-      .account-grid{
-        grid-template-columns:1fr;
-      }
-
-      .panel-title{
-        font-size:32px;
-      }
-    }
-
-    @media(max-width:600px){
-      .logo h1{
-        font-size:34px;
-      }
-
-      .account-card,
-      .account-panel{
-        border-radius:22px;
-      }
-
-      .account-card{
-        padding:22px;
-      }
-
-      .account-panel{
-        padding:22px;
-      }
-    }
-  </style>
   <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="account-page.css">
   <script src="theme.js"></script>
 </head>
-<body>
+<body class="account-page">
 
-  <header>
-    <a href="index.html" class="logo">
-      <div>
-      <h1 class="logo-word">
-        <span>S</span><span>o</span><span>c</span><span>i</span><span>a</span><span>l</span><span>E</span><span>r</span><span>a</span>
-      </h1>
-      <p>Social Shopping</p>
-      </div>
-      <img src="assets/SocialEra-Logo.png" alt="SocialEra logo" class="logo-mark-image">
-    </a>
-
-    <nav class="top-nav">
-      <a href="index.html">Home</a>
-      <a href="shop.html">Shop</a>
-      <a href="account.html">Account</a>
-      <a href="cart.html" class="cart-button">Cart</a>
-    </nav>
-  </header>
+  <header></header>
 
   <main class="page-wrap">
     <section class="account-shell">
@@ -523,11 +21,6 @@
         <div class="account-pill">SocialEra Member</div>
 
         <div class="account-meta">
-          <div class="meta-row">
-            <span class="meta-label">Username</span>
-            <span id="meta-username" class="meta-value">—</span>
-          </div>
-
           <div class="meta-row">
             <span class="meta-label">Member Since</span>
             <span id="meta-created" class="meta-value">—</span>
@@ -550,48 +43,82 @@
         <button id="logout-button" class="logout-button">Log Out</button>
       </aside>
 
-      <section class="account-panel">
-        <span class="panel-eyebrow">Your SocialEra space</span>
-        <h1 class="panel-title">Welcome to your account</h1>
-        <p class="panel-subtitle">
-          This is your starting point for saved favourites, account settings, future wishlist features, and your SocialEra social-shopping profile.
-        </p>
-
+      <section class="account-main">
         <div id="status-message" class="status loading">Loading your account details...</div>
 
-        <div class="account-grid">
-          <div class="info-card">
-            <h3>Saved Favourites</h3>
-            <p>
-              This area can become your wishlist once we connect user-specific product saving to Supabase.
-            </p>
-          </div>
+        <div class="account-dual">
+          <section class="account-section shopping">
+            <span class="section-label">Shopping</span>
+            <div class="account-grid">
+              <div class="info-card">
+                <h3>Saved Favourites</h3>
+                <p>
+                  This area can become your wishlist once we connect user-specific product saving to Supabase.
+                </p>
+              </div>
 
-          <div class="info-card">
-            <h3>Your Profile</h3>
-            <p>
-              Your account can later expand into a public SocialEra identity with a profile image, bio, collections, and shoppable posts.
-            </p>
-          </div>
+              <div class="info-card">
+                <h3>Order History</h3>
+                <p>
+                  This section can later show purchases, order tracking, delivery updates, and saved addresses.
+                </p>
+              </div>
 
-          <div class="info-card">
-            <h3>Order History</h3>
-            <p>
-              This section can later show purchases, order tracking, delivery updates, and saved addresses.
-            </p>
-          </div>
+              <div class="info-card">
+                <h3>Shopping Preferences</h3>
+                <p>
+                  Over time this can hold saved sizes, favorite categories, and the styles you want SocialEra to recommend first.
+                </p>
+              </div>
 
-          <div class="info-card">
-            <h3>Social Shopping</h3>
-            <p>
-              Later on, this account can become the foundation for follows, product-tagged posts, and creator or customer collections.
-            </p>
-          </div>
-        </div>
+              <div class="info-card">
+                <h3>Cart & Checkout</h3>
+                <p>
+                  Use this space as your buying side of SocialEra: fast checkout, saved addresses, and your current basket flow.
+                </p>
+              </div>
+            </div>
 
-        <div class="account-actions">
-          <a class="action-link primary" href="shop.html">Continue Shopping</a>
-          <a class="action-link secondary" href="cart.html">View Cart</a>
+            <div class="account-actions">
+              <a class="action-link primary" href="shop.html">Continue Shopping</a>
+              <a class="action-link secondary" href="messages.html">Open Usapp Chats</a>
+              <a class="action-link secondary" href="cart.html">View Cart</a>
+            </div>
+          </section>
+
+          <section class="account-section social">
+            <span class="section-label">Social</span>
+            <section class="profile-showcase">
+              <div class="profile-hero">
+                <div class="profile-identity">
+                  <div id="profile-avatar" class="avatar">SE</div>
+                  <div class="profile-identity-copy">
+                    <strong id="profile-badge-name">SocialEra Member</strong>
+                  </div>
+                </div>
+                <div class="profile-hero-copy">
+                  <span class="profile-kicker">Your Profile</span>
+                  <h3 id="profile-title">Your SocialEra identity</h3>
+                  <p id="profile-subtitle">
+                    This is where your account and your public SocialEra profile meet: your look, your posts, and your social-shopping presence in one place.
+                  </p>
+                  <div id="profile-stats" class="profile-stats"></div>
+                </div>
+              </div>
+
+              <div class="profile-posts">
+                <div class="profile-posts-head">
+                  <div>
+                    <h3>Your Posts</h3>
+                    <p>Recent SocialEra posts tied to your profile.</p>
+                  </div>
+                </div>
+                <div id="profile-posts-grid" class="profile-posts-grid">
+                  <div class="profile-post-empty">Loading your profile posts...</div>
+                </div>
+              </div>
+            </section>
+          </section>
         </div>
       </section>
     </section>
@@ -603,122 +130,6 @@
 
   <script type="module" src="supabase.js"></script>
   <script src="public-page.js"></script>
-
-  <script>
-    const statusMessage = document.getElementById('status-message');
-    const accountName = document.getElementById('account-name');
-    const accountEmail = document.getElementById('account-email');
-    const metaUsername = document.getElementById('meta-username');
-    const metaCreated = document.getElementById('meta-created');
-    const metaId = document.getElementById('meta-id');
-    const avatar = document.getElementById('avatar');
-    const logoutButton = document.getElementById('logout-button');
-
-    function showStatus(message, type){
-      statusMessage.textContent = message;
-      statusMessage.className = `status show ${type}`;
-    }
-
-    function formatDate(value){
-      if(!value){
-        return '—';
-      }
-
-      const date = new Date(value);
-
-      if(Number.isNaN(date.getTime())){
-        return '—';
-      }
-
-      return date.toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    }
-
-    function getInitials(name, email){
-      const safeName = String(name || '').trim();
-
-      if(safeName){
-        const parts = safeName.split(/\s+/).filter(Boolean).slice(0,2);
-        return parts.map(part => part.charAt(0).toUpperCase()).join('') || 'L';
-      }
-
-      return String(email || 'L').charAt(0).toUpperCase();
-    }
-
-    function shortenId(value){
-      const text = String(value || '');
-      if(text.length <= 12){
-        return text || '—';
-      }
-      return `${text.slice(0,6)}...${text.slice(-4)}`;
-    }
-
-    async function loadAccount(){
-      if(!window.supabase){
-        showStatus('Supabase is not connected yet.', 'error');
-        return;
-      }
-
-      try{
-        const { data, error } = await window.supabase.auth.getUser();
-
-        if(error || !data || !data.user){
-          window.location.href = 'login.html';
-          return;
-        }
-
-        const user = data.user;
-        const fullName = user.user_metadata?.full_name || 'SocialEra Member';
-        const username = user.user_metadata?.username || '—';
-        const email = user.email || '—';
-        const createdAt = user.created_at || '';
-
-        accountName.textContent = fullName;
-        accountEmail.textContent = email;
-        metaUsername.textContent = username;
-        metaCreated.textContent = formatDate(createdAt);
-        metaId.textContent = shortenId(user.id);
-        avatar.textContent = getInitials(fullName, email);
-
-        showStatus('Your account is active and connected.', 'success');
-      }catch(error){
-        console.error(error);
-        showStatus('We could not load your account right now.', 'error');
-      }
-    }
-
-    logoutButton.addEventListener('click', async function(){
-      if(!window.supabase){
-        showStatus('Supabase is not connected yet.', 'error');
-        return;
-      }
-
-      logoutButton.disabled = true;
-      logoutButton.textContent = 'Logging Out...';
-
-      try{
-        const { error } = await window.supabase.auth.signOut();
-
-        if(error){
-          showStatus(error.message, 'error');
-          logoutButton.disabled = false;
-          logoutButton.textContent = 'Log Out';
-          return;
-        }
-
-        window.location.href = 'login.html';
-      }catch(error){
-        console.error(error);
-        showStatus('Something went wrong while logging out.', 'error');
-        logoutButton.disabled = false;
-        logoutButton.textContent = 'Log Out';
-      }
-    });
-
-    document.addEventListener('DOMContentLoaded', loadAccount);
-  </script>
+  <script src="account-page.js"></script>
 </body>
 </html>

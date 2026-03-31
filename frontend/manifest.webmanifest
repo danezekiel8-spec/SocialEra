@@ -1,0 +1,25 @@
+{
+  "name": "SocialEra",
+  "short_name": "SocialEra",
+  "description": "Social shopping, feed, chat, and storefront in one installable app-like experience.",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f5f0",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "/assets/socialera-app-icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/socialera-app-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

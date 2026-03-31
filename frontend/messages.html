@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialEra - Usapp Chats</title>
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="messages.css" />
+  <script src="theme.js"></script>
+</head>
+<body class="messages-page-body">
+  <header></header>
+
+  <main class="messages-page">
+    <section class="messages-hero">
+      <div class="messages-kicker">Usapp Chats</div>
+      <div class="messages-hero-shell">
+        <div class="messages-hero-copy">
+          <h1>Usapp Chats keeps your SocialEra conversations in one place.</h1>
+          <p>
+            Use Usapp Chats to ask about a creator drop, product fit, pricing, shipping, or anything else tied to the social-shopping flow.
+          </p>
+        </div>
+
+        <div class="messages-hero-card">
+          <span id="messages-sync-pill" class="messages-sync-pill">Loading identity...</span>
+          <strong id="messages-sync-name">Preparing your inbox</strong>
+          <p id="messages-sync-copy">
+            We are connecting your current SocialEra identity so Usapp Chats feels tied to the rest of the prototype.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="messages-workspace">
+      <aside class="messages-sidebar">
+        <div class="messages-sidebar-head">
+          <div>
+            <span class="messages-section-kicker">Inbox</span>
+            <h2>Your conversations</h2>
+          </div>
+          <button id="messages-refresh-button" class="messages-refresh-button" type="button">Refresh</button>
+        </div>
+
+        <div id="messages-status" class="messages-status" aria-live="polite">Loading conversations...</div>
+
+        <section class="messages-start-card">
+          <div class="messages-block-head">
+            <div>
+              <strong>Start a new chat</strong>
+              <span>Creators and support</span>
+            </div>
+          </div>
+          <div id="messages-contact-grid" class="messages-contact-grid"></div>
+        </section>
+
+        <section class="messages-threads-card">
+          <div class="messages-block-head">
+            <div>
+              <strong>Recent threads</strong>
+              <span>Latest first</span>
+            </div>
+          </div>
+          <div id="messages-thread-list" class="messages-thread-list"></div>
+        </section>
+      </aside>
+
+      <section class="messages-panel">
+        <div id="messages-empty-state" class="messages-empty-state">
+          <div class="messages-empty-icon">SE</div>
+          <h3>Pick a thread to start talking.</h3>
+          <p>
+            Open support for help, or start a creator conversation from one of the contacts on the left.
+          </p>
+        </div>
+
+        <div id="messages-thread-view" class="messages-thread-view hidden">
+          <div class="messages-thread-head">
+            <div class="messages-thread-contact">
+              <div id="messages-active-avatar" class="messages-avatar large">SE</div>
+              <div class="messages-thread-meta">
+                <strong id="messages-active-name">SocialEra Contact</strong>
+                <p id="messages-active-copy">Loading conversation details...</p>
+              </div>
+            </div>
+
+            <a id="messages-active-link" class="messages-active-link hidden" href="index.html">View source</a>
+          </div>
+
+          <div id="messages-feed" class="messages-feed" aria-live="polite"></div>
+
+          <form id="messages-form" class="messages-form">
+            <label class="sr-only" for="messages-input">Write a message</label>
+            <textarea
+              id="messages-input"
+              maxlength="1000"
+              placeholder="Ask about the look, product, price, fit, shipping, or anything else..."
+            ></textarea>
+            <div class="messages-form-bar">
+              <span id="messages-character-count">0 / 1000</span>
+              <button id="messages-send-button" type="submit">Send Message</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2026 SocialEra</p>
+  </footer>
+
+  <script type="module" src="supabase.js"></script>
+  <script src="public-page.js"></script>
+  <script src="messages.js"></script>
+</body>
+</html>
