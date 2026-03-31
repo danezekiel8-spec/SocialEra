@@ -31,6 +31,7 @@ const {
   createMessageContactHelpers
 } = require('./lib/message-helpers');
 const createAdminSupportRoutes = require('./routes/admin-support');
+const createAppearanceRoutes = require('./routes/storefront-appearance');
 const createProductRoutes = require('./routes/storefront-products');
 const createMessageRoutes = require('./routes/storefront-messages');
 const createSocialRoutes = require('./routes/storefront-social');
@@ -72,7 +73,10 @@ const PRODUCTS_FILE = path.join(__dirname, 'products.json');
 const SUPPORT_WORKSPACE_FILE = path.join(__dirname, 'support-workspace.json');
 const SOCIAL_POSTS_FILE = path.join(__dirname, 'social-posts.json');
 const SOCIAL_MESSAGES_FILE = path.join(__dirname, 'social-messages.json');
+const APPEARANCE_SETTINGS_FILE = path.join(__dirname, 'appearance-settings.json');
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
+const DEFAULT_SUPABASE_URL = 'https://kfunqpatayfkscilhncx.supabase.co';
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ByM_npvMJj4LM_WVntb_aw_qwFPgoMj';
 
 const ADMIN_USERNAME = String(process.env.ADMIN_USERNAME || '').trim();
 const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || '');
@@ -97,6 +101,7 @@ let productsStore = null;
 let supportWorkspaceStore = null;
 let socialPostsStore = null;
 let socialMessagesStore = null;
+let appearanceSettingsStore = null;
 let productDataSource = null;
 const messageEvents = new EventEmitter();
 messageEvents.setMaxListeners(0);
@@ -312,6 +317,32 @@ function writeSocialMessages(data) {
   return socialMessagesStore.write(data);
 }
 
+function readAppearanceSettings() {
+  if (!appearanceSettingsStore) {
+    appearanceSettingsStore = createJsonFileStore({
+      filePath: APPEARANCE_SETTINGS_FILE,
+      defaultValue: { users: {} },
+      label: 'appearance-settings.json',
+      readTransform: (parsed) => ({
+        users: parsed && parsed.users && typeof parsed.users === 'object' ? parsed.users : {}
+      }),
+      writeTransform: (data) => ({
+        users: data && data.users && typeof data.users === 'object' ? data.users : {}
+      })
+    });
+  }
+
+  return appearanceSettingsStore.read();
+}
+
+function writeAppearanceSettings(data) {
+  if (!appearanceSettingsStore) {
+    readAppearanceSettings();
+  }
+
+  return appearanceSettingsStore.write(data);
+}
+
 function emitMessageEvent(payload = {}) {
   const actorIds = Array.from(new Set(
     (Array.isArray(payload.actorIds) ? payload.actorIds : [])
@@ -393,6 +424,44 @@ function getBearerToken(req) {
 
 function getSessionToken(req, cookieName) {
   return getBearerToken(req) || getCookieValue(req, cookieName) || null;
+}
+
+async function resolveAuthenticatedAppUser(req) {
+  const token = getBearerToken(req);
+  const supabaseUrl = String(process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || DEFAULT_SUPABASE_URL).trim();
+  const supabasePublishableKey = String(
+    process.env.SUPABASE_PUBLISHABLE_KEY
+    || process.env.SUPABASE_ANON_KEY
+    || DEFAULT_SUPABASE_PUBLISHABLE_KEY
+  ).trim();
+
+  if (!token || !supabaseUrl || !supabasePublishableKey) {
+    return null;
+  }
+
+  const response = await fetch(`${supabaseUrl.replace(/\/+$/, '')}/auth/v1/user`, {
+    method: 'GET',
+    headers: {
+      apikey: supabasePublishableKey,
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const payload = await response.json().catch(() => null);
+
+  if (!payload || !payload.id) {
+    return null;
+  }
+
+  return {
+    id: String(payload.id).trim(),
+    email: String(payload.email || '').trim(),
+    user_metadata: payload.user_metadata && typeof payload.user_metadata === 'object' ? payload.user_metadata : {}
+  };
 }
 
 function isSecureRequest(req) {
@@ -617,6 +686,12 @@ app.use('/api', createSocialRoutes({
   findCommentById,
   countNestedComments,
   flattenRecentComments
+}));
+
+app.use('/api', createAppearanceRoutes({
+  readAppearanceSettings,
+  writeAppearanceSettings,
+  resolveAuthenticatedAppUser
 }));
 
 app.use('/api', createMessageRoutes({

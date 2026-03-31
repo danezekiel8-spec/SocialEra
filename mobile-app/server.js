@@ -48,6 +48,12 @@ function proxyRequest(req, res, requestUrl) {
     host: target.host
   };
 
+  // The mobile app authenticates API calls with bearer tokens, not browser cookies.
+  // Forwarding the full localhost cookie jar to the backend can trigger 431 header-size
+  // failures once the browser has accumulated enough local cookies.
+  delete headers.cookie;
+  delete headers.connection;
+
   const proxyReq = transport.request(
     target,
     {
@@ -96,7 +102,8 @@ function serveFile(res, filePath) {
 
     const extension = path.extname(filePath).toLowerCase();
     res.writeHead(200, {
-      'Content-Type': MIME_TYPES[extension] || 'application/octet-stream'
+      'Content-Type': MIME_TYPES[extension] || 'application/octet-stream',
+      'Cache-Control': 'no-store'
     });
     res.end(file);
   });

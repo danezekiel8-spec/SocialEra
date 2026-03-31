@@ -13,6 +13,7 @@ const IOS_DEVICE = detectIOSDevice();
 const STORAGE_KEYS = {
   actorId: 'socialera.mobile.actor-id',
   activeView: 'socialera.mobile.active-view',
+  appearanceSettings: 'socialera.mobile.appearance-settings',
   bag: 'socialera.mobile.bag',
   notificationSeenAt: 'socialera.mobile.notification-seen-at',
   profile: 'socialera.mobile.profile',
@@ -73,6 +74,10 @@ const VIEW_META = {
   profile: {
     title: 'Profile',
     subtitle: 'This app runs separately and can share the same backend safely.'
+  },
+  settings: {
+    title: 'Settings',
+    subtitle: 'Adjust the app appearance for your signed-in SocialEra account.'
   }
 };
 
@@ -80,6 +85,8 @@ const DEFAULT_UPLOAD_CHANNELS = ['night-code', 'soft-power', 'studio-note', 'dro
 const GUEST_ACCESSIBLE_VIEWS = new Set(['auth', 'shop']);
 const MAX_PROFILE_PHOTO_BYTES = 512 * 1024;
 const MAX_PROFILE_PHOTO_DIMENSION = 720;
+const MAX_APPEARANCE_BACKGROUND_BYTES = 5 * 1024 * 1024;
+const MAX_APPEARANCE_BACKGROUND_DIMENSION = 1800;
 const ACTIVITY_POLL_INTERVAL_MS = IOS_DEVICE ? 10000 : 5000;
 const MESSAGE_POLL_INTERVAL_MS = IOS_DEVICE ? 8000 : 5000;
 const SPOTLIGHT_SLIDESHOW_INTERVAL_MS = IOS_DEVICE ? 5200 : 3200;
@@ -120,9 +127,14 @@ const UPLOAD_STEPS = [
     note: 'Check the final card, linked products, and publish when it feels right.'
   }
 ];
+const APP_THEME_IDS = ['socialera', 'editorial', 'coast', 'midnight', 'terracotta', 'moss', 'sunroom'];
+const APPEARANCE_PAGE_IDS = ['home', 'shop', 'videos', 'upload', 'profile', 'inbox'];
 const initialGuestActorId = ensureActorId();
 const initialGuestProfile = loadProfile();
 const initialActiveView = normalizeStoredView(loadText(STORAGE_KEYS.activeView) || 'home');
+const initialAppearanceSettings = loadCachedAppearanceSettings(initialGuestActorId, {
+  themeFallback: loadTheme()
+});
 const APP_THEMES = [
   {
     id: 'socialera',
@@ -167,6 +179,14 @@ const APP_THEMES = [
     swatches: ['#fbf6e9', '#d7a43a', '#352919']
   }
 ];
+const APPEARANCE_PAGE_OPTIONS = [
+  { id: 'home', label: 'Home' },
+  { id: 'shop', label: 'Shop' },
+  { id: 'videos', label: 'Videos' },
+  { id: 'upload', label: 'Composer' },
+  { id: 'profile', label: 'Profile' },
+  { id: 'inbox', label: 'Usapp' }
+];
 
 const state = {
   apiBase: normalizeApiBase(APP_CONFIG.apiBase || '/api'),
@@ -176,7 +196,11 @@ const state = {
   deviceActorId: initialGuestActorId,
   guestProfile: initialGuestProfile,
   profile: { ...initialGuestProfile },
-  theme: loadTheme(),
+  theme: initialAppearanceSettings.theme,
+  appearanceSettings: initialAppearanceSettings,
+  appearanceDraft: cloneAppearanceSettings(initialAppearanceSettings),
+  appearanceLoading: false,
+  appearanceSaving: false,
   profilePhotoBusy: false,
   profilePhotoDraftUrl: '',
   profilePhotoDraftName: '',
@@ -238,6 +262,7 @@ const state = {
   spotlightPreviewIndex: 0,
   iosOptimized: IOS_DEVICE,
   usappLiveConnected: false,
+  coreBackendFailureCount: 0,
   loading: true,
   ready: false,
   offlineMode: false,
@@ -271,6 +296,7 @@ let messageRefreshTimer = null;
 let messageRefreshPromise = null;
 let messageStateSyncTimer = null;
 let messageStateSyncPromise = null;
+let coreBackendRetryTimer = null;
 let lastRenderedView = '';
 let usappEventSource = null;
 let usappEventReconnectTimer = null;
@@ -286,6 +312,7 @@ let voiceRecorderStream = null;
 let voiceRecorderChunks = [];
 let viewportVideoObserver = null;
 let chromeMetricsFrame = 0;
+let authMetadataRepairPromise = null;
 const viewportVideoVisibility = new WeakMap();
 const swipeState = {
   tracking: false,
@@ -293,7 +320,50 @@ const swipeState = {
   startY: 0
 };
 
-init();
+window.addEventListener('error', (event) => {
+  reportStartupError(event && event.error ? event.error : event);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  reportStartupError(event && event.reason ? event.reason : event);
+});
+
+try {
+  init().catch((error) => {
+    reportStartupError(error);
+  });
+} catch (error) {
+  reportStartupError(error);
+}
+
+function reportStartupError(error) {
+  const message = String(
+    error && (error.stack || error.message)
+      ? error.stack || error.message
+      : error || 'Unknown startup error'
+  ).trim();
+
+  console.error('SocialEra app startup error:', error);
+
+  if (!elements.viewRoot) {
+    return;
+  }
+
+  elements.viewRoot.innerHTML = `
+    <div class="view-shell" data-view="startup-error">
+      <div class="section-stack">
+        <section class="card connection-card">
+          <div>
+            <p class="section-label">App error</p>
+            <h3>SocialEra could not finish loading.</h3>
+            <p>Refresh once after this fix. If it still fails, this message will show the startup error instead of a blank screen.</p>
+          </div>
+          <pre class="helper-text" style="white-space: pre-wrap; word-break: break-word;">${escapeHtml(message)}</pre>
+        </section>
+      </div>
+    </div>
+  `;
+}
 
 function createInitialFeedVisibleCount() {
   return {
@@ -339,6 +409,7 @@ async function initSupabase() {
       renderNow: false,
       refreshNow: false
     });
+    await maybeRepairOversizedAuthSession();
 
     supabaseClient.auth.onAuthStateChange((_event, session) => {
       syncAuthSession(session, {
@@ -373,6 +444,11 @@ async function syncAuthSession(session, { renderNow = true, refreshNow = false }
   state.mutedThreadIds = loadMutedThreadIds(state.actorId);
   state.messageReplyDecorations = loadMessageReplyDecorations(state.actorId);
   state.activeNotificationPanel = false;
+  state.appearanceSettings = loadCachedAppearanceSettings(state.actorId, {
+    themeFallback: nextUser ? state.theme : loadTheme()
+  });
+  state.appearanceDraft = cloneAppearanceSettings(state.appearanceSettings);
+  state.theme = state.appearanceSettings.theme;
   resetLiveNotificationState();
 
   if (refreshNow && previousActorId !== state.actorId) {
@@ -404,11 +480,13 @@ function bindEvents() {
   window.addEventListener('scroll', handleViewScroll, { passive: true });
   window.addEventListener('wheel', handleViewScroll, { passive: true });
   window.addEventListener('resize', scheduleChromeMetricsSync, { passive: true });
+  window.addEventListener('resize', syncInstallButton, { passive: true });
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', scheduleChromeMetricsSync);
     window.visualViewport.addEventListener('scroll', scheduleChromeMetricsSync);
+    window.visualViewport.addEventListener('resize', syncInstallButton);
   }
 
   elements.refreshButton.addEventListener('click', toggleNotificationSheet);
@@ -540,19 +618,25 @@ async function refreshData({ quiet = false } = {}) {
   const requests = await Promise.allSettled([
     refreshConnectedAccountProfile(),
     loadSocialFeedPosts(),
-    fetchJson('/products'),
+    fetchJson('/products', { omitAuth: true }),
     loadMessagingContacts(),
     loadMessagingThreads(),
-    state.authUser ? loadRemoteMessageState() : Promise.resolve(null)
+    state.authUser ? loadRemoteMessageState() : Promise.resolve(null),
+    state.authUser ? loadAppearanceSettings({ quiet: true, syncDraft: true }) : Promise.resolve(state.appearanceSettings)
   ]);
 
   const [, postsResult, productsResult, contactsResult, threadsResult, messageStateResult] = requests;
   const coreBackendAvailable = postsResult.status === 'fulfilled' && productsResult.status === 'fulfilled';
 
+  const fetchedPosts = postsResult.status === 'fulfilled' ? postsResult.value : null;
+  const shouldPreserveExistingPosts = Array.isArray(state.posts) && state.posts.length && (!Array.isArray(fetchedPosts) || !fetchedPosts.length);
+
   state.posts = mergePostCollections(
-    postsResult.status === 'fulfilled'
-      ? postsResult.value
-      : [],
+    shouldPreserveExistingPosts
+      ? state.posts
+      : Array.isArray(fetchedPosts)
+        ? fetchedPosts
+        : [],
     state.localPosts
   );
   state.products = productsResult.status === 'fulfilled'
@@ -565,10 +649,33 @@ async function refreshData({ quiet = false } = {}) {
     ? threadsResult.value
     : [];
 
+  updateUsappLoadStatus({
+    contactResult: contactsResult,
+    threadResult: threadsResult
+  });
+
   if (messageStateResult && messageStateResult.status === 'fulfilled' && messageStateResult.value) {
     applyRemoteMessageStatePayload(messageStateResult.value, {
       syncIfMissing: true
     });
+  }
+
+  if (coreBackendAvailable) {
+    state.coreBackendFailureCount = 0;
+
+    if (coreBackendRetryTimer) {
+      window.clearTimeout(coreBackendRetryTimer);
+      coreBackendRetryTimer = null;
+    }
+  } else {
+    state.coreBackendFailureCount += 1;
+
+    if (!quiet && state.coreBackendFailureCount === 1 && !coreBackendRetryTimer) {
+      coreBackendRetryTimer = window.setTimeout(() => {
+        coreBackendRetryTimer = null;
+        refreshData({ quiet: true }).catch(() => null);
+      }, 1400);
+    }
   }
 
   state.offlineMode = !coreBackendAvailable;
@@ -585,7 +692,7 @@ async function refreshData({ quiet = false } = {}) {
   primeLiveNotificationState();
   syncActivityAutoRefresh();
 
-  if (!coreBackendAvailable && !quiet) {
+  if (!coreBackendAvailable && !quiet && state.coreBackendFailureCount > 1) {
     showToast('Preview mode is active while the backend is unavailable.');
   }
 }
@@ -828,6 +935,8 @@ async function refreshMessagingData({ includeContacts = false, renderNow = true 
     : [];
   const previousSignature = getMessagingSignature();
   const previousContactsSignature = getMessageContactsSignature();
+  const previousMessageStatus = state.messageStatus;
+  const previousMessageStatusType = state.messageStatusType;
 
   messageRefreshPromise = (async () => {
     const requests = [
@@ -879,6 +988,11 @@ async function refreshMessagingData({ includeContacts = false, renderNow = true 
       state.contacts = [];
     }
 
+    updateUsappLoadStatus({
+      contactResult,
+      threadResult
+    });
+
     const liveUpdate = threadResult && threadResult.status === 'fulfilled'
       ? markUsappLiveChanges(previousThreads, state.threads)
       : { selectedThreadUpdated: false };
@@ -888,8 +1002,9 @@ async function refreshMessagingData({ includeContacts = false, renderNow = true 
       const nextContactsSignature = getMessageContactsSignature();
       const threadsChanged = previousSignature !== nextSignature;
       const contactsChanged = previousContactsSignature !== nextContactsSignature;
+      const statusChanged = previousMessageStatus !== state.messageStatus || previousMessageStatusType !== state.messageStatusType;
 
-      if (threadsChanged || contactsChanged) {
+      if (threadsChanged || contactsChanged || statusChanged) {
         refreshMessagingUi({
           scrollToLatest: liveUpdate.selectedThreadUpdated && state.activeView === 'inbox' && state.messagePanelMode === 'thread',
           scrollBehavior: 'auto'
@@ -1030,7 +1145,11 @@ async function refreshLiveActivity({ includePosts = true, includeThreads = state
 
     results.forEach((result) => {
       if (result.key === 'posts' && !result.error) {
-        const nextPosts = mergePostCollections(result.posts, state.localPosts);
+        const useExistingPosts = Array.isArray(state.posts) && state.posts.length && (!Array.isArray(result.posts) || !result.posts.length);
+        const nextPosts = mergePostCollections(
+          useExistingPosts ? state.posts : result.posts,
+          state.localPosts
+        );
         const postsChanged = previousPostSignature !== getPostActivitySignature(nextPosts);
         state.posts = nextPosts;
 
@@ -1090,6 +1209,7 @@ async function refreshLiveActivity({ includePosts = true, includeThreads = state
         renderCommentSheet();
       }
     }
+
   })().finally(() => {
     activityRefreshPromise = null;
   });
@@ -1343,7 +1463,8 @@ function render() {
     bag: renderBagView,
     inbox: renderInboxView,
     post: renderPostDetailView,
-    profile: renderProfileView
+    profile: renderProfileView,
+    settings: renderSettingsView
   }[view]();
 
   elements.viewRoot.innerHTML = `
@@ -1965,12 +2086,13 @@ function renderHomeView() {
   const posts = getFilteredPosts();
   const spotlightPosts = getSpotlightPosts(posts);
   const { items: feedPosts, hasMore } = getVisibleFeedPosts('home', posts);
+  const feedMarkup = renderPostCardList(feedPosts, 'home');
 
   return `
     ${renderSpotlightFolder(spotlightPosts)}
 
     <section class="post-list">
-      ${feedPosts.length ? feedPosts.map(renderPostCard).join('') : renderEmptyCard('No feed cards yet', 'Once the social feed has posts, they will show up here first.')}
+      ${feedMarkup || renderEmptyCard('No feed cards yet', 'Once the social feed has posts, they will show up here first.')}
     </section>
     ${renderFeedContinuation('home', hasMore)}
   `;
@@ -2301,6 +2423,7 @@ function renderVideosView() {
   const videoPosts = state.posts.filter((post) => post.mediaType === 'video');
   const sourcePosts = videoPosts.length ? videoPosts : state.posts;
   const { items: showcase, hasMore } = getVisibleFeedPosts('videos', sourcePosts);
+  const showcaseMarkup = renderPostCardList(showcase, 'videos');
 
   return `
     <section class="card hero-card">
@@ -2334,7 +2457,7 @@ function renderVideosView() {
     </section>
 
     <section class="post-list">
-      ${showcase.length ? showcase.map(renderPostCard).join('') : renderEmptyCard('No videos yet', 'Once video posts are added, this tab can become the app\'s main vertical media stream.')}
+      ${showcaseMarkup || renderEmptyCard('No videos yet', 'Once video posts are added, this tab can become the app\'s main vertical media stream.')}
     </section>
     ${renderFeedContinuation('videos', hasMore)}
   `;
@@ -2350,6 +2473,22 @@ function renderFeedContinuation(view, hasMore) {
       <button class="ghost-button feed-load-more" type="button" data-load-more-feed="${escapeHtml(view)}">Load more</button>
     </section>
   `;
+}
+
+function renderPostCardList(posts, surface = 'feed') {
+  return (Array.isArray(posts) ? posts : []).map((post, index) => {
+    try {
+      return renderPostCard(post);
+    } catch (error) {
+      console.error('Skipping malformed rendered post card:', {
+        surface,
+        index,
+        postId: post && post.id ? post.id : '',
+        error
+      });
+      return '';
+    }
+  }).join('');
 }
 
 function renderDiscoverView() {
@@ -3258,6 +3397,10 @@ function renderUsappPanelCard() {
   const visibleContacts = getVisibleMessageContacts();
   const threads = getVisibleMessageThreads();
   const showingThread = isUsappThreadMode(selectedThread);
+  const peopleEmptyTitle = state.authUser ? 'No people available' : 'Sign in to view people';
+  const peopleEmptyCopy = state.authUser
+    ? 'Open Usapp on your other signed-in member account, then refresh here.'
+    : 'Sign in with your SocialEra account to load member contacts.';
 
   if (showingThread) {
     return `
@@ -3291,6 +3434,13 @@ function renderUsappPanelCard() {
       </div>
 
       <div class="usapp-widget-body">
+        ${state.messageStatus ? `
+          <div class="usapp-widget-status ${escapeHtml(state.messageStatusType || 'info')}">
+            <span class="usapp-widget-status-dot" aria-hidden="true"></span>
+            <span>${escapeHtml(getMessageStatusCopy())}</span>
+          </div>
+        ` : ''}
+
         <div class="usapp-search-wrap ${state.messageSearchOpen ? 'is-open' : ''}">
           <input
             class="usapp-search"
@@ -3309,7 +3459,7 @@ function renderUsappPanelCard() {
 
         <div class="usapp-section usapp-section-people">
           <div class="usapp-contact-row">
-            ${visibleContacts.length ? visibleContacts.map((contact, index) => renderMessageContactChip(contact, selectedThread, index)).join('') : renderEmptyCard('No people available', 'Signed-in member contacts from the website messenger will appear here.')}
+            ${visibleContacts.length ? visibleContacts.map((contact, index) => renderMessageContactChip(contact, selectedThread, index)).join('') : renderEmptyCard(peopleEmptyTitle, peopleEmptyCopy)}
           </div>
         </div>
       </div>
@@ -3415,34 +3565,17 @@ function renderProfileView() {
       <section class="card connection-card">
         <div>
           <p class="section-label">App settings</p>
-          <h3>Adjust the in-app identity and look</h3>
-          <p>${signedIn ? 'Theme choices stay on this device, while your account identity comes from SocialEra.' : 'This only changes the separate app experience. The current website remains untouched.'}</p>
+          <h3>Appearance and personalization</h3>
+          <p>${signedIn ? 'Open Settings to manage your account theme and background across the app.' : 'Sign in to unlock account-based appearance settings that can follow you across devices.'}</p>
         </div>
 
-        <div class="theme-picker-block">
-          <div>
-            <p class="mini-label">Theme</p>
-            <h3 class="theme-picker-title">Appearance presets</h3>
-          </div>
-          <div class="theme-grid">
-            ${APP_THEMES.map((theme) => `
-              <button
-                class="theme-option ${state.theme === theme.id ? 'active' : ''}"
-                type="button"
-                data-set-theme="${escapeHtml(theme.id)}"
-              >
-                <span class="theme-swatches" aria-hidden="true">
-                  ${theme.swatches.map((color) => `<span class="theme-swatch" style="--theme-swatch:${escapeHtml(color)}"></span>`).join('')}
-                </span>
-                <span class="theme-option-copy">
-                  <strong>${escapeHtml(theme.label)}</strong>
-                  <span>${escapeHtml(theme.note)}</span>
-                </span>
-              </button>
-            `).join('')}
-          </div>
-          <p class="helper-text">Themes apply instantly and stay saved on this device.</p>
-        </div>
+        <button class="settings-entry-button" type="button" data-open-view="settings">
+          <span class="settings-entry-icon" aria-hidden="true">${renderSettingsIcon()}</span>
+          <span class="settings-entry-copy">
+            <strong>Settings</strong>
+            <span>${signedIn ? 'Theme, background, and page targeting' : 'Sign in to open appearance settings'}</span>
+          </span>
+        </button>
 
         ${renderProfileEditor()}
       </section>
@@ -3465,6 +3598,132 @@ function renderProfileView() {
         </div>
       </section>
     </section>
+  `;
+}
+
+function renderSettingsView() {
+  const signedIn = Boolean(state.authUser);
+  const settings = cloneAppearanceSettings(state.appearanceDraft);
+  const hasBackground = hasAppearanceBackground(settings);
+  const previewUrl = hasBackground ? settings.backgroundUrl : '';
+  const dirty = !areAppearanceSettingsEqual(settings, state.appearanceSettings);
+  const disableSave = state.appearanceSaving || !signedIn || (settings.backgroundMode === 'selected' && !settings.selectedPages.length);
+
+  return `
+    <section class="card hero-card hero-card-compact settings-hero-card">
+      <div class="hero-content">
+        <div class="settings-hero-topline">
+          <span class="mode-badge">Signed-in only</span>
+          <button class="ghost-button settings-back-button" type="button" data-open-view="profile" ${state.appearanceSaving ? 'disabled' : ''}>Back to profile</button>
+        </div>
+        <div>
+          <p class="section-label">Profile settings</p>
+          <h2 class="settings-hero-title">Control how SocialEra looks in your app.</h2>
+          <p class="settings-hero-note">Changes preview live here first, then save them to follow your signed-in account after refresh.</p>
+        </div>
+      </div>
+    </section>
+
+    <form class="settings-form" data-appearance-form="true">
+      <section class="card settings-section-card">
+        <div class="settings-section-head">
+          <div>
+            <p class="mini-label">Theme</p>
+            <h3>Appearance presets</h3>
+          </div>
+          <span class="featured-badge">${escapeHtml(getThemeMeta(settings.theme).label)}</span>
+        </div>
+        <div class="theme-grid">
+          ${APP_THEMES.map((theme) => `
+            <button
+              class="theme-option ${settings.theme === theme.id ? 'active' : ''}"
+              type="button"
+              data-settings-theme="${escapeHtml(theme.id)}"
+            >
+              <span class="theme-swatches" aria-hidden="true">
+                ${theme.swatches.map((color) => `<span class="theme-swatch" style="--theme-swatch:${escapeHtml(color)}"></span>`).join('')}
+              </span>
+              <span class="theme-option-copy">
+                <strong>${escapeHtml(theme.label)}</strong>
+                <span>${escapeHtml(theme.note)}</span>
+              </span>
+            </button>
+          `).join('')}
+        </div>
+      </section>
+
+      <section class="card settings-section-card">
+        <div class="settings-section-head">
+          <div>
+            <p class="mini-label">Background</p>
+            <h3>Upload a background image</h3>
+          </div>
+          <span class="featured-badge">${hasBackground ? 'Preview ready' : 'Optional'}</span>
+        </div>
+        <div class="settings-background-preview ${previewUrl ? 'has-image' : ''}">
+          ${previewUrl
+            ? `<img src="${escapeHtml(previewUrl)}" alt="Background preview" loading="lazy" decoding="async">`
+            : `
+              <div class="settings-background-empty">
+                <strong>No background selected</strong>
+                <span>Upload an image to preview it before saving.</span>
+              </div>
+            `}
+          <div class="settings-background-overlay">
+            <span>Live preview</span>
+          </div>
+        </div>
+        <input class="hidden" type="file" accept="image/*" data-settings-background-input="true" ${signedIn ? '' : 'disabled'}>
+        <div class="summary-actions">
+          <button class="ghost-button" type="button" data-settings-background-pick="true" ${signedIn && !state.appearanceSaving ? '' : 'disabled'}>Upload image</button>
+          <button class="ghost-button" type="button" data-settings-remove-background="true" ${!hasBackground || state.appearanceSaving ? 'disabled' : ''}>Remove background</button>
+        </div>
+        <p class="helper-text">Image files only. Larger images are optimized for the app and limited to about 5MB.</p>
+      </section>
+
+      <section class="card settings-section-card">
+        <div class="settings-section-head">
+          <div>
+            <p class="mini-label">Page targeting</p>
+            <h3>Choose where the background appears</h3>
+          </div>
+        </div>
+        <div class="settings-target-mode">
+          <button class="chip ${settings.backgroundMode === 'all' ? 'active' : ''}" type="button" data-settings-target-mode="all" ${state.appearanceSaving ? 'disabled' : ''}>All pages</button>
+          <button class="chip ${settings.backgroundMode === 'selected' ? 'active' : ''}" type="button" data-settings-target-mode="selected" ${state.appearanceSaving ? 'disabled' : ''}>Selected pages</button>
+        </div>
+        <div class="settings-page-grid ${settings.backgroundMode === 'selected' ? '' : 'is-disabled'}">
+          ${APPEARANCE_PAGE_OPTIONS.map((page) => `
+            <button
+              class="settings-page-option ${settings.selectedPages.includes(page.id) ? 'active' : ''}"
+              type="button"
+              data-settings-page-toggle="${escapeHtml(page.id)}"
+              ${settings.backgroundMode === 'selected' && !state.appearanceSaving ? '' : 'disabled'}
+            >
+              <span>${escapeHtml(page.label)}</span>
+              <span>${settings.selectedPages.includes(page.id) ? 'On' : 'Off'}</span>
+            </button>
+          `).join('')}
+        </div>
+        <p class="helper-text">${settings.backgroundMode === 'selected' ? 'Pick one or more pages for this background.' : 'All pages will share the same background when it is enabled.'}</p>
+      </section>
+
+      <section class="card settings-section-card settings-controls-card">
+        <div class="settings-section-head">
+          <div>
+            <p class="mini-label">Controls</p>
+            <h3>Save or reset your draft</h3>
+          </div>
+          <span class="mode-badge ${dirty ? 'preview' : ''}">${dirty ? 'Unsaved changes' : 'Saved state'}</span>
+        </div>
+        <div class="summary-actions">
+          <button class="primary-button" type="submit" ${disableSave ? 'disabled' : ''}>${state.appearanceSaving ? 'Saving...' : 'Save settings'}</button>
+          <button class="ghost-button" type="button" data-settings-reset="true" ${state.appearanceSaving ? 'disabled' : ''}>Reset</button>
+          <button class="ghost-button" type="button" data-settings-remove-background="true" ${!hasBackground || state.appearanceSaving ? 'disabled' : ''}>Remove background</button>
+        </div>
+        <p class="helper-text">${signedIn ? 'Theme and background preview live in the app shell while you edit. Save when you want to keep them.' : 'Sign in to edit and save appearance settings.'}</p>
+      </section>
+    </form>
   `;
 }
 
@@ -4133,6 +4392,22 @@ function renderRefreshIcon() {
     <svg class="usapp-inline-icon" viewBox="0 0 20 20" aria-hidden="true">
       <path d="M15.2 7.2A6.2 6.2 0 1 0 16 10.4"></path>
       <path d="M15.3 3.8v4h-4"></path>
+    </svg>
+  `;
+}
+
+function renderSettingsIcon() {
+  return `
+    <svg class="usapp-inline-icon" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="2.5"></circle>
+      <path d="M10 3.4v1.6"></path>
+      <path d="M10 15v1.6"></path>
+      <path d="M15.2 4.8 14 6"></path>
+      <path d="M6 14 4.8 15.2"></path>
+      <path d="M16.6 10H15"></path>
+      <path d="M5 10H3.4"></path>
+      <path d="M15.2 15.2 14 14"></path>
+      <path d="M6 6 4.8 4.8"></path>
     </svg>
   `;
 }
@@ -4846,6 +5121,62 @@ async function handleClick(event) {
     return;
   }
 
+  const settingsThemeButton = event.target.closest('[data-settings-theme]');
+  if (settingsThemeButton) {
+    updateAppearanceDraft({
+      theme: settingsThemeButton.dataset.settingsTheme
+    });
+    render();
+    return;
+  }
+
+  const settingsTargetModeButton = event.target.closest('[data-settings-target-mode]');
+  if (settingsTargetModeButton) {
+    const nextMode = settingsTargetModeButton.dataset.settingsTargetMode === 'selected' ? 'selected' : 'all';
+    updateAppearanceDraft({
+      backgroundMode: nextMode,
+      selectedPages: nextMode === 'selected' && !state.appearanceDraft.selectedPages.length
+        ? [getAppearanceTargetView('settings')]
+        : state.appearanceDraft.selectedPages
+    });
+    render();
+    return;
+  }
+
+  const settingsPageToggle = event.target.closest('[data-settings-page-toggle]');
+  if (settingsPageToggle) {
+    toggleAppearanceDraftPage(settingsPageToggle.dataset.settingsPageToggle);
+    render();
+    return;
+  }
+
+  const settingsBackgroundPickButton = event.target.closest('[data-settings-background-pick]');
+  if (settingsBackgroundPickButton) {
+    const fileInput = document.querySelector('[data-settings-background-input]');
+
+    if (fileInput) {
+      fileInput.click();
+    }
+
+    return;
+  }
+
+  const settingsResetButton = event.target.closest('[data-settings-reset]');
+  if (settingsResetButton) {
+    resetAppearanceDraft();
+    render();
+    showToast('Settings draft reset.');
+    return;
+  }
+
+  const settingsRemoveBackgroundButton = event.target.closest('[data-settings-remove-background]');
+  if (settingsRemoveBackgroundButton) {
+    removeAppearanceDraftBackground();
+    render();
+    showToast('Background removed from the draft.');
+    return;
+  }
+
   const uploadMediaTypeButton = event.target.closest('[data-upload-media-type]');
   if (uploadMediaTypeButton) {
     state.uploadDraft.mediaType = uploadMediaTypeButton.dataset.uploadMediaType || 'image';
@@ -5199,6 +5530,13 @@ async function handleSubmit(event) {
   if (profileForm) {
     event.preventDefault();
     await submitProfileForm(profileForm);
+    return;
+  }
+
+  const appearanceForm = event.target.closest('[data-appearance-form]');
+  if (appearanceForm) {
+    event.preventDefault();
+    await saveAppearanceSettings();
   }
 }
 
@@ -5312,6 +5650,31 @@ async function handleChange(event) {
       showToast('That profile picture could not be loaded.');
     } finally {
       profilePhotoFileField.value = '';
+    }
+
+    return;
+  }
+
+  const settingsBackgroundField = event.target.closest('[data-settings-background-input]');
+  if (settingsBackgroundField) {
+    const [file] = Array.from(settingsBackgroundField.files || []);
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const dataUrl = await optimizeAppearanceBackgroundFile(file);
+      updateAppearanceDraft({
+        backgroundUrl: dataUrl,
+        backgroundEnabled: true
+      });
+      render();
+      showToast('Background ready to save.');
+    } catch (error) {
+      showToast(error.message || 'That background could not be loaded.');
+    } finally {
+      settingsBackgroundField.value = '';
     }
 
     return;
@@ -5441,6 +5804,7 @@ async function signInAccount(formData) {
     renderNow: false,
     refreshNow: state.ready
   });
+  await maybeRepairOversizedAuthSession();
 
   const nextView = resolveAuthRedirectView();
 
@@ -5499,6 +5863,7 @@ async function signUpAccount(formData) {
       renderNow: false,
       refreshNow: state.ready
     });
+    await maybeRepairOversizedAuthSession();
 
     const nextView = resolveAuthRedirectView();
 
@@ -6003,7 +6368,7 @@ async function ensureThread(contactId) {
 
     await syncMessageProfile().catch(() => null);
 
-    const response = await fetchJson('/messages/member-threads', {
+    const response = await fetchMessageJson('/messages/member-threads', {
       method: 'POST',
       body: JSON.stringify({
         actorId: getMessageActorId(),
@@ -6170,7 +6535,7 @@ async function sendMessage(threadId, text, attachment = null) {
       return;
     }
 
-    const response = await fetchJson(`/messages/member-threads/${encodeURIComponent(thread.nativeId)}/messages`, {
+    const response = await fetchMessageJson(`/messages/member-threads/${encodeURIComponent(thread.nativeId)}/messages`, {
       method: 'POST',
       body: JSON.stringify({
         actorId: getMessageActorId(),
@@ -6233,7 +6598,7 @@ async function sendMessageReaction(thread, messageId, emoji) {
     let nextThread = null;
 
     if (thread.provider === 'member') {
-      const response = await fetchJson(`/messages/member-threads/${encodeURIComponent(thread.nativeId)}/messages/${encodeURIComponent(message.nativeId)}/reactions`, {
+      const response = await fetchMessageJson(`/messages/member-threads/${encodeURIComponent(thread.nativeId)}/messages/${encodeURIComponent(message.nativeId)}/reactions`, {
         method: 'POST',
         body: JSON.stringify({
           actorId: getMessageActorId(),
@@ -6243,7 +6608,7 @@ async function sendMessageReaction(thread, messageId, emoji) {
 
       nextThread = normalizeThread(response.thread, 'member');
     } else {
-      const response = await fetchJson(`/messages/threads/${encodeURIComponent(thread.nativeId)}/messages/${encodeURIComponent(message.nativeId)}/reactions`, {
+      const response = await fetchMessageJson(`/messages/threads/${encodeURIComponent(thread.nativeId)}/messages/${encodeURIComponent(message.nativeId)}/reactions`, {
         method: 'POST',
         body: JSON.stringify({
           actorId: getMessageActorId(),
@@ -6361,7 +6726,12 @@ function updateNav() {
 
 function syncInstallButton() {
   const isStandalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
-  const shouldShow = Boolean(state.installPrompt) && !isStandalone;
+  const suppressOnDesktop = Boolean(
+    window.matchMedia
+    && window.matchMedia('(min-width: 768px)').matches
+    && window.matchMedia('(pointer: fine)').matches
+  );
+  const shouldShow = Boolean(state.installPrompt) && !isStandalone && !suppressOnDesktop;
   elements.installButton.classList.toggle('hidden', !shouldShow);
 }
 
@@ -6371,6 +6741,10 @@ function setActiveView(nextView, { renderNow = true } = {}) {
   if (!isSignedIn() && requiresAuthForView(normalizedView)) {
     requestAuthAccess(normalizedView, `Sign in or create an account to open ${titleCase(normalizedView)} in the app.`);
     return;
+  }
+
+  if (normalizeView(state.activeView) === 'settings' && normalizedView !== 'settings' && !state.appearanceSaving) {
+    discardAppearanceDraft();
   }
 
   rememberViewScroll(state.activeView);
@@ -6400,6 +6774,15 @@ function setActiveView(nextView, { renderNow = true } = {}) {
   if (renderNow) {
     render();
   }
+
+  if (normalizedView === 'settings' && isSignedIn()) {
+    loadAppearanceSettings({
+      quiet: false,
+      syncDraft: true
+    }).catch((error) => {
+      console.error('Could not load appearance settings:', error);
+    });
+  }
 }
 
 function normalizeView(value) {
@@ -6422,7 +6805,7 @@ function normalizeStoredView(value) {
 
 function normalizeTheme(value) {
   const themeId = String(value || 'socialera').trim().toLowerCase();
-  return APP_THEMES.some((theme) => theme.id === themeId) ? themeId : 'socialera';
+  return APP_THEME_IDS.includes(themeId) ? themeId : 'socialera';
 }
 
 function getThemeMeta(themeId = state.theme) {
@@ -6515,8 +6898,25 @@ function setUploadStep(stepId, { renderNow = true } = {}) {
 }
 
 function applyTheme() {
-  document.documentElement.dataset.theme = normalizeTheme(state.theme);
+  const effectiveSettings = getEffectiveAppearanceSettings();
+  const resolvedTheme = normalizeTheme(effectiveSettings.theme);
+  const backgroundActive = shouldApplyAppearanceBackground(effectiveSettings);
+
+  state.theme = resolvedTheme;
+  document.documentElement.dataset.theme = resolvedTheme;
   document.documentElement.classList.toggle('ios-optimized', Boolean(state.iosOptimized));
+  document.documentElement.dataset.appearanceTarget = getAppearanceTargetView();
+
+  if (elements.phoneShell) {
+    elements.phoneShell.dataset.customBackground = backgroundActive ? 'true' : 'false';
+    elements.phoneShell.style.setProperty(
+      '--appearance-bg-image',
+      backgroundActive && effectiveSettings.backgroundUrl
+        ? `url(${JSON.stringify(effectiveSettings.backgroundUrl)})`
+        : 'none'
+    );
+    elements.phoneShell.style.setProperty('--appearance-bg-opacity', backgroundActive ? '1' : '0');
+  }
 }
 
 function shouldAutoplayVideo(type = 'post') {
@@ -7177,6 +7577,62 @@ function getMessageStatusCopy() {
   return state.messageStatus || 'Message real SocialEra members without leaving the app.';
 }
 
+function setMessageStatus(message = '', type = 'info') {
+  const nextMessage = String(message || '').trim();
+  state.messageStatus = nextMessage;
+  state.messageStatusType = nextMessage ? String(type || 'info').trim().toLowerCase() || 'info' : '';
+}
+
+function clearMessageStatus() {
+  state.messageStatus = '';
+  state.messageStatusType = '';
+}
+
+function getUsappLoadErrorMessage(scope, error) {
+  const normalizedScope = scope === 'people' ? 'people' : 'chats';
+  const message = String(error && error.message ? error.message : '').trim();
+
+  if (isSupabaseAuthRequiredError(error) || /session expired|sign in again/i.test(message)) {
+    return 'Sign in again to load your member chats.';
+  }
+
+  if (/failed to fetch|networkerror|network request failed|load failed/i.test(message)) {
+    return normalizedScope === 'people'
+      ? 'Could not reach member people right now. Check your connection, then refresh Usapp.'
+      : 'Could not reach your member chats right now. Check your connection, then refresh Usapp.';
+  }
+
+  return normalizedScope === 'people'
+    ? 'Could not load member people right now.'
+    : 'Could not load your member chats right now.';
+}
+
+function updateUsappLoadStatus({ contactResult = null, threadResult = null } = {}) {
+  const contactError = contactResult && contactResult.status === 'rejected'
+    ? contactResult.reason
+    : null;
+  const threadError = threadResult && threadResult.status === 'rejected'
+    ? threadResult.reason
+    : null;
+
+  if (threadError) {
+    setMessageStatus(getUsappLoadErrorMessage('chats', threadError), 'error');
+    return;
+  }
+
+  if (contactError) {
+    setMessageStatus(getUsappLoadErrorMessage('people', contactError), 'error');
+    return;
+  }
+
+  if (state.authUser && !state.contacts.length && !state.threads.length) {
+    setMessageStatus('No member people or chats were returned for this account yet. Open Usapp on another signed-in member account, then refresh here.', 'info');
+    return;
+  }
+
+  clearMessageStatus();
+}
+
 function getVisibleMessageContacts() {
   return state.contacts.filter((contact) => matchesMessageSearch(contact));
 }
@@ -7758,10 +8214,40 @@ function toggleActor(actorIds, actorId, currentlyActive) {
 
 async function loadSocialFeedPosts() {
   try {
-    return normalizePosts(await fetchJson('/social/posts'));
+    const payload = await fetchJson('/social/posts', { omitAuth: true });
+    const normalizedPosts = normalizePosts(payload);
+
+    if (normalizedPosts.length || !Array.isArray(payload)) {
+      return normalizedPosts;
+    }
+
+    const backendOrigin = String(APP_CONFIG.backendOrigin || '').trim();
+
+    if (!backendOrigin) {
+      return normalizedPosts;
+    }
+
+    console.warn('Social feed proxy returned an empty list. Retrying directly against the backend origin.');
+    const backendPayload = await fetchBackendJson('/social/posts', { omitAuth: true });
+    const backendPosts = normalizePosts(backendPayload);
+
+    return backendPosts.length ? backendPosts : normalizedPosts;
   } catch (apiError) {
     console.warn('Falling back to Supabase social posts for the mobile app:', apiError);
-    return fetchSocialPostsFromSupabase();
+
+    try {
+      const backendPayload = await fetchBackendJson('/social/posts', { omitAuth: true });
+      const backendPosts = normalizePosts(backendPayload);
+
+      if (backendPosts.length) {
+        return backendPosts;
+      }
+    } catch (backendError) {
+      console.warn('Direct backend social feed retry failed for the mobile app:', backendError);
+    }
+
+    const supabasePosts = await fetchSocialPostsFromSupabase();
+    return supabasePosts;
   }
 }
 
@@ -8029,20 +8515,158 @@ function countCommentTree(comments) {
   }, 0);
 }
 
+function shouldBypassAuthForApiPath(pathname) {
+  return /^\/messages(?:\/|$)/.test(String(pathname || '').trim());
+}
+
 async function fetchJson(pathname, options = {}) {
+  const {
+    headers: optionHeaders = {},
+    credentials: requestCredentials = 'omit',
+    omitAuth = false,
+    allowMessageAuth = false,
+    ...requestOptions
+  } = options;
+  const headers = {
+    ...optionHeaders
+  };
+  const bypassAuth = shouldBypassAuthForApiPath(pathname) && !allowMessageAuth;
+  const effectiveOmitAuth = omitAuth || bypassAuth;
+
+  if (!('Content-Type' in headers) && !('content-type' in headers)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (bypassAuth) {
+    delete headers.Authorization;
+    delete headers.authorization;
+  }
+
+  if (!effectiveOmitAuth && !headers.Authorization && !headers.authorization && state.authSession && state.authSession.access_token) {
+    headers.Authorization = `Bearer ${state.authSession.access_token}`;
+  }
+
   const response = await fetch(`${state.apiBase}${pathname}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {})
-    },
-    ...options
+    ...requestOptions,
+    credentials: requestCredentials,
+    headers
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
+    const errorText = await response.text().catch(() => '');
+    const error = new Error(parseRequestErrorText(errorText) || `Request failed: ${response.status}`);
+    error.status = response.status;
+    error.rawText = errorText;
+    throw error;
   }
 
-  return response.json();
+  if (response.status === 204) {
+    return null;
+  }
+
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function fetchMessageJson(pathname, options = {}) {
+  return fetchJson(pathname, {
+    ...options,
+    omitAuth: true
+  });
+}
+
+async function fetchBackendJson(pathname, options = {}) {
+  const backendOrigin = String(APP_CONFIG.backendOrigin || '').trim().replace(/\/+$/, '');
+
+  if (!backendOrigin) {
+    throw new Error('No backend origin configured for direct requests.');
+  }
+
+  const {
+    headers: optionHeaders = {},
+    credentials: requestCredentials = 'omit',
+    omitAuth = false,
+    ...requestOptions
+  } = options;
+  const headers = {
+    ...optionHeaders
+  };
+
+  if (!('Content-Type' in headers) && !('content-type' in headers)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (!omitAuth && !headers.Authorization && !headers.authorization && state.authSession && state.authSession.access_token) {
+    headers.Authorization = `Bearer ${state.authSession.access_token}`;
+  }
+
+  const response = await fetch(`${backendOrigin}/api${pathname}`, {
+    ...requestOptions,
+    credentials: requestCredentials,
+    headers
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    const error = new Error(parseRequestErrorText(errorText) || `Direct backend request failed: ${response.status}`);
+    error.status = response.status;
+    error.rawText = errorText;
+    throw error;
+  }
+
+  if (response.status === 204) {
+    return null;
+  }
+
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+
+function parseRequestErrorText(value) {
+  const raw = String(value || '').trim();
+
+  if (!raw) {
+    return '';
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (parsed && typeof parsed === 'object') {
+      return String(
+        parsed.error
+        || parsed.message
+        || parsed.detail
+        || raw
+      ).trim();
+    }
+  } catch (error) {
+    return raw;
+  }
+
+  return raw;
+}
+
+function getRequestErrorMessage(error, fallback = 'Something went wrong.') {
+  const status = Number(error && error.status ? error.status : 0);
+  const directMessage = String(error && error.message ? error.message : '').trim();
+  const parsedRawMessage = parseRequestErrorText(error && error.rawText ? error.rawText : '');
+
+  if (status === 431) {
+    return 'The browser sent too much local session data with this request. Refresh the app and try again.';
+  }
+
+  return parsedRawMessage || directMessage || fallback;
+}
+
+function isAuthRequestError(error) {
+  const status = Number(error && error.status ? error.status : 0);
+  const message = getRequestErrorMessage(error, '').toLowerCase();
+
+  return status === 401
+    || /unauthorized/.test(message)
+    || /authentication required/.test(message)
+    || /sign in again/.test(message);
 }
 
 function createApiUrl(pathname) {
@@ -8171,7 +8795,7 @@ async function loadRemoteMessageState() {
     return remoteMessageStatePromise;
   }
 
-  remoteMessageStatePromise = fetchJson(`/messages/state?actorId=${encodeURIComponent(getMessageActorId())}`)
+  remoteMessageStatePromise = fetchMessageJson(`/messages/state?actorId=${encodeURIComponent(getMessageActorId())}`)
     .finally(() => {
       remoteMessageStatePromise = null;
     });
@@ -8188,7 +8812,7 @@ async function syncRemoteMessageState() {
     return messageStateSyncPromise;
   }
 
-  messageStateSyncPromise = fetchJson('/messages/state/sync', {
+  messageStateSyncPromise = fetchMessageJson('/messages/state/sync', {
     method: 'POST',
     body: JSON.stringify(buildMessageStateSnapshot())
   }).finally(() => {
@@ -8216,7 +8840,29 @@ function queueRemoteMessageStateSync({ delayMs = 140 } = {}) {
 }
 
 function normalizePosts(payload) {
-  return Array.isArray(payload) ? payload.map(normalizePost) : [];
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+
+  const normalizedPosts = [];
+
+  payload.forEach((post, index) => {
+    try {
+      const normalizedPost = normalizePost(post);
+
+      if (normalizedPost) {
+        normalizedPosts.push(normalizedPost);
+      }
+    } catch (error) {
+      console.error('Skipping malformed social post while normalizing feed:', {
+        index,
+        postId: post && post.id ? post.id : '',
+        error
+      });
+    }
+  });
+
+  return normalizedPosts;
 }
 
 function normalizePost(post) {
@@ -8337,33 +8983,109 @@ function normalizeProduct(product) {
   };
 }
 
-async function loadMessagingContacts() {
-  const memberRequest = state.authUser
-    ? (async () => {
-        await syncMessageProfile().catch(() => null);
-        const payload = await fetchJson(`/messages/members?actorId=${encodeURIComponent(getMessageActorId())}`);
-        return normalizeContacts(payload && payload.contacts, 'member');
-      })().catch((error) => {
-        console.error('Member contacts could not be loaded:', error);
-        return [];
-      })
-    : Promise.resolve([]);
+async function ensureUsappMemberSession() {
+  const hadAuthUser = Boolean(state.authUser && state.authUser.id);
 
-  const memberContacts = await memberRequest;
-  return mergeMessageContacts(memberContacts.filter((contact) => isMemberMessageContact(contact)));
+  try {
+    let session = await ensureSupabaseSessionState();
+
+    if (!session || !session.access_token) {
+      session = await ensureSupabaseSessionState({ forceRefresh: true });
+    }
+
+    if (session && session.access_token) {
+      await syncAuthSession(session, {
+        renderNow: false,
+        refreshNow: false
+      });
+
+      return {
+        ready: true,
+        guest: false,
+        session
+      };
+    }
+  } catch (error) {
+    return {
+      ready: false,
+      guest: false,
+      error
+    };
+  }
+
+  if (!hadAuthUser) {
+    return {
+      ready: false,
+      guest: true,
+      session: null
+    };
+  }
+
+  return {
+    ready: false,
+    guest: false,
+    error: new Error('Your SocialEra member session expired. Sign in again to load Usapp.')
+  };
+}
+
+async function loadMessagingContacts() {
+  const sessionState = await ensureUsappMemberSession();
+
+  if (sessionState.guest) {
+    return [];
+  }
+
+  if (!sessionState.ready) {
+    throw sessionState.error || new Error('Sign in again to load member people.');
+  }
+
+  const actorId = getMessageActorId();
+
+  if (!actorId) {
+    throw new Error('Sign in again to load member people.');
+  }
+
+  await syncMessageProfile().catch((error) => {
+    console.error('Message profile sync could not be completed:', error);
+    return null;
+  });
+
+  try {
+    const payload = await fetchMessageJson(`/messages/members?actorId=${encodeURIComponent(actorId)}`);
+    const memberContacts = normalizeContacts(payload && payload.contacts, 'member');
+    return mergeMessageContacts(memberContacts.filter((contact) => isMemberMessageContact(contact)));
+  } catch (error) {
+    console.error('Member contacts could not be loaded:', error);
+    throw error;
+  }
 }
 
 async function loadMessagingThreads() {
-  const memberRequest = state.authUser
-    ? fetchJson(`/messages/member-threads?actorId=${encodeURIComponent(getMessageActorId())}`)
-      .then((payload) => normalizeThreads(payload && payload.threads, 'member'))
-      .catch((error) => {
-        console.error('Member threads could not be loaded:', error);
-        return [];
-      })
-    : Promise.resolve([]);
+  const sessionState = await ensureUsappMemberSession();
 
-  const memberThreads = await memberRequest;
+  if (sessionState.guest) {
+    return [];
+  }
+
+  if (!sessionState.ready) {
+    throw sessionState.error || new Error('Sign in again to load member chats.');
+  }
+
+  const actorId = getMessageActorId();
+
+  if (!actorId) {
+    throw new Error('Sign in again to load member chats.');
+  }
+
+  let memberThreads = [];
+
+  try {
+    const payload = await fetchMessageJson(`/messages/member-threads?actorId=${encodeURIComponent(actorId)}`);
+    memberThreads = normalizeThreads(payload && payload.threads, 'member');
+  } catch (error) {
+    console.error('Member threads could not be loaded:', error);
+    throw error;
+  }
 
   return hydrateMessageReplyDecorations(memberThreads.filter((thread) => thread && thread.provider === 'member'))
     .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
@@ -8374,7 +9096,7 @@ async function syncMessageProfile() {
     return null;
   }
 
-  return fetchJson('/messages/profiles/sync', {
+  return fetchMessageJson('/messages/profiles/sync', {
     method: 'POST',
     body: JSON.stringify({
       actorId: getMessageActorId(),
@@ -8415,6 +9137,11 @@ function forceReauth(targetView = 'profile', message = 'Your app session expired
   state.authUser = null;
   state.actorId = state.deviceActorId;
   state.profile = { ...state.guestProfile };
+  state.appearanceSettings = loadCachedAppearanceSettings(state.actorId, {
+    themeFallback: loadTheme()
+  });
+  state.appearanceDraft = cloneAppearanceSettings(state.appearanceSettings);
+  state.theme = state.appearanceSettings.theme;
   state.sharedPosts = loadSharedPosts(state.actorId);
   state.notificationSeenAt = loadNotificationSeenAt(state.actorId);
   state.forcedUnreadThreadIds = loadForcedUnreadThreadIds(state.actorId);
@@ -9409,14 +10136,81 @@ async function optimizeProfilePhotoFile(file) {
   throw new Error('That photo is too large to use right now. Try a smaller image.');
 }
 
+async function optimizeAppearanceBackgroundFile(file) {
+  if (!file || !String(file.type || '').toLowerCase().startsWith('image/')) {
+    throw new Error('Please choose an image file for the background.');
+  }
+
+  const mimeType = String(file.type || '').toLowerCase();
+
+  if (mimeType === 'image/svg+xml') {
+    throw new Error('Please use a PNG, JPG, or WebP image for the background.');
+  }
+
+  if (Number(file.size || 0) <= MAX_APPEARANCE_BACKGROUND_BYTES) {
+    return readFileAsDataUrl(file);
+  }
+
+  if (typeof document === 'undefined') {
+    throw new Error('That background could not be processed here.');
+  }
+
+  const image = await loadImageElementFromFile(file);
+  const largestSide = Math.max(Number(image.naturalWidth || image.width || 0), Number(image.naturalHeight || image.height || 0));
+
+  if (!largestSide) {
+    throw new Error('That background could not be loaded.');
+  }
+
+  let scale = Math.min(1, MAX_APPEARANCE_BACKGROUND_DIMENSION / largestSide);
+  let quality = 0.9;
+  let attempts = 0;
+
+  while (attempts < 8) {
+    const width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+    const height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+      throw new Error('That background could not be processed.');
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    context.fillStyle = '#101317';
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+
+    const dataUrl = canvas.toDataURL('image/jpeg', quality);
+
+    if (estimateDataUrlBytes(dataUrl) <= MAX_APPEARANCE_BACKGROUND_BYTES) {
+      return dataUrl;
+    }
+
+    if (scale > 0.52) {
+      scale *= 0.86;
+    } else {
+      quality -= 0.12;
+    }
+
+    attempts += 1;
+  }
+
+  throw new Error('That background is still too large after optimization. Try a smaller image.');
+}
+
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) {
     return;
   }
 
-  const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+  const hostname = String(window.location.hostname || '').trim().toLowerCase();
+  const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(hostname);
+  const isPrivateIpv4 = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(hostname);
+  const isLocalDevelopmentHost = isLocalhost || isPrivateIpv4 || hostname.endsWith('.local');
 
-  if (isLocalhost) {
+  if (isLocalDevelopmentHost) {
     window.addEventListener('load', async () => {
       const registrations = await navigator.serviceWorker.getRegistrations().catch(() => []);
       await Promise.all(registrations.map((registration) => registration.unregister().catch(() => false)));
@@ -9560,6 +10354,93 @@ function persistProfilePhotoOverride(value, actorId = state.actorId) {
   persistText(getActorStorageKey(STORAGE_KEYS.profilePhoto, actorId), normalizeProfilePhotoValue(value));
 }
 
+function getAuthMetadataPhotoValue(user = state.authUser) {
+  const metadata = user && typeof user.user_metadata === 'object' ? user.user_metadata : {};
+
+  return normalizeProfilePhotoValue(
+    metadata.avatar_url
+      || metadata.picture
+      || metadata.avatar
+      || metadata.photo_url
+      || metadata.photoUrl
+      || ''
+  );
+}
+
+function hasOversizedAuthProfileMetadata(user = state.authUser) {
+  const photoValue = getAuthMetadataPhotoValue(user);
+  return Boolean(photoValue && (photoValue.startsWith('data:') || photoValue.length > 1500));
+}
+
+function hasOversizedAuthSession(session = state.authSession, user = state.authUser) {
+  const accessToken = String(session && session.access_token ? session.access_token : '').trim();
+  return accessToken.length > 7000 || hasOversizedAuthProfileMetadata(user);
+}
+
+async function repairOversizedAuthProfileMetadata() {
+  if (!supabaseClient || !state.authUser || !hasOversizedAuthSession(state.authSession, state.authUser)) {
+    return false;
+  }
+
+  const metadata = state.authUser && typeof state.authUser.user_metadata === 'object'
+    ? state.authUser.user_metadata
+    : {};
+  const localPhotoUrl = normalizeProfilePhotoValue(state.profile.photoUrl || loadProfilePhotoOverride(state.actorId));
+  const remoteSafePhotoUrl = localPhotoUrl && !localPhotoUrl.startsWith('data:') ? localPhotoUrl : '';
+
+  const { data, error } = await supabaseClient.auth.updateUser({
+    data: {
+      ...metadata,
+      avatar_url: remoteSafePhotoUrl,
+      picture: remoteSafePhotoUrl,
+      avatar: remoteSafePhotoUrl,
+      photo_url: remoteSafePhotoUrl,
+      photoUrl: remoteSafePhotoUrl
+    }
+  });
+
+  if (error) {
+    throw error;
+  }
+
+  persistProfilePhotoOverride(localPhotoUrl.startsWith('data:') ? localPhotoUrl : '', state.actorId);
+
+  const refreshedSession = await ensureSupabaseSessionState({ forceRefresh: true }).catch(() => null);
+
+  if (refreshedSession) {
+    await syncAuthSession(refreshedSession, {
+      renderNow: false,
+      refreshNow: false
+    });
+  } else if (data && data.user) {
+    state.authUser = data.user;
+    state.profile = buildProfileFromAuthUser(state.authUser);
+  }
+
+  return true;
+}
+
+async function maybeRepairOversizedAuthSession() {
+  if (authMetadataRepairPromise) {
+    return authMetadataRepairPromise;
+  }
+
+  if (!hasOversizedAuthSession(state.authSession, state.authUser)) {
+    return false;
+  }
+
+  authMetadataRepairPromise = repairOversizedAuthProfileMetadata()
+    .catch((error) => {
+      console.error('Could not repair oversized auth session metadata:', error);
+      return false;
+    })
+    .finally(() => {
+      authMetadataRepairPromise = null;
+    });
+
+  return authMetadataRepairPromise;
+}
+
 async function persistAccountProfilePhoto(photoUrl) {
   if (!supabaseClient || !state.authUser) {
     throw new Error('Account sync is unavailable right now.');
@@ -9569,14 +10450,15 @@ async function persistAccountProfilePhoto(photoUrl) {
     ? state.authUser.user_metadata
     : {};
   const nextPhotoUrl = normalizeProfilePhotoValue(photoUrl);
+  const remoteSafePhotoUrl = nextPhotoUrl && !nextPhotoUrl.startsWith('data:') ? nextPhotoUrl : '';
   const { data, error } = await supabaseClient.auth.updateUser({
     data: {
       ...metadata,
-      avatar_url: nextPhotoUrl,
-      picture: nextPhotoUrl,
-      avatar: nextPhotoUrl,
-      photo_url: nextPhotoUrl,
-      photoUrl: nextPhotoUrl
+      avatar_url: remoteSafePhotoUrl,
+      picture: remoteSafePhotoUrl,
+      avatar: remoteSafePhotoUrl,
+      photo_url: remoteSafePhotoUrl,
+      photoUrl: remoteSafePhotoUrl
     }
   });
 
@@ -9584,7 +10466,7 @@ async function persistAccountProfilePhoto(photoUrl) {
     throw error;
   }
 
-  persistProfilePhotoOverride('', state.actorId);
+  persistProfilePhotoOverride(nextPhotoUrl.startsWith('data:') ? nextPhotoUrl : '', state.actorId);
   return data && data.user ? data.user : state.authUser;
 }
 
@@ -9622,6 +10504,407 @@ function formatCalendarDate(value) {
     month: 'long',
     day: 'numeric'
   });
+}
+
+function getAllAppearancePageIds() {
+  return [...APPEARANCE_PAGE_IDS];
+}
+
+function normalizeAppearancePage(value) {
+  const normalized = normalizeView(value);
+  return APPEARANCE_PAGE_IDS.includes(normalized) ? normalized : '';
+}
+
+function normalizeAppearanceSelectedPages(values, fallback = getAllAppearancePageIds(), { allowEmpty = false } = {}) {
+  const selected = Array.from(new Set(
+    (Array.isArray(values) ? values : [])
+      .map((value) => normalizeAppearancePage(value))
+      .filter(Boolean)
+  ));
+
+  if (selected.length || allowEmpty) {
+    return selected;
+  }
+
+  return Array.from(new Set(
+    (Array.isArray(fallback) ? fallback : getAllAppearancePageIds())
+      .map((value) => normalizeAppearancePage(value))
+      .filter(Boolean)
+  ));
+}
+
+function createDefaultAppearanceSettings(theme = loadTheme()) {
+  return {
+    theme: normalizeTheme(theme),
+    backgroundUrl: '',
+    backgroundMode: 'all',
+    selectedPages: getAllAppearancePageIds(),
+    backgroundEnabled: false
+  };
+}
+
+function normalizeAppearanceSettings(input = {}, fallback = createDefaultAppearanceSettings()) {
+  const selectedPagesProvided = Boolean(
+    input
+    && (
+      Object.prototype.hasOwnProperty.call(input, 'selectedPages')
+      || Object.prototype.hasOwnProperty.call(input, 'selected_pages')
+    )
+  );
+  const normalizedTheme = normalizeTheme(
+    input && Object.prototype.hasOwnProperty.call(input, 'theme')
+      ? input.theme
+      : fallback.theme
+  );
+  const backgroundUrl = String(
+    input && (
+      input.backgroundUrl
+      || input.background_url
+      || input.backgroundImageUrl
+      || input.background_image_url
+      || ''
+    ) || fallback.backgroundUrl || ''
+  ).trim();
+  const backgroundMode = String(
+    input && (input.backgroundMode || input.background_mode || '')
+      || fallback.backgroundMode
+      || 'all'
+  ).trim().toLowerCase() === 'selected' ? 'selected' : 'all';
+  const selectedPages = normalizeAppearanceSelectedPages(
+    input && (input.selectedPages || input.selected_pages),
+    fallback.selectedPages,
+    { allowEmpty: selectedPagesProvided }
+  );
+  const backgroundEnabled = Boolean(
+    backgroundUrl
+    && (
+      input && Object.prototype.hasOwnProperty.call(input, 'backgroundEnabled')
+        ? input.backgroundEnabled
+        : fallback.backgroundEnabled
+    )
+  );
+
+  return {
+    theme: normalizedTheme,
+    backgroundUrl,
+    backgroundMode,
+    selectedPages: backgroundMode === 'all' ? getAllAppearancePageIds() : selectedPages,
+    backgroundEnabled
+  };
+}
+
+function cloneAppearanceSettings(settings) {
+  const themeFallback = settings && settings.theme ? settings.theme : loadTheme();
+  return normalizeAppearanceSettings(settings, createDefaultAppearanceSettings(themeFallback));
+}
+
+function getComparableAppearanceSettings(settings) {
+  const normalized = normalizeAppearanceSettings(settings, createDefaultAppearanceSettings());
+
+  return {
+    theme: normalized.theme,
+    backgroundUrl: normalized.backgroundUrl,
+    backgroundMode: normalized.backgroundMode,
+    backgroundEnabled: normalized.backgroundEnabled,
+    selectedPages: [...normalized.selectedPages].sort()
+  };
+}
+
+function areAppearanceSettingsEqual(left, right) {
+  return JSON.stringify(getComparableAppearanceSettings(left)) === JSON.stringify(getComparableAppearanceSettings(right));
+}
+
+function getAppearanceStorageKey(actorId = state.actorId) {
+  return getActorStorageKey(STORAGE_KEYS.appearanceSettings, actorId);
+}
+
+function loadCachedAppearanceSettings(
+  actorId = loadText(STORAGE_KEYS.actorId) || initialGuestActorId,
+  { themeFallback = loadTheme() } = {}
+) {
+  const stored = loadJson(getAppearanceStorageKey(actorId));
+  return normalizeAppearanceSettings(stored || {}, createDefaultAppearanceSettings(themeFallback));
+}
+
+function persistCachedAppearanceSettings(settings, actorId = state.actorId) {
+  const normalized = normalizeAppearanceSettings(settings, createDefaultAppearanceSettings(settings && settings.theme ? settings.theme : loadTheme()));
+  try {
+    persistJson(getAppearanceStorageKey(actorId), normalized);
+  } catch (error) {
+    console.warn('Could not persist the full appearance settings locally. Retrying with a lighter cache.', error);
+    persistJson(getAppearanceStorageKey(actorId), {
+      ...normalized,
+      backgroundUrl: '',
+      backgroundEnabled: false
+    });
+  }
+  persistText(STORAGE_KEYS.theme, normalized.theme);
+  return normalized;
+}
+
+function getAppearanceTargetView(view = state.activeView) {
+  const normalized = normalizeView(view);
+
+  if (normalized === 'settings' || normalized === 'auth') {
+    return 'profile';
+  }
+
+  if (normalized === 'bag' || normalized === 'search') {
+    return 'shop';
+  }
+
+  if (normalized === 'post') {
+    return getAppearanceTargetView(getPostReturnView());
+  }
+
+  return normalizeAppearancePage(normalized) || 'home';
+}
+
+function hasAppearanceBackground(settings = state.appearanceSettings) {
+  const normalized = normalizeAppearanceSettings(settings, state.appearanceSettings);
+  return Boolean(normalized.backgroundEnabled && normalized.backgroundUrl);
+}
+
+function shouldApplyAppearanceBackground(settings = getEffectiveAppearanceSettings(), view = state.activeView) {
+  const normalized = normalizeAppearanceSettings(settings, state.appearanceSettings);
+
+  if (!hasAppearanceBackground(normalized)) {
+    return false;
+  }
+
+  if (normalized.backgroundMode === 'all') {
+    return true;
+  }
+
+  return normalized.selectedPages.includes(getAppearanceTargetView(view));
+}
+
+function getEffectiveAppearanceSettings() {
+  return normalizeAppearanceSettings(
+    normalizeView(state.activeView) === 'settings'
+      ? state.appearanceDraft
+      : state.appearanceSettings,
+    state.appearanceSettings
+  );
+}
+
+function applyAppearanceSettings(settings, { syncDraft = true, persistLocal = true } = {}) {
+  const normalized = normalizeAppearanceSettings(settings, state.appearanceSettings);
+  state.appearanceSettings = normalized;
+  state.theme = normalized.theme;
+
+  if (syncDraft) {
+    state.appearanceDraft = cloneAppearanceSettings(normalized);
+  }
+
+  if (persistLocal) {
+    persistCachedAppearanceSettings(normalized, state.actorId);
+  }
+
+  return normalized;
+}
+
+function updateAppearanceDraft(updates = {}) {
+  state.appearanceDraft = normalizeAppearanceSettings({
+    ...state.appearanceDraft,
+    ...updates
+  }, state.appearanceSettings);
+  state.theme = state.appearanceDraft.theme;
+}
+
+function toggleAppearanceDraftPage(pageId) {
+  const normalizedPage = normalizeAppearancePage(pageId);
+
+  if (!normalizedPage) {
+    return;
+  }
+
+  const nextPages = new Set(state.appearanceDraft.selectedPages);
+
+  if (nextPages.has(normalizedPage)) {
+    nextPages.delete(normalizedPage);
+  } else {
+    nextPages.add(normalizedPage);
+  }
+
+  updateAppearanceDraft({
+    selectedPages: Array.from(nextPages)
+  });
+}
+
+function removeAppearanceDraftBackground() {
+  updateAppearanceDraft({
+    backgroundUrl: '',
+    backgroundEnabled: false
+  });
+}
+
+function discardAppearanceDraft() {
+  state.appearanceDraft = cloneAppearanceSettings(state.appearanceSettings);
+  state.theme = state.appearanceSettings.theme;
+}
+
+function resetAppearanceDraft() {
+  discardAppearanceDraft();
+}
+
+async function loadAppearanceSettings({ quiet = false, syncDraft = false } = {}) {
+  if (!state.authUser) {
+    return state.appearanceSettings;
+  }
+
+  if (!quiet) {
+    state.appearanceLoading = true;
+    render();
+  } else {
+    state.appearanceLoading = true;
+  }
+
+  try {
+    if (!state.authSession || !state.authSession.access_token) {
+      if (quiet) {
+        return state.appearanceSettings;
+      }
+
+      const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to load your appearance settings.');
+
+      if (redirected) {
+        return state.appearanceSettings;
+      }
+    }
+
+    const payload = await fetchJson('/appearance-settings');
+    return applyAppearanceSettings(payload && payload.settings ? payload.settings : createDefaultAppearanceSettings(state.theme), {
+      syncDraft,
+      persistLocal: true
+    });
+  } catch (error) {
+    if (isAuthRequestError(error)) {
+      if (quiet) {
+        console.warn('Skipping background appearance settings refresh because the signed-in session is not ready yet.', error);
+        return state.appearanceSettings;
+      }
+
+      const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to load your appearance settings.');
+
+      if (!redirected) {
+        try {
+          const retryPayload = await fetchJson('/appearance-settings');
+          return applyAppearanceSettings(retryPayload && retryPayload.settings ? retryPayload.settings : createDefaultAppearanceSettings(state.theme), {
+            syncDraft,
+            persistLocal: true
+          });
+        } catch (retryError) {
+          console.error('Could not retry appearance settings load:', retryError);
+        }
+      }
+
+      return state.appearanceSettings;
+    }
+
+    console.error('Could not load appearance settings:', error);
+    return state.appearanceSettings;
+  } finally {
+    state.appearanceLoading = false;
+
+    if (!quiet) {
+      render();
+    }
+  }
+}
+
+async function saveAppearanceSettings(retried = false) {
+  if (ensureSignedIn('settings', 'Sign in to save your appearance settings.')) {
+    return;
+  }
+
+  if (state.appearanceDraft.backgroundMode === 'selected' && !state.appearanceDraft.selectedPages.length) {
+    showToast('Choose at least one page for the background.');
+    return;
+  }
+
+  state.appearanceSaving = true;
+  render();
+
+  try {
+    if (!state.authSession || !state.authSession.access_token) {
+      const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.');
+
+      if (redirected) {
+        return;
+      }
+    }
+
+    let nextSettings = cloneAppearanceSettings(state.appearanceDraft);
+    let nextBackgroundUrl = String(nextSettings.backgroundUrl || '').trim();
+
+    if (!nextBackgroundUrl || !nextSettings.backgroundEnabled) {
+      nextBackgroundUrl = '';
+    }
+
+    nextSettings = normalizeAppearanceSettings({
+      ...nextSettings,
+      backgroundUrl: nextBackgroundUrl,
+      backgroundEnabled: Boolean(nextBackgroundUrl)
+    }, state.appearanceSettings);
+
+    let response = null;
+
+    try {
+      response = await fetchJson('/appearance-settings', {
+        method: 'PUT',
+        body: JSON.stringify(nextSettings)
+      });
+    } catch (saveError) {
+      if (!retried && Number(saveError && saveError.status ? saveError.status : 0) === 431) {
+        try {
+          const repaired = await maybeRepairOversizedAuthSession();
+
+          if (repaired) {
+            state.appearanceSaving = false;
+            await saveAppearanceSettings(true);
+            return;
+          }
+        } catch (repairError) {
+          console.error('Could not repair oversized auth metadata before retrying appearance save:', repairError);
+        }
+      }
+
+      if (!retried && isAuthRequestError(saveError)) {
+        const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.');
+
+        if (!redirected) {
+          state.appearanceSaving = false;
+          await saveAppearanceSettings(true);
+          return;
+        }
+      }
+
+      throw new Error(`Settings save failed: ${getRequestErrorMessage(saveError, 'The appearance settings could not be saved.')}`);
+    }
+
+    applyAppearanceSettings(response && response.settings ? response.settings : nextSettings, {
+      syncDraft: true,
+      persistLocal: true
+    });
+    showToast('Appearance settings saved.');
+  } catch (error) {
+    if (!retried && isAuthRequestError(error)) {
+      const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.');
+
+      if (!redirected) {
+        state.appearanceSaving = false;
+        await saveAppearanceSettings(true);
+        return;
+      }
+    }
+
+    console.error('Could not save appearance settings:', error);
+    showToast(getRequestErrorMessage(error, 'Settings could not be saved right now.'));
+  } finally {
+    state.appearanceSaving = false;
+    render();
+  }
 }
 
 function loadTheme() {
