@@ -46,6 +46,35 @@
       : null;
   }
 
+  async function waitForSupabaseClient() {
+    if (getSupabaseClient()) {
+      return getSupabaseClient();
+    }
+
+    if (typeof window.ensureSocialEraSupabase === 'function') {
+      try {
+        await window.ensureSocialEraSupabase();
+      } catch (error) {
+        console.warn('Storefront Supabase wait failed:', error);
+      }
+    }
+
+    return getSupabaseClient();
+  }
+
+  async function getSupabaseSessionUser(supabase) {
+    var sessionResult = await supabase.auth.getSession();
+    var session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+    var user = session && session.user ? session.user : null;
+
+    if (user) {
+      return user;
+    }
+
+    var userResult = await supabase.auth.getUser();
+    return userResult && userResult.data ? userResult.data.user : null;
+  }
+
   function ensureArray(value) {
     return Array.isArray(value) ? value : [];
   }
@@ -86,14 +115,14 @@
   async function loadSocialIdentity() {
     var fallback = buildFallbackIdentity();
 
-    if (!window.supabase || !window.supabase.auth) {
-      cachedIdentity = fallback;
+    var supabase = await waitForSupabaseClient();
+
+    if (!supabase || !supabase.auth) {
       return fallback;
     }
 
     try {
-      var result = await window.supabase.auth.getUser();
-      var user = result && result.data ? result.data.user : null;
+      var user = await getSupabaseSessionUser(supabase);
 
       if (!user) {
         cachedIdentity = fallback;

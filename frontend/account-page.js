@@ -187,6 +187,23 @@ function renderProfilePosts(posts){
   `).join('');
 }
 
+function clearRecentLoginHandoff(){
+  try{
+    sessionStorage.removeItem('socialera-login-handoff');
+  }catch(error){
+    // no-op
+  }
+}
+
+function hasRecentLoginHandoff(){
+  try{
+    const timestamp = Number(sessionStorage.getItem('socialera-login-handoff') || 0);
+    return Boolean(timestamp && Date.now() - timestamp < 15000);
+  }catch(error){
+    return false;
+  }
+}
+
 async function loadProfilePosts(user){
   const identity = buildProfileIdentity(user);
 
@@ -224,21 +241,85 @@ async function loadProfilePosts(user){
   }
 }
 
+async function getReadySupabase(){
+  if(window.supabase && window.supabase.auth){
+    return window.supabase;
+  }
+
+  if(typeof window.ensureSocialEraSupabase === 'function'){
+    return window.ensureSocialEraSupabase();
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      window.removeEventListener('socialera:supabase-ready', handleReady);
+      window.removeEventListener('socialera:supabase-error', handleError);
+      reject(new Error('Supabase did not load in time.'));
+    }, 5000);
+
+    function finish(client){
+      window.clearTimeout(timeout);
+      window.removeEventListener('socialera:supabase-ready', handleReady);
+      window.removeEventListener('socialera:supabase-error', handleError);
+      resolve(client);
+    }
+
+    function handleReady(event){
+      const client = event && event.detail ? event.detail.supabase : window.supabase;
+      finish(client);
+    }
+
+    function handleError(event){
+      window.clearTimeout(timeout);
+      window.removeEventListener('socialera:supabase-ready', handleReady);
+      window.removeEventListener('socialera:supabase-error', handleError);
+      reject(event && event.detail && event.detail.error ? event.detail.error : new Error('Supabase failed to load.'));
+    }
+
+    window.addEventListener('socialera:supabase-ready', handleReady, { once: true });
+    window.addEventListener('socialera:supabase-error', handleError, { once: true });
+  });
+}
+
 async function loadAccount(){
-  if(!window.supabase){
+  const supabase = await getReadySupabase().catch((error) => {
+    console.error(error);
+    return null;
+  });
+
+  if(!supabase){
     showStatus('Supabase is not connected yet.', 'error');
     return;
   }
 
   try{
-    const { data, error } = await window.supabase.auth.getUser();
+    let user = null;
+    const sessionResult = await supabase.auth.getSession();
+    const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
 
-    if(error || !data || !data.user){
+    if(session && session.user){
+      user = session.user;
+    }
+
+    if(!user && hasRecentLoginHandoff()){
+      await new Promise((resolve) => window.setTimeout(resolve, 600));
+      const retryResult = await supabase.auth.getSession();
+      const retrySession = retryResult && retryResult.data ? retryResult.data.session : null;
+      user = retrySession && retrySession.user ? retrySession.user : null;
+    }
+
+    if(!user){
       window.location.href = 'login.html';
       return;
     }
 
-    const user = data.user;
+    const userResult = await supabase.auth.getUser();
+    if(userResult && userResult.data && userResult.data.user){
+      user = userResult.data.user;
+    }
+
+    clearRecentLoginHandoff();
+
     const fullName = user.user_metadata?.full_name || 'SocialEra Member';
     const email = user.email || '—';
     const createdAt = user.created_at || '';

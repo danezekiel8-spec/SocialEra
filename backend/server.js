@@ -106,6 +106,38 @@ let productDataSource = null;
 const messageEvents = new EventEmitter();
 messageEvents.setMaxListeners(0);
 
+function getPublicSupabaseConfig() {
+  const supabaseUrl = String(
+    process.env.SUPABASE_URL
+    || process.env.SUPABASE_PROJECT_URL
+    || DEFAULT_SUPABASE_URL
+    || ''
+  ).trim();
+  const supabasePublishableKey = String(
+    process.env.SUPABASE_PUBLISHABLE_KEY
+    || process.env.SUPABASE_ANON_KEY
+    || DEFAULT_SUPABASE_PUBLISHABLE_KEY
+    || ''
+  ).trim();
+  let supabaseProjectRef = '';
+
+  try {
+    supabaseProjectRef = new URL(supabaseUrl).host.split('.')[0] || '';
+  } catch (error) {
+    supabaseProjectRef = '';
+  }
+
+  return {
+    supabaseUrl,
+    supabasePublishableKey,
+    supabaseProjectRef,
+    supabaseConfigured: Boolean(supabaseUrl && supabasePublishableKey),
+    supabaseSource: process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY
+      ? 'env'
+      : 'fallback'
+  };
+}
+
 function isPrivateNetworkHostname(hostname) {
   return /^10\.\d+\.\d+\.\d+$/.test(hostname)
     || /^192\.168\.\d+\.\d+$/.test(hostname)
@@ -156,6 +188,30 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json({ limit: '100mb' }));
+
+app.get('/supabase.js', (req, res) => {
+  const config = getPublicSupabaseConfig();
+  const payload = `import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const config = ${JSON.stringify(config)};
+window.SOCIALERA_SUPABASE_CONFIG = config;
+
+if (config.supabaseConfigured && config.supabaseUrl && config.supabasePublishableKey) {
+  window.supabase = createClient(config.supabaseUrl, config.supabasePublishableKey);
+} else {
+  window.supabase = null;
+  console.warn('SocialEra Supabase runtime config is missing. Auth-enabled website features are unavailable until SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY are configured.');
+}
+
+export { config };
+export default window.supabase;
+`;
+
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.send(payload);
+});
+
 app.use(express.static(FRONTEND_DIR));
 
 function getProductsStore() {
@@ -428,12 +484,10 @@ function getSessionToken(req, cookieName) {
 
 async function resolveAuthenticatedAppUser(req) {
   const token = getBearerToken(req);
-  const supabaseUrl = String(process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || DEFAULT_SUPABASE_URL).trim();
-  const supabasePublishableKey = String(
-    process.env.SUPABASE_PUBLISHABLE_KEY
-    || process.env.SUPABASE_ANON_KEY
-    || DEFAULT_SUPABASE_PUBLISHABLE_KEY
-  ).trim();
+  const {
+    supabaseUrl,
+    supabasePublishableKey
+  } = getPublicSupabaseConfig();
 
   if (!token || !supabaseUrl || !supabasePublishableKey) {
     return null;
@@ -669,6 +723,7 @@ app.use('/api', createAdminSupportRoutes({
   SUPPORT_SESSION_COOKIE_PATH,
   getValidSession,
   requireSupportAuth,
+  getPublicSupabaseConfig,
   readSupportWorkspace,
   writeSupportWorkspace
 }));

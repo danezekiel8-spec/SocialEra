@@ -23,6 +23,7 @@ function createAdminSupportRoutes({
   SUPPORT_SESSION_COOKIE_PATH,
   getValidSession,
   requireSupportAuth,
+  getPublicSupabaseConfig,
   readSupportWorkspace,
   writeSupportWorkspace
 }) {
@@ -102,10 +103,25 @@ function createAdminSupportRoutes({
   }
 
   router.get('/storefront-config', (req, res) => {
+    const supabaseConfig = typeof getPublicSupabaseConfig === 'function'
+      ? getPublicSupabaseConfig()
+      : {
+          supabaseUrl: '',
+          supabasePublishableKey: '',
+          supabaseProjectRef: '',
+          supabaseConfigured: false,
+          supabaseSource: 'missing'
+        };
+
     res.json({
       adminConfigured: ADMIN_CONFIGURED,
       checkoutEnabled: CHECKOUT_ENABLED,
-      supportConfigured: SUPPORT_CONFIGURED
+      supportConfigured: SUPPORT_CONFIGURED,
+      supabaseUrl: supabaseConfig.supabaseUrl,
+      supabasePublishableKey: supabaseConfig.supabasePublishableKey,
+      supabaseProjectRef: supabaseConfig.supabaseProjectRef,
+      supabaseConfigured: Boolean(supabaseConfig.supabaseConfigured),
+      supabaseSource: supabaseConfig.supabaseSource
     });
   });
 

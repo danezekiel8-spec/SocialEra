@@ -105,13 +105,27 @@
       mode: 'local'
     };
 
+    if ((!window.supabase || !window.supabase.auth) && typeof window.ensureSocialEraSupabase === 'function') {
+      try {
+        await window.ensureSocialEraSupabase();
+      } catch (error) {
+        console.warn('Failed waiting for widget auth:', error);
+      }
+    }
+
     if (!window.supabase || !window.supabase.auth) {
       return fallback;
     }
 
     try {
-      var result = await window.supabase.auth.getUser();
-      var user = result && result.data ? result.data.user : null;
+      var sessionResult = await window.supabase.auth.getSession();
+      var session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+      var user = session && session.user ? session.user : null;
+
+      if (!user) {
+        var result = await window.supabase.auth.getUser();
+        user = result && result.data ? result.data.user : null;
+      }
 
       if (!user) {
         return fallback;

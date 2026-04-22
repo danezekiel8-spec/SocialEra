@@ -81,13 +81,27 @@
       mode: 'local'
     };
 
+    if ((!window.supabase || !window.supabase.auth) && typeof window.ensureSocialEraSupabase === 'function') {
+      try {
+        await window.ensureSocialEraSupabase();
+      } catch (error) {
+        console.warn('Failed waiting for messaging auth:', error);
+      }
+    }
+
     if (!window.supabase || !window.supabase.auth) {
       return fallback;
     }
 
     try {
-      const { data } = await window.supabase.auth.getUser();
-      const user = data && data.user;
+      const sessionResult = await window.supabase.auth.getSession();
+      const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+      let user = session && session.user ? session.user : null;
+
+      if (!user) {
+        const { data } = await window.supabase.auth.getUser();
+        user = data && data.user;
+      }
 
       if (!user) {
         return fallback;

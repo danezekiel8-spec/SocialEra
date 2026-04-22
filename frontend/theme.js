@@ -46,6 +46,23 @@
     document.documentElement.classList.add('auth-gate-ready');
   }
 
+  function hasRecentLoginHandoff() {
+    try {
+      var timestamp = Number(sessionStorage.getItem('socialera-login-handoff') || 0);
+      return timestamp && Date.now() - timestamp < 15000;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function clearRecentLoginHandoff() {
+    try {
+      sessionStorage.removeItem('socialera-login-handoff');
+    } catch (error) {
+      // no-op
+    }
+  }
+
   function lockAccountPageUntilVerified() {
     if (!isProtectedAccountPage()) {
       document.documentElement.classList.add('auth-gate-ready');
@@ -57,10 +74,9 @@
   }
 
   function getStoredSupabaseSession() {
-    var keys = [
-      'sb-kfunqpatayfkscilhncx-auth-token',
-      'supabase.auth.token'
-    ];
+    var keys = Object.keys(localStorage || {}).filter(function (key) {
+      return /^sb-[a-z0-9]+-auth-token$/i.test(key) || key === 'supabase.auth.token';
+    });
 
     function parseStoredValue(raw) {
       if (!raw) {
@@ -204,25 +220,31 @@
       return true;
     }
 
-    if (!getStoredSupabaseSession()) {
-      redirectToLogin();
-      return false;
-    }
-
     try {
       supabase = await ensureSupabaseLoaded();
       sessionResult = await supabase.auth.getSession();
       session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
 
       if (!session || !session.user) {
+        if (hasRecentLoginHandoff()) {
+          releaseAccountPageLock();
+          return true;
+        }
+
         redirectToLogin();
         return false;
       }
 
+      clearRecentLoginHandoff();
       releaseAccountPageLock();
       return true;
     } catch (error) {
       console.warn('SocialEra account gate fallback triggered:', error);
+      if (!hasRecentLoginHandoff() && !getStoredSupabaseSession()) {
+        redirectToLogin();
+        return false;
+      }
+
       releaseAccountPageLock();
       return true;
     }

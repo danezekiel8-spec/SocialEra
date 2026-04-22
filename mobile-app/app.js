@@ -1,13 +1,6 @@
 const APP_CONFIG = window.SOCIALERA_APP_CONFIG || {};
-const SUPABASE_URL = 'https://kfunqpatayfkscilhncx.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ByM_npvMJj4LM_WVntb_aw_qwFPgoMj';
-const SUPABASE_PROJECT_REF = (() => {
-  try {
-    return new URL(SUPABASE_URL).host.split('.')[0] || '';
-  } catch (error) {
-    return '';
-  }
-})();
+let runtimeSupabaseUrl = '';
+let runtimeSupabasePublishableKey = '';
 const IOS_DEVICE = detectIOSDevice();
 
 const STORAGE_KEYS = {
@@ -96,11 +89,6 @@ const USAPP_MESSAGE_LONG_PRESS_MS = 420;
 const MAX_VOICE_MESSAGE_BYTES = 4 * 1024 * 1024;
 const MESSAGE_COMPOSER_EMOJIS = ['🙂', '🔥', '✨', '🖤', '🙌', '😍', '👌', '🙏'];
 const MESSAGE_REACTION_EMOJIS = ['❤️', '🔥', '😂', '👏', '🙌', '😍'];
-const SUPABASE_SESSION_STORAGE_KEYS = Array.from(new Set([
-  SUPABASE_PROJECT_REF ? `sb-${SUPABASE_PROJECT_REF}-auth-token` : '',
-  SUPABASE_PROJECT_REF ? `sb-${SUPABASE_PROJECT_REF}-auth-token-code-verifier` : '',
-  'supabase.auth.token'
-].filter(Boolean)));
 const UPLOAD_STEPS = [
   {
     id: 'media',
@@ -387,9 +375,15 @@ async function initSupabase() {
   state.authAvailable = true;
 
   try {
+    const runtimeSupabaseConfig = await loadRuntimeSupabaseConfig();
+
+    if (!runtimeSupabaseConfig.supabaseConfigured) {
+      throw new Error('Supabase runtime config is missing. Add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY to the backend environment.');
+    }
+
     const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm');
 
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    supabaseClient = createClient(runtimeSupabaseConfig.supabaseUrl, runtimeSupabaseConfig.supabasePublishableKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
@@ -419,10 +413,14 @@ async function initSupabase() {
     });
   } catch (error) {
     console.error(error);
+    const message = String(error && error.message ? error.message : '').trim();
+    const networkIssue = /failed to fetch|networkerror|network request failed|load failed|could not resolve/i.test(message);
     state.authAvailable = false;
     state.authMessage = {
       type: 'error',
-      text: 'Account login is unavailable right now. Guest mode still works.'
+      text: networkIssue
+        ? 'Account login is unavailable because the configured Supabase project could not be reached. Guest mode still works.'
+        : (message || 'Account login is unavailable right now. Guest mode still works.')
     };
   } finally {
     state.authReady = true;
@@ -5963,7 +5961,7 @@ function clearLocalSupabaseSessionArtifacts() {
       return;
     }
 
-    SUPABASE_SESSION_STORAGE_KEYS.forEach((key) => {
+    getSupabaseSessionStorageKeys().forEach((key) => {
       try {
         storage.removeItem(key);
       } catch (error) {
@@ -8645,6 +8643,47 @@ function parseRequestErrorText(value) {
   }
 
   return raw;
+}
+
+function getSupabaseProjectRef(url = runtimeSupabaseUrl) {
+  try {
+    return new URL(String(url || '').trim()).host.split('.')[0] || '';
+  } catch (error) {
+    return '';
+  }
+}
+
+function getSupabaseSessionStorageKeys() {
+  const projectRef = getSupabaseProjectRef();
+  return Array.from(new Set([
+    projectRef ? `sb-${projectRef}-auth-token` : '',
+    projectRef ? `sb-${projectRef}-auth-token-code-verifier` : '',
+    'supabase.auth.token'
+  ].filter(Boolean)));
+}
+
+async function loadRuntimeSupabaseConfig() {
+  const response = await fetch(`${state.apiBase}/storefront-config`, {
+    credentials: 'omit'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Could not load auth config (${response.status}).`);
+  }
+
+  const payload = await response.json().catch(() => null);
+  const supabaseUrl = String(payload && payload.supabaseUrl ? payload.supabaseUrl : '').trim();
+  const supabasePublishableKey = String(payload && payload.supabasePublishableKey ? payload.supabasePublishableKey : '').trim();
+
+  runtimeSupabaseUrl = supabaseUrl;
+  runtimeSupabasePublishableKey = supabasePublishableKey;
+
+  return {
+    supabaseUrl,
+    supabasePublishableKey,
+    supabaseConfigured: Boolean(payload && payload.supabaseConfigured && supabaseUrl && supabasePublishableKey),
+    supabaseSource: String(payload && payload.supabaseSource ? payload.supabaseSource : '').trim()
+  };
 }
 
 function getRequestErrorMessage(error, fallback = 'Something went wrong.') {

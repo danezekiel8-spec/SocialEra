@@ -1,5 +1,5 @@
-const APP_CACHE = 'socialera-app-v1';
-const STATIC_CACHE = 'socialera-static-v1';
+const APP_CACHE = 'socialera-app-v3';
+const STATIC_CACHE = 'socialera-static-v3';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -8,6 +8,25 @@ const APP_SHELL = [
   '/manifest.webmanifest',
   '/assets/socialera-app-icon.svg'
 ];
+const NETWORK_FIRST_PATHS = [
+  '/api/',
+  '/supabase.js'
+];
+
+function shouldUseNetworkFirst(url) {
+  return NETWORK_FIRST_PATHS.some((path) => url.pathname === path || url.pathname.startsWith(path));
+}
+
+function fetchAndCache(request, cacheName) {
+  return fetch(request).then((response) => {
+    if (response && response.ok) {
+      const clone = response.clone();
+      caches.open(cacheName).then((cache) => cache.put(request, clone));
+    }
+
+    return response;
+  });
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -38,6 +57,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  if (shouldUseNetworkFirst(url)) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -51,18 +75,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (['script', 'style', 'image', 'font'].includes(request.destination)) {
+  if (['script', 'style'].includes(request.destination)) {
+    event.respondWith(
+      fetchAndCache(request, STATIC_CACHE)
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+
+  if (['image', 'font'].includes(request.destination)) {
     event.respondWith(
       caches.match(request).then((cached) => {
-        const networkFetch = fetch(request)
-          .then((response) => {
-            if (response && response.ok) {
-              const clone = response.clone();
-              caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
-            }
-            return response;
-          })
-          .catch(() => cached);
+        const networkFetch = fetchAndCache(request, STATIC_CACHE).catch(() => cached);
 
         return cached || networkFetch;
       })

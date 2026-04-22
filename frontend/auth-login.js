@@ -19,6 +19,39 @@
     statusMessage.className = 'status';
   }
 
+  function markRecentLoginAttempt() {
+    try {
+      sessionStorage.setItem('socialera-login-handoff', String(Date.now()));
+    } catch (error) {
+      // no-op
+    }
+  }
+
+  async function waitForStoredSession() {
+    var attempt = 0;
+    var lastSession = null;
+
+    while (attempt < 10) {
+      try {
+        var result = await window.supabase.auth.getSession();
+        lastSession = result && result.data ? result.data.session : null;
+
+        if (lastSession && lastSession.user) {
+          return lastSession;
+        }
+      } catch (error) {
+        console.warn('Login session handoff check failed:', error);
+      }
+
+      attempt += 1;
+      await new Promise(function (resolve) {
+        window.setTimeout(resolve, 150);
+      });
+    }
+
+    return lastSession;
+  }
+
   function getSafeRedirectTarget() {
     try {
       var params = new URLSearchParams(window.location.search || '');
@@ -95,9 +128,17 @@
       }
 
       if (data && data.user) {
+        markRecentLoginAttempt();
+        var session = data.session && data.session.user ? data.session : await waitForStoredSession();
+
+        if (!session || !session.user) {
+          showStatus('Login was accepted, but this browser did not store the session. Please refresh and try again.', 'error');
+          return;
+        }
+
         showStatus('Login successful. Redirecting...', 'success');
         window.setTimeout(function () {
-          window.location.href = getSafeRedirectTarget();
+          window.location.replace(getSafeRedirectTarget());
         }, 900);
         return;
       }

@@ -414,6 +414,29 @@
       : '<span class="header-profile-avatar-fallback">' + escapeHtml(getInitials(safeName)) + '</span>';
   }
 
+  async function getSupabaseSessionUser() {
+    var sessionResult = await window.supabase.auth.getSession();
+    var session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+    var user = session && session.user ? session.user : null;
+
+    if (user) {
+      return user;
+    }
+
+    var userResult = await window.supabase.auth.getUser();
+    return userResult && userResult.data ? userResult.data.user : null;
+  }
+
+  function hasStoredSupabaseSession() {
+    try {
+      return Object.keys(localStorage || {}).some(function (key) {
+        return /^sb-[a-z0-9]+-auth-token$/i.test(key) || key === 'supabase.auth.token';
+      });
+    } catch (error) {
+      return false;
+    }
+  }
+
   function updateLegacyAuthNavigation(nav) {
     var cartButton = nav.querySelector('.cart-button');
     var authSelectors = [
@@ -429,10 +452,8 @@
       });
     });
 
-    window.supabase.auth.getUser()
-      .then(function (result) {
-        var user = result && result.data ? result.data.user : null;
-
+    getSupabaseSessionUser()
+      .then(function (user) {
         if (user) {
           var accountLink = document.createElement('a');
           accountLink.href = 'account.html';
@@ -522,7 +543,7 @@
       waitForSupabaseAuth();
 
       if (profileLink) {
-        profileLink.href = 'login.html';
+        profileLink.href = hasStoredSupabaseSession() ? 'account.html' : 'login.html';
         renderModernHeaderProfile(profileLink, 'SocialEra Member');
       } else if (!sharedHeaderRole && authAttemptCount < maxAuthAttempts) {
         authAttemptCount += 1;
@@ -534,10 +555,8 @@
     bindAuthNavigationSync();
 
     if (profileLink) {
-      window.supabase.auth.getUser()
-        .then(function (result) {
-          var user = result && result.data ? result.data.user : null;
-
+      getSupabaseSessionUser()
+        .then(function (user) {
           if (user) {
             var meta = user.user_metadata || {};
             var fullName = String(meta.full_name || meta.display_name || user.email || 'SocialEra Member').trim();
