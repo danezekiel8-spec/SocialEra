@@ -478,12 +478,101 @@ function getBearerToken(req) {
   return authHeader.slice(7).trim();
 }
 
+function getBodyAccessToken(req) {
+  const token = req && req.body && typeof req.body === 'object'
+    ? String(req.body.accessToken || req.body.access_token || '').trim()
+    : '';
+
+  return token || null;
+}
+
+function getAppAccessToken(req) {
+  return getBearerToken(req) || getBodyAccessToken(req);
+}
+
+function parseRequestErrorText(value) {
+  const raw = String(value || '').trim();
+
+  if (!raw) {
+    return '';
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+
+    if (parsed && typeof parsed === 'object') {
+      return String(parsed.error || parsed.message || parsed.msg || raw).trim();
+    }
+  } catch (error) {
+    return raw;
+  }
+
+  return raw;
+}
+
+function decodeBase64UrlJson(value) {
+  const segment = String(value || '').trim();
+
+  if (!segment) {
+    return null;
+  }
+
+  try {
+    const normalized = segment
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), '=');
+    return JSON.parse(Buffer.from(padded, 'base64').toString('utf8'));
+  } catch (error) {
+    return null;
+  }
+}
+
+function getExpectedSupabaseIssuer(supabaseUrl) {
+  return String(supabaseUrl || '').trim().replace(/\/+$/, '') + '/auth/v1';
+}
+
+function resolveAppUserFromJwtClaims(token, supabaseUrl) {
+  const parts = String(token || '').trim().split('.');
+
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  const payload = decodeBase64UrlJson(parts[1]);
+
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const userId = String(payload.sub || payload.user_id || '').trim();
+  const expiresAt = Number(payload.exp || 0);
+  const issuer = String(payload.iss || '').trim().replace(/\/+$/, '');
+  const expectedIssuer = getExpectedSupabaseIssuer(supabaseUrl);
+
+  if (!userId || !expiresAt || expiresAt * 1000 < Date.now() - 30000) {
+    return null;
+  }
+
+  if (expectedIssuer && issuer && issuer !== expectedIssuer) {
+    return null;
+  }
+
+  return {
+    id: userId,
+    email: String(payload.email || '').trim(),
+    user_metadata: payload.user_metadata && typeof payload.user_metadata === 'object'
+      ? payload.user_metadata
+      : {}
+  };
+}
+
 function getSessionToken(req, cookieName) {
   return getBearerToken(req) || getCookieValue(req, cookieName) || null;
 }
 
 async function resolveAuthenticatedAppUser(req) {
-  const token = getBearerToken(req);
+  const token = getAppAccessToken(req);
   const {
     supabaseUrl,
     supabasePublishableKey
@@ -491,6 +580,16 @@ async function resolveAuthenticatedAppUser(req) {
 
   if (!token || !supabaseUrl || !supabasePublishableKey) {
     return null;
+  }
+
+  const tokenTooLargeForProxy = token.length > 7000;
+
+  if (tokenTooLargeForProxy) {
+    const claimsUser = resolveAppUserFromJwtClaims(token, supabaseUrl);
+
+    if (claimsUser) {
+      return claimsUser;
+    }
   }
 
   const response = await fetch(`${supabaseUrl.replace(/\/+$/, '')}/auth/v1/user`, {
@@ -502,7 +601,22 @@ async function resolveAuthenticatedAppUser(req) {
   });
 
   if (!response.ok) {
-    return null;
+    const rawText = await response.text().catch(() => '');
+    const headerTooLarge = /header|cookie/i.test(rawText) && /too large/i.test(rawText);
+
+    if (headerTooLarge) {
+      const claimsUser = resolveAppUserFromJwtClaims(token, supabaseUrl);
+
+      if (claimsUser) {
+        return claimsUser;
+      }
+    }
+
+    const message = parseRequestErrorText(rawText)
+      || `Supabase rejected the app session (${response.status})`;
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
 
   const payload = await response.json().catch(() => null);

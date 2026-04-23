@@ -81,7 +81,7 @@ function normalizeSettings(input = {}, fallback = createDefaultSettings()) {
     theme,
     backgroundUrl,
     backgroundMode,
-    selectedPages: backgroundMode === 'all' ? [...ALLOWED_PAGES] : selectedPages,
+    selectedPages,
     backgroundEnabled
   };
 }
@@ -148,7 +148,11 @@ function createAppearanceRoutes({
       next();
     } catch (error) {
       console.error('Could not resolve app user for appearance settings:', error);
-      return res.status(401).json({ error: 'Authentication required' });
+      const status = Number(error && error.status ? error.status : 0);
+      const message = status === 431
+        ? 'The signed-in session is too large. Refresh your session and try again.'
+        : String(error && error.message ? error.message : '').trim() || 'Authentication required';
+      return res.status(401).json({ error: message });
     }
   }
 
@@ -171,6 +175,17 @@ function createAppearanceRoutes({
   }
 
   router.get('/appearance-settings', requireAppUser, (req, res) => {
+    try {
+      return res.json({
+        settings: readUserSettings(String(req.appUser.id || '').trim())
+      });
+    } catch (error) {
+      console.error('Error loading appearance settings:', error);
+      return res.status(500).json({ error: 'Failed to load appearance settings' });
+    }
+  });
+
+  router.post('/appearance-settings/read', requireAppUser, (req, res) => {
     try {
       return res.json({
         settings: readUserSettings(String(req.appUser.id || '').trim())
@@ -231,6 +246,9 @@ function createAppearanceRoutes({
       const requestedTheme = String(req.body.theme || '').trim().toLowerCase();
       const requestedMode = String(req.body.backgroundMode || '').trim().toLowerCase();
       const selectedPagesInput = Array.isArray(req.body.selectedPages) ? req.body.selectedPages : [];
+      const selectedPages = normalizePageList(selectedPagesInput, { allowEmpty: true });
+      const hasPartialPageSelection = selectedPages.length > 0 && selectedPages.length < ALLOWED_PAGES.length;
+      const backgroundMode = requestedMode === 'selected' || hasPartialPageSelection ? 'selected' : 'all';
       const backgroundUrl = String(req.body.backgroundUrl || '').trim();
 
       if (requestedTheme && !ALLOWED_THEMES.has(requestedTheme)) {
@@ -241,11 +259,11 @@ function createAppearanceRoutes({
         return res.status(400).json({ error: 'Invalid background mode' });
       }
 
-      if (requestedMode === 'selected' && selectedPagesInput.some((value) => !ALLOWED_PAGES.includes(String(value || '').trim().toLowerCase()))) {
+      if (selectedPagesInput.some((value) => !ALLOWED_PAGES.includes(String(value || '').trim().toLowerCase()))) {
         return res.status(400).json({ error: 'Invalid page targets' });
       }
 
-      if (requestedMode === 'selected' && !selectedPagesInput.length) {
+      if (backgroundMode === 'selected' && !selectedPages.length) {
         return res.status(400).json({ error: 'Choose at least one page target' });
       }
 
@@ -262,8 +280,8 @@ function createAppearanceRoutes({
         ...current,
         theme: req.body.theme,
         backgroundUrl,
-        backgroundMode: req.body.backgroundMode,
-        selectedPages: req.body.selectedPages,
+        backgroundMode,
+        selectedPages: backgroundMode === 'all' ? [...ALLOWED_PAGES] : selectedPages,
         backgroundEnabled: req.body.backgroundEnabled
       });
 

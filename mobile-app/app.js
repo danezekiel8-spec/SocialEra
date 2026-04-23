@@ -78,8 +78,9 @@ const DEFAULT_UPLOAD_CHANNELS = ['night-code', 'soft-power', 'studio-note', 'dro
 const GUEST_ACCESSIBLE_VIEWS = new Set(['auth', 'shop']);
 const MAX_PROFILE_PHOTO_BYTES = 512 * 1024;
 const MAX_PROFILE_PHOTO_DIMENSION = 720;
-const MAX_APPEARANCE_BACKGROUND_BYTES = 5 * 1024 * 1024;
-const MAX_APPEARANCE_BACKGROUND_DIMENSION = 1800;
+const MAX_APPEARANCE_BACKGROUND_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_APPEARANCE_BACKGROUND_BYTES = 900 * 1024;
+const MAX_APPEARANCE_BACKGROUND_DIMENSION = 1440;
 const ACTIVITY_POLL_INTERVAL_MS = IOS_DEVICE ? 10000 : 5000;
 const MESSAGE_POLL_INTERVAL_MS = IOS_DEVICE ? 8000 : 5000;
 const SPOTLIGHT_SLIDESHOW_INTERVAL_MS = IOS_DEVICE ? 5200 : 3200;
@@ -187,6 +188,7 @@ const state = {
   theme: initialAppearanceSettings.theme,
   appearanceSettings: initialAppearanceSettings,
   appearanceDraft: cloneAppearanceSettings(initialAppearanceSettings),
+  appearancePendingBackgroundUrl: '',
   appearanceLoading: false,
   appearanceSaving: false,
   profilePhotoBusy: false,
@@ -446,6 +448,13 @@ async function syncAuthSession(session, { renderNow = true, refreshNow = false }
     themeFallback: nextUser ? state.theme : loadTheme()
   });
   state.appearanceDraft = cloneAppearanceSettings(state.appearanceSettings);
+  if (state.appearancePendingBackgroundUrl) {
+    state.appearanceDraft = normalizeAppearanceSettings({
+      ...state.appearanceDraft,
+      backgroundUrl: state.appearancePendingBackgroundUrl,
+      backgroundEnabled: true
+    }, state.appearanceSettings);
+  }
   state.theme = state.appearanceSettings.theme;
   resetLiveNotificationState();
 
@@ -3601,11 +3610,12 @@ function renderProfileView() {
 
 function renderSettingsView() {
   const signedIn = Boolean(state.authUser);
-  const settings = cloneAppearanceSettings(state.appearanceDraft);
+  const settings = cloneAppearanceSettings(getAppearanceDraftWithPendingBackground());
   const hasBackground = hasAppearanceBackground(settings);
   const previewUrl = hasBackground ? settings.backgroundUrl : '';
   const dirty = !areAppearanceSettingsEqual(settings, state.appearanceSettings);
   const disableSave = state.appearanceSaving || !signedIn || (settings.backgroundMode === 'selected' && !settings.selectedPages.length);
+  const isSelectedTargetMode = settings.backgroundMode === 'selected';
 
   return `
     <section class="card hero-card hero-card-compact settings-hero-card">
@@ -3690,20 +3700,20 @@ function renderSettingsView() {
           <button class="chip ${settings.backgroundMode === 'all' ? 'active' : ''}" type="button" data-settings-target-mode="all" ${state.appearanceSaving ? 'disabled' : ''}>All pages</button>
           <button class="chip ${settings.backgroundMode === 'selected' ? 'active' : ''}" type="button" data-settings-target-mode="selected" ${state.appearanceSaving ? 'disabled' : ''}>Selected pages</button>
         </div>
-        <div class="settings-page-grid ${settings.backgroundMode === 'selected' ? '' : 'is-disabled'}">
+        <div class="settings-page-grid ${state.appearanceSaving ? 'is-disabled' : ''}">
           ${APPEARANCE_PAGE_OPTIONS.map((page) => `
             <button
-              class="settings-page-option ${settings.selectedPages.includes(page.id) ? 'active' : ''}"
+              class="settings-page-option ${isSelectedTargetMode && settings.selectedPages.includes(page.id) ? 'active' : ''}"
               type="button"
               data-settings-page-toggle="${escapeHtml(page.id)}"
-              ${settings.backgroundMode === 'selected' && !state.appearanceSaving ? '' : 'disabled'}
+              ${state.appearanceSaving ? 'disabled' : ''}
             >
               <span>${escapeHtml(page.label)}</span>
-              <span>${settings.selectedPages.includes(page.id) ? 'On' : 'Off'}</span>
+              <span>${isSelectedTargetMode ? (settings.selectedPages.includes(page.id) ? 'On' : 'Off') : 'Pick'}</span>
             </button>
           `).join('')}
         </div>
-        <p class="helper-text">${settings.backgroundMode === 'selected' ? 'Pick one or more pages for this background.' : 'All pages will share the same background when it is enabled.'}</p>
+        <p class="helper-text">${isSelectedTargetMode ? 'Pick one or more pages for this background.' : 'All pages are active now. Tap a page below to start a selected-pages list.'}</p>
       </section>
 
       <section class="card settings-section-card settings-controls-card">
@@ -5131,11 +5141,15 @@ async function handleClick(event) {
   const settingsTargetModeButton = event.target.closest('[data-settings-target-mode]');
   if (settingsTargetModeButton) {
     const nextMode = settingsTargetModeButton.dataset.settingsTargetMode === 'selected' ? 'selected' : 'all';
+    const currentSelectedPages = normalizeAppearanceSelectedPages(state.appearanceDraft.selectedPages, [], { allowEmpty: true });
+    const isDefaultAllSelection = state.appearanceDraft.backgroundMode === 'all' && currentSelectedPages.length === APPEARANCE_PAGE_IDS.length;
     updateAppearanceDraft({
       backgroundMode: nextMode,
-      selectedPages: nextMode === 'selected' && !state.appearanceDraft.selectedPages.length
-        ? [getAppearanceTargetView('settings')]
-        : state.appearanceDraft.selectedPages
+      selectedPages: nextMode === 'all'
+        ? getAllAppearancePageIds()
+        : (!currentSelectedPages.length || isDefaultAllSelection)
+          ? [getAppearanceTargetView('settings')]
+          : currentSelectedPages
     });
     render();
     return;
@@ -5143,7 +5157,17 @@ async function handleClick(event) {
 
   const settingsPageToggle = event.target.closest('[data-settings-page-toggle]');
   if (settingsPageToggle) {
-    toggleAppearanceDraftPage(settingsPageToggle.dataset.settingsPageToggle);
+    const targetPage = normalizeAppearancePage(settingsPageToggle.dataset.settingsPageToggle);
+
+    if (state.appearanceDraft.backgroundMode !== 'selected') {
+      updateAppearanceDraft({
+        backgroundMode: 'selected',
+        selectedPages: targetPage ? [targetPage] : [getAppearanceTargetView('settings')]
+      });
+    } else {
+      toggleAppearanceDraftPage(targetPage);
+    }
+
     render();
     return;
   }
@@ -5663,6 +5687,7 @@ async function handleChange(event) {
 
     try {
       const dataUrl = await optimizeAppearanceBackgroundFile(file);
+      state.appearancePendingBackgroundUrl = dataUrl;
       updateAppearanceDraft({
         backgroundUrl: dataUrl,
         backgroundEnabled: true
@@ -10186,11 +10211,15 @@ async function optimizeAppearanceBackgroundFile(file) {
     throw new Error('Please use a PNG, JPG, or WebP image for the background.');
   }
 
-  if (Number(file.size || 0) <= MAX_APPEARANCE_BACKGROUND_BYTES) {
-    return readFileAsDataUrl(file);
+  if (Number(file.size || 0) > MAX_APPEARANCE_BACKGROUND_FILE_BYTES) {
+    throw new Error('Please choose a background image under 5MB.');
   }
 
   if (typeof document === 'undefined') {
+    if (Number(file.size || 0) <= MAX_APPEARANCE_BACKGROUND_BYTES) {
+      return readFileAsDataUrl(file);
+    }
+
     throw new Error('That background could not be processed here.');
   }
 
@@ -10202,7 +10231,7 @@ async function optimizeAppearanceBackgroundFile(file) {
   }
 
   let scale = Math.min(1, MAX_APPEARANCE_BACKGROUND_DIMENSION / largestSide);
-  let quality = 0.9;
+  let quality = 0.86;
   let attempts = 0;
 
   while (attempts < 8) {
@@ -10627,7 +10656,7 @@ function normalizeAppearanceSettings(input = {}, fallback = createDefaultAppeara
     theme: normalizedTheme,
     backgroundUrl,
     backgroundMode,
-    selectedPages: backgroundMode === 'all' ? getAllAppearancePageIds() : selectedPages,
+    selectedPages,
     backgroundEnabled
   };
 }
@@ -10651,6 +10680,10 @@ function getComparableAppearanceSettings(settings) {
 
 function areAppearanceSettingsEqual(left, right) {
   return JSON.stringify(getComparableAppearanceSettings(left)) === JSON.stringify(getComparableAppearanceSettings(right));
+}
+
+function hasUnsavedAppearanceDraft() {
+  return !areAppearanceSettingsEqual(getAppearanceDraftWithPendingBackground(), state.appearanceSettings);
 }
 
 function getAppearanceStorageKey(actorId = state.actorId) {
@@ -10718,10 +10751,24 @@ function shouldApplyAppearanceBackground(settings = getEffectiveAppearanceSettin
   return normalized.selectedPages.includes(getAppearanceTargetView(view));
 }
 
+function getAppearanceDraftWithPendingBackground() {
+  const pendingBackgroundUrl = String(state.appearancePendingBackgroundUrl || '').trim();
+
+  if (!pendingBackgroundUrl) {
+    return state.appearanceDraft;
+  }
+
+  return normalizeAppearanceSettings({
+    ...state.appearanceDraft,
+    backgroundUrl: state.appearanceDraft.backgroundUrl || pendingBackgroundUrl,
+    backgroundEnabled: true
+  }, state.appearanceSettings);
+}
+
 function getEffectiveAppearanceSettings() {
   return normalizeAppearanceSettings(
     normalizeView(state.activeView) === 'settings'
-      ? state.appearanceDraft
+      ? getAppearanceDraftWithPendingBackground()
       : state.appearanceSettings,
     state.appearanceSettings
   );
@@ -10733,6 +10780,7 @@ function applyAppearanceSettings(settings, { syncDraft = true, persistLocal = tr
   state.theme = normalized.theme;
 
   if (syncDraft) {
+    state.appearancePendingBackgroundUrl = '';
     state.appearanceDraft = cloneAppearanceSettings(normalized);
   }
 
@@ -10772,6 +10820,7 @@ function toggleAppearanceDraftPage(pageId) {
 }
 
 function removeAppearanceDraftBackground() {
+  state.appearancePendingBackgroundUrl = '';
   updateAppearanceDraft({
     backgroundUrl: '',
     backgroundEnabled: false
@@ -10779,12 +10828,75 @@ function removeAppearanceDraftBackground() {
 }
 
 function discardAppearanceDraft() {
+  state.appearancePendingBackgroundUrl = '';
   state.appearanceDraft = cloneAppearanceSettings(state.appearanceSettings);
   state.theme = state.appearanceSettings.theme;
 }
 
 function resetAppearanceDraft() {
   discardAppearanceDraft();
+}
+
+function prepareAppearanceSettingsForSave(draft) {
+  const normalized = cloneAppearanceSettings(draft);
+  const selectedPages = normalizeAppearanceSelectedPages(normalized.selectedPages, [], { allowEmpty: true });
+  const hasPartialPageSelection = selectedPages.length > 0 && selectedPages.length < APPEARANCE_PAGE_IDS.length;
+  const backgroundMode = normalized.backgroundMode === 'selected' || hasPartialPageSelection ? 'selected' : 'all';
+
+  return normalizeAppearanceSettings({
+    ...normalized,
+    backgroundMode,
+    selectedPages: backgroundMode === 'all' ? getAllAppearancePageIds() : selectedPages
+  }, state.appearanceSettings);
+}
+
+async function getAppearanceAccessToken({ forceRefresh = false } = {}) {
+  if (state.authSession && state.authSession.access_token) {
+    await maybeRepairOversizedAuthSession();
+  }
+
+  let session = await ensureSupabaseSessionState({ forceRefresh }).catch((error) => {
+    console.error('Could not read appearance settings session:', error);
+    return null;
+  });
+
+  if ((!session || !session.access_token) && !forceRefresh) {
+    session = await ensureSupabaseSessionState({ forceRefresh: true }).catch((error) => {
+      console.error('Could not refresh appearance settings session:', error);
+      return null;
+    });
+  }
+
+  return String(session && session.access_token ? session.access_token : '').trim();
+}
+
+async function createAuthenticatedAppearanceBody(payload = {}, options = {}) {
+  const accessToken = await getAppearanceAccessToken(options);
+
+  if (!accessToken) {
+    throw new Error('Authentication required');
+  }
+
+  return JSON.stringify({
+    ...payload,
+    accessToken
+  });
+}
+
+async function fetchAppearanceSettingsFromBackend(options = {}) {
+  return fetchJson('/appearance-settings/read', {
+    method: 'POST',
+    omitAuth: true,
+    body: await createAuthenticatedAppearanceBody({}, options)
+  });
+}
+
+async function saveAppearanceSettingsToBackend(settings, options = {}) {
+  return fetchJson('/appearance-settings', {
+    method: 'PUT',
+    omitAuth: true,
+    body: await createAuthenticatedAppearanceBody(settings, options)
+  });
 }
 
 async function loadAppearanceSettings({ quiet = false, syncDraft = false } = {}) {
@@ -10812,9 +10924,10 @@ async function loadAppearanceSettings({ quiet = false, syncDraft = false } = {})
       }
     }
 
-    const payload = await fetchJson('/appearance-settings');
+    const payload = await fetchAppearanceSettingsFromBackend();
+    const shouldSyncDraft = syncDraft && !(normalizeView(state.activeView) === 'settings' && hasUnsavedAppearanceDraft());
     return applyAppearanceSettings(payload && payload.settings ? payload.settings : createDefaultAppearanceSettings(state.theme), {
-      syncDraft,
+      syncDraft: shouldSyncDraft,
       persistLocal: true
     });
   } catch (error) {
@@ -10828,9 +10941,10 @@ async function loadAppearanceSettings({ quiet = false, syncDraft = false } = {})
 
       if (!redirected) {
         try {
-          const retryPayload = await fetchJson('/appearance-settings');
+          const retryPayload = await fetchAppearanceSettingsFromBackend({ forceRefresh: true });
+          const shouldSyncDraft = syncDraft && !(normalizeView(state.activeView) === 'settings' && hasUnsavedAppearanceDraft());
           return applyAppearanceSettings(retryPayload && retryPayload.settings ? retryPayload.settings : createDefaultAppearanceSettings(state.theme), {
-            syncDraft,
+            syncDraft: shouldSyncDraft,
             persistLocal: true
           });
         } catch (retryError) {
@@ -10852,12 +10966,14 @@ async function loadAppearanceSettings({ quiet = false, syncDraft = false } = {})
   }
 }
 
-async function saveAppearanceSettings(retried = false) {
+async function saveAppearanceSettings(retried = false, draftOverride = null) {
   if (ensureSignedIn('settings', 'Sign in to save your appearance settings.')) {
     return;
   }
 
-  if (state.appearanceDraft.backgroundMode === 'selected' && !state.appearanceDraft.selectedPages.length) {
+  const draftToSave = prepareAppearanceSettingsForSave(draftOverride || getAppearanceDraftWithPendingBackground());
+
+  if (draftToSave.backgroundMode === 'selected' && !draftToSave.selectedPages.length) {
     showToast('Choose at least one page for the background.');
     return;
   }
@@ -10874,7 +10990,7 @@ async function saveAppearanceSettings(retried = false) {
       }
     }
 
-    let nextSettings = cloneAppearanceSettings(state.appearanceDraft);
+    let nextSettings = prepareAppearanceSettingsForSave(draftToSave);
     let nextBackgroundUrl = String(nextSettings.backgroundUrl || '').trim();
 
     if (!nextBackgroundUrl || !nextSettings.backgroundEnabled) {
@@ -10890,10 +11006,7 @@ async function saveAppearanceSettings(retried = false) {
     let response = null;
 
     try {
-      response = await fetchJson('/appearance-settings', {
-        method: 'PUT',
-        body: JSON.stringify(nextSettings)
-      });
+      response = await saveAppearanceSettingsToBackend(nextSettings);
     } catch (saveError) {
       if (!retried && Number(saveError && saveError.status ? saveError.status : 0) === 431) {
         try {
@@ -10901,7 +11014,7 @@ async function saveAppearanceSettings(retried = false) {
 
           if (repaired) {
             state.appearanceSaving = false;
-            await saveAppearanceSettings(true);
+            await saveAppearanceSettings(true, draftToSave);
             return;
           }
         } catch (repairError) {
@@ -10910,11 +11023,17 @@ async function saveAppearanceSettings(retried = false) {
       }
 
       if (!retried && isAuthRequestError(saveError)) {
-        const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.');
+        const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.', {
+          forceRefresh: true
+        });
 
         if (!redirected) {
-          state.appearanceSaving = false;
-          await saveAppearanceSettings(true);
+          response = await saveAppearanceSettingsToBackend(nextSettings, { forceRefresh: true });
+          applyAppearanceSettings(response && response.settings ? response.settings : nextSettings, {
+            syncDraft: true,
+            persistLocal: true
+          });
+          showToast('Appearance settings saved.');
           return;
         }
       }
@@ -10933,7 +11052,7 @@ async function saveAppearanceSettings(retried = false) {
 
       if (!redirected) {
         state.appearanceSaving = false;
-        await saveAppearanceSettings(true);
+        await saveAppearanceSettings(true, draftToSave);
         return;
       }
     }
