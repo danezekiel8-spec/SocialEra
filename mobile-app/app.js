@@ -233,6 +233,7 @@ const state = {
   messageReplyDecorations: loadMessageReplyDecorations(initialGuestActorId),
   uploadDraft: createUploadDraft(),
   uploadStep: UPLOAD_STEPS[0].id,
+  uploadPreviewOpen: false,
   selectedThreadId: loadText(STORAGE_KEYS.selectedThread) || '',
   selectedPostId: '',
   activeCommentPostId: '',
@@ -2977,6 +2978,7 @@ function handleCatalogSearchResult(dataset = {}) {
 function renderUploadView() {
   const draft = state.uploadDraft;
   const previewPost = buildUploadPreviewPost();
+  const previewCollapsed = isCompactUploadPreviewViewport() && !state.uploadPreviewOpen;
   const selectionCount = draft.linkedProductIds.length;
   const hasMedia = Boolean(draft.mediaUrl);
   const canPublish = canPublishUploadDraft(draft);
@@ -3167,18 +3169,32 @@ function renderUploadView() {
         </form>
       </section>
 
-      <section class="card upload-preview-card upload-modal-preview-card">
-        <div>
+      <section class="card upload-preview-card upload-modal-preview-card ${previewCollapsed ? 'is-collapsed' : ''}">
+        <div class="upload-preview-head">
+          <div class="upload-preview-copy">
           <p class="section-label">Live preview</p>
           <h3 class="section-title">This is how it lands</h3>
           <p class="helper-text">The app preview stays live while you type, just like the website composer updates its modal state before publish.</p>
+          </div>
+          <button
+            class="ghost-button upload-preview-toggle"
+            type="button"
+            data-upload-preview-toggle="true"
+            aria-expanded="${previewCollapsed ? 'false' : 'true'}"
+          >
+            ${escapeHtml(previewCollapsed ? 'Show preview' : 'Hide preview')}
+          </button>
         </div>
-        <div class="upload-preview-canvas" data-upload-preview>
+        <div id="upload-preview-canvas" class="upload-preview-canvas" data-upload-preview>
           ${renderPostCard(previewPost)}
         </div>
       </section>
     </section>
   `;
+}
+
+function isCompactUploadPreviewViewport() {
+  return window.matchMedia('(max-width: 719px)').matches;
 }
 
 function renderUploadModalPreviewMedia(previewPost, hasMedia) {
@@ -4224,10 +4240,6 @@ function renderPostCard(post) {
   const hasMedia = hasPostMedia(post);
   const suggestions = findSuggestedProducts(post, { limit: 4 });
   const postKindLabel = getPostKindLabel(post);
-  const overlayTags = (post.tags || [])
-    .slice(0, 2)
-    .map((tag) => `<span class="post-overlay-tag">#${escapeHtml(tag)}</span>`)
-    .join('');
   const actionRow = `
     <div class="metric-row post-actions ${hasMedia ? 'post-media-actions' : 'post-copy-actions'}">
       ${renderPostMetricButton({
@@ -4283,12 +4295,10 @@ function renderPostCard(post) {
             ${renderMedia(post, 'feed')}
           </div>
           ${actionRow}
-          ${overlayTags ? `<div class="post-media-bottomline">${overlayTags}</div>` : ''}
         </div>
       ` : `
         <div class="post-text-footer">
           ${actionRow}
-          ${overlayTags ? `<div class="post-inline-tags">${overlayTags}</div>` : ''}
         </div>
       `}
 
@@ -5216,6 +5226,13 @@ async function handleClick(event) {
   if (uploadStepNavButton) {
     const direction = uploadStepNavButton.dataset.uploadStepNav === 'previous' ? 'previous' : 'next';
     setUploadStep(direction === 'previous' ? getPreviousUploadStepId() : getNextUploadStepId());
+    return;
+  }
+
+  const uploadPreviewToggle = event.target.closest('[data-upload-preview-toggle]');
+  if (uploadPreviewToggle) {
+    state.uploadPreviewOpen = !state.uploadPreviewOpen;
+    render();
     return;
   }
 
