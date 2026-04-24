@@ -77,6 +77,7 @@ const APPEARANCE_SETTINGS_FILE = path.join(__dirname, 'appearance-settings.json'
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
 const DEFAULT_SUPABASE_URL = 'https://kfunqpatayfkscilhncx.supabase.co';
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ByM_npvMJj4LM_WVntb_aw_qwFPgoMj';
+const SUPABASE_MEMBER_DIRECTORY_CACHE_MS = 30 * 1000;
 
 const ADMIN_USERNAME = String(process.env.ADMIN_USERNAME || '').trim();
 const ADMIN_PASSWORD = String(process.env.ADMIN_PASSWORD || '');
@@ -105,6 +106,10 @@ let appearanceSettingsStore = null;
 let productDataSource = null;
 const messageEvents = new EventEmitter();
 messageEvents.setMaxListeners(0);
+let cachedSupabaseMemberDirectory = {
+  fetchedAt: 0,
+  members: []
+};
 
 function getPublicSupabaseConfig() {
   const supabaseUrl = String(
@@ -136,6 +141,106 @@ function getPublicSupabaseConfig() {
       ? 'env'
       : 'fallback'
   };
+}
+
+function normalizeSupabaseDirectoryMember(user) {
+  if (!user || typeof user !== 'object') {
+    return null;
+  }
+
+  const id = String(user.id || user.user_id || '').trim();
+
+  if (!id) {
+    return null;
+  }
+
+  const metadata = user.user_metadata && typeof user.user_metadata === 'object'
+    ? user.user_metadata
+    : {};
+  const email = String(user.email || '').trim();
+  const emailBase = email.split('@')[0].trim() || 'socialera.member';
+  const displayName = String(
+    metadata.full_name
+    || metadata.display_name
+    || metadata.name
+    || emailBase
+    || 'SocialEra Member'
+  ).trim() || 'SocialEra Member';
+  const rawUserName = String(
+    metadata.username
+    || metadata.user_name
+    || emailBase
+    || 'socialera.member'
+  ).trim().replace(/^@+/, '');
+  const updatedAt = String(
+    user.last_sign_in_at
+    || user.updated_at
+    || user.created_at
+    || new Date().toISOString()
+  ).trim();
+
+  return normalizeMessageContact({
+    actorId: `user-${id}`,
+    nativeUserId: id,
+    displayName,
+    userName: `@${rawUserName || 'socialera.member'}`,
+    photoUrl: String(
+      metadata.avatar_url
+      || metadata.picture
+      || metadata.avatar
+      || metadata.photo_url
+      || metadata.photoUrl
+      || ''
+    ).trim(),
+    role: 'member',
+    intro: 'Start a direct message with this member.',
+    provider: 'member',
+    updatedAt,
+    lastActiveAt: updatedAt
+  });
+}
+
+async function loadSupabaseMemberDirectory({ force = false } = {}) {
+  const now = Date.now();
+
+  if (!force && cachedSupabaseMemberDirectory.fetchedAt && (now - cachedSupabaseMemberDirectory.fetchedAt) < SUPABASE_MEMBER_DIRECTORY_CACHE_MS) {
+    return cachedSupabaseMemberDirectory.members;
+  }
+
+  const supabaseUrl = String(process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || DEFAULT_SUPABASE_URL || '').trim();
+  const supabaseServiceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    return cachedSupabaseMemberDirectory.members;
+  }
+
+  const response = await fetch(`${supabaseUrl.replace(/\/+$/, '')}/auth/v1/admin/users?page=1&per_page=250`, {
+    method: 'GET',
+    headers: {
+      apikey: supabaseServiceRoleKey,
+      Authorization: `Bearer ${supabaseServiceRoleKey}`
+    }
+  });
+
+  if (!response.ok) {
+    const rawText = await response.text().catch(() => '');
+    const error = new Error(parseRequestErrorText(rawText) || `Supabase member directory request failed (${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
+
+  const payload = await response.json().catch(() => null);
+  const users = Array.isArray(payload && payload.users) ? payload.users : [];
+  const members = users
+    .map((user) => normalizeSupabaseDirectoryMember(user))
+    .filter(Boolean);
+
+  cachedSupabaseMemberDirectory = {
+    fetchedAt: now,
+    members
+  };
+
+  return members;
 }
 
 function isPrivateNetworkHostname(hostname) {
@@ -876,6 +981,7 @@ app.use('/api', createAppearanceRoutes({
 
 app.use('/api', createMessageRoutes({
   buildMessageContacts,
+  loadSupabaseMemberDirectory,
   readSocialMessages,
   upsertMemberProfile,
   writeSocialMessages,

@@ -1025,6 +1025,13 @@ async function refreshMessagingData({ includeContacts = false, renderNow = true 
       const statusChanged = previousMessageStatus !== state.messageStatus || previousMessageStatusType !== state.messageStatusType;
 
       if (threadsChanged || contactsChanged || statusChanged) {
+        if (isUsappSearchFieldActive()) {
+          updateHeader();
+          updateNav();
+          syncUsappSearchUi();
+          return;
+        }
+
         refreshMessagingUi({
           scrollToLatest: liveUpdate.selectedThreadUpdated && state.activeView === 'inbox' && state.messagePanelMode === 'thread',
           scrollBehavior: 'auto'

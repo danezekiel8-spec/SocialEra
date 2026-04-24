@@ -2,6 +2,7 @@ const express = require('express');
 
 function createMessageRoutes({
   buildMessageContacts,
+  loadSupabaseMemberDirectory,
   readSocialMessages,
   upsertMemberProfile,
   writeSocialMessages,
@@ -25,6 +26,23 @@ function createMessageRoutes({
 
   function normalizeLookupValue(value) {
     return String(value || '').trim().toLowerCase();
+  }
+
+  async function loadRemoteMemberContacts(actorId = '') {
+    if (typeof loadSupabaseMemberDirectory !== 'function') {
+      return [];
+    }
+
+    const members = await loadSupabaseMemberDirectory();
+    const normalizedActorId = String(actorId || '').trim();
+
+    return (Array.isArray(members) ? members : [])
+      .filter((member) => member && member.actorId && member.actorId !== normalizedActorId)
+      .map((member) => normalizeMessageContact(member, {
+        role: 'member',
+        intro: 'Start a direct message with this member.',
+        provider: 'member'
+      }));
   }
 
   function touchMemberPresence(data, actorId) {
@@ -312,14 +330,12 @@ function createMessageRoutes({
     });
   });
 
-  router.get('/messages/members', (req, res) => {
+  router.get('/messages/members', async (req, res) => {
     try {
       const actorId = String(req.query.actorId || '').trim();
       const data = readSocialMessages();
-      const contacts = data.members
+      const localContacts = data.members
         .filter((member) => member.actorId && member.actorId !== actorId)
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-        .slice(0, 18)
         .map((member) => normalizeMessageContact(member, {
           role: 'member',
           intro: 'Start a direct message with this member.',
@@ -330,8 +346,38 @@ function createMessageRoutes({
               : (member && String(member.actorId || '').startsWith('user-')
                 ? String(member.actorId || '').slice(5)
                 : '')
-          ).trim()
+              ).trim()
         }));
+      const remoteContacts = await loadRemoteMemberContacts(actorId).catch((error) => {
+        console.error('Supabase member directory could not be loaded:', error);
+        return [];
+      });
+      const contactsByActorId = new Map();
+
+      remoteContacts.forEach((contact) => {
+        contactsByActorId.set(contact.actorId, contact);
+      });
+
+      localContacts.forEach((contact) => {
+        const existing = contactsByActorId.get(contact.actorId);
+        contactsByActorId.set(contact.actorId, normalizeMessageContact({
+          ...(existing || {}),
+          ...contact,
+          updatedAt: String(contact.updatedAt || (existing && existing.updatedAt) || new Date().toISOString()),
+          lastActiveAt: String(contact.lastActiveAt || (existing && existing.lastActiveAt) || contact.updatedAt || new Date().toISOString())
+        }, {
+          role: 'member',
+          intro: 'Start a direct message with this member.',
+          provider: 'member'
+        }));
+      });
+      const contacts = Array.from(contactsByActorId.values())
+        .sort((a, b) => {
+          const leftTime = new Date(String(a.lastActiveAt || a.updatedAt || 0)).getTime();
+          const rightTime = new Date(String(b.lastActiveAt || b.updatedAt || 0)).getTime();
+          return rightTime - leftTime;
+        })
+        .slice(0, 250);
 
       return res.json({ contacts });
     } catch (error) {
@@ -361,7 +407,7 @@ function createMessageRoutes({
     }
   });
 
-  router.post('/messages/member-threads', (req, res) => {
+  router.post('/messages/member-threads', async (req, res) => {
     try {
       const actorId = String(req.body.actorId || '').trim();
       const contactActorId = String(req.body.contactActorId || req.body.contactId || '').trim();
@@ -382,7 +428,28 @@ function createMessageRoutes({
         avatar: req.body.avatar,
         photoUrl: req.body.photoUrl
       });
-      const contactProfile = getMemberProfile(data, contactActorId);
+      let contactProfile = getMemberProfile(data, contactActorId);
+
+      if (!contactProfile) {
+        const remoteContacts = await loadRemoteMemberContacts(actorId).catch((error) => {
+          console.error('Supabase member directory lookup failed while opening a thread:', error);
+          return [];
+        });
+        const remoteMatch = remoteContacts.find((contact) => contact.actorId === contactActorId);
+
+        if (remoteMatch) {
+          contactProfile = upsertMemberProfile(data, {
+            actorId: remoteMatch.actorId,
+            nativeUserId: remoteMatch.nativeUserId,
+            displayName: remoteMatch.displayName,
+            userName: remoteMatch.userName,
+            avatar: remoteMatch.avatar,
+            photoUrl: remoteMatch.photoUrl,
+            lastActiveAt: remoteMatch.lastActiveAt,
+            updatedAt: remoteMatch.updatedAt
+          });
+        }
+      }
 
       if (!contactProfile) {
         return res.status(404).json({ error: 'Member not found' });
