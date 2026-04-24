@@ -2560,33 +2560,22 @@ function renderDiscoverView() {
 
 function renderSearchView() {
   const catalogContext = getCatalogContext('search');
-  const channels = Array.from(new Set(state.products.map((product) => product.category))).filter(Boolean);
-  const searchExperience = renderCatalogSearchExperience({
-    view: 'search',
-    includeRecentWhenEmpty: true
-  });
 
   return `
     <section class="card search-card">
       <div>
         <p class="section-label">Search</p>
-        <h3 class="section-title">Find products fast</h3>
+        <h3 class="section-title">Search members, products, and posts</h3>
       </div>
       <input
         class="field"
         type="search"
         name="discoverQuery"
         autocomplete="off"
-        placeholder="Search by product, category, or style"
+        placeholder="Search by member, product, post, or style"
         value="${escapeHtml(catalogContext.query)}"
       >
-      <div class="chip-row">
-        ${renderFilterChip('all', catalogContext.filter, 'discover')}
-        ${channels.map((channel) => renderFilterChip(channel, catalogContext.filter, 'discover')).join('')}
-      </div>
     </section>
-
-    <div data-catalog-search-experience="search">${searchExperience}</div>
 
     ${renderCatalogResultsSection('search')}
   `;
@@ -2594,6 +2583,31 @@ function renderSearchView() {
 
 function renderCatalogResultsSection(view) {
   const normalizedView = normalizeView(view) === 'search' ? 'search' : 'shop';
+
+  if (normalizedView === 'search') {
+    const payload = getCatalogSearchPayload(String(state.searchViewQuery || ''), {
+      includeRecentWhenEmpty: true
+    });
+
+    return `
+      <section class="card app-search-experience" data-catalog-results="search">
+        <div class="section-header app-search-head">
+          <div>
+            <p class="section-label">${escapeHtml(payload.kicker)}</p>
+            <h3 class="section-title">${escapeHtml(payload.title)}</h3>
+          </div>
+          ${payload.note ? `<p class="section-note">${escapeHtml(payload.note)}</p>` : ''}
+        </div>
+
+        ${payload.sections.length ? `
+          <div class="app-search-sections">
+            ${payload.sections.map((section) => renderCatalogSearchSection(section)).join('')}
+          </div>
+        ` : renderEmptyCard('No search activity yet', 'Start typing to search members, products, and posts.')}
+      </section>
+    `;
+  }
+
   const catalogContext = getCatalogContext(normalizedView);
   const products = getFilteredProducts({ view: normalizedView });
   const title = normalizedView === 'search'
@@ -2661,17 +2675,25 @@ function syncCatalogSearchUi() {
     return false;
   }
 
-  const experienceSlot = elements.viewRoot.querySelector(`[data-catalog-search-experience="${normalizedView}"]`);
   const resultsSection = elements.viewRoot.querySelector(`[data-catalog-results="${normalizedView}"]`);
 
-  if (!experienceSlot || !resultsSection) {
+  if (!resultsSection) {
     return false;
   }
 
-  experienceSlot.innerHTML = renderCatalogSearchExperience({
-    view: normalizedView,
-    includeRecentWhenEmpty: normalizedView === 'search'
-  });
+  if (normalizedView === 'shop') {
+    const experienceSlot = elements.viewRoot.querySelector('[data-catalog-search-experience="shop"]');
+
+    if (!experienceSlot) {
+      return false;
+    }
+
+    experienceSlot.innerHTML = renderCatalogSearchExperience({
+      view: normalizedView,
+      includeRecentWhenEmpty: false
+    });
+  }
+
   resultsSection.outerHTML = renderCatalogResultsSection(normalizedView);
   return true;
 }
@@ -2695,6 +2717,7 @@ function renderCatalogSearchResult(item) {
   const attrs = [
     `data-app-search-kind="${escapeHtml(item.kind)}"`,
     item.id ? `data-app-search-id="${escapeHtml(String(item.id))}"` : '',
+    item.actorId ? `data-app-search-actor-id="${escapeHtml(String(item.actorId))}"` : '',
     item.postId ? `data-app-search-post-id="${escapeHtml(String(item.postId))}"` : '',
     item.label ? `data-app-search-label="${escapeHtml(String(item.label))}"` : '',
     item.query ? `data-app-search-query="${escapeHtml(String(item.query))}"` : '',
@@ -2707,11 +2730,17 @@ function renderCatalogSearchResult(item) {
         ${renderProductMedia(item.product)}
       </span>
     `
-    : `
-      <span class="app-search-result-thumb ${item.kind === 'web-link' ? 'is-web' : ''}" aria-hidden="true">
-        ${escapeHtml(item.avatar || getInitials(item.displayName || item.label || item.provider || 'SE'))}
-      </span>
-    `;
+    : item.photoUrl
+      ? `
+        <span class="app-search-result-thumb ${item.kind === 'web-link' ? 'is-web' : ''}" aria-hidden="true">
+          <img src="${escapeHtml(resolveMediaUrl(item.photoUrl))}" alt="">
+        </span>
+      `
+      : `
+        <span class="app-search-result-thumb ${item.kind === 'web-link' ? 'is-web' : ''}" aria-hidden="true">
+          ${escapeHtml(item.avatar || getInitials(item.displayName || item.label || item.provider || 'SE'))}
+        </span>
+      `;
 
   return `
     <button class="app-search-result" type="button" ${attrs}>
@@ -2810,16 +2839,18 @@ function getCatalogSearchPayload(query, { includeRecentWhenEmpty = false } = {})
 
   if (profileMatches.length) {
     sections.push({
-      title: 'Profiles',
+      title: 'Members',
       items: profileMatches.map((profile) => ({
         kind: 'profile',
+        actorId: profile.actorId,
         postId: profile.postId,
         label: profile.displayName || profile.userName,
-        kicker: 'Profile',
+        kicker: 'Member',
         tag: `${profile.postCount} post${profile.postCount === 1 ? '' : 's'}`,
         title: profile.displayName,
         subtitle: profile.userName || 'SocialEra profile',
         avatar: profile.avatar || getInitials(profile.displayName),
+        photoUrl: profile.photoUrl || '',
         displayName: profile.displayName
       }))
     });
@@ -2888,14 +2919,37 @@ function getCatalogPostSearchResults(query) {
 function getCatalogProfileSearchResults(query) {
   const seen = new Map();
 
+  state.contacts
+    .filter((contact) => isMemberMessageContact(contact))
+    .forEach((contact) => {
+      const key = String(contact.actorId || contact.nativeUserId || contact.userName || contact.displayName || '').trim().toLowerCase();
+
+      if (!key || seen.has(key)) {
+        return;
+      }
+
+      seen.set(key, {
+        actorId: contact.actorId,
+        displayName: contact.displayName,
+        userName: contact.userName,
+        avatar: contact.avatar,
+        photoUrl: contact.photoUrl || '',
+        postId: '',
+        postCount: 0,
+        createdAt: ''
+      });
+    });
+
   state.posts.forEach((post) => {
-    const key = `${normalizeSearchText(post.userName)}::${normalizeSearchText(post.displayName)}`;
+    const key = String(post.actorId || `${normalizeSearchText(post.userName)}::${normalizeSearchText(post.displayName)}`).trim().toLowerCase();
 
     if (!seen.has(key)) {
       seen.set(key, {
+        actorId: post.actorId || '',
         displayName: post.displayName,
         userName: post.userName,
         avatar: post.avatar,
+        photoUrl: post.photoUrl || '',
         postId: post.id,
         postCount: 0,
         createdAt: post.createdAt
@@ -2904,10 +2958,16 @@ function getCatalogProfileSearchResults(query) {
 
     const entry = seen.get(key);
     entry.postCount += 1;
+    entry.actorId = entry.actorId || post.actorId || '';
+    entry.displayName = entry.displayName || post.displayName;
+    entry.userName = entry.userName || post.userName;
+    entry.avatar = entry.avatar || post.avatar;
+    entry.photoUrl = entry.photoUrl || post.photoUrl || '';
 
-    if (new Date(post.createdAt).getTime() > new Date(entry.createdAt).getTime()) {
+    if (!entry.createdAt || new Date(post.createdAt).getTime() > new Date(entry.createdAt).getTime()) {
       entry.postId = post.id;
       entry.createdAt = post.createdAt;
+      entry.photoUrl = post.photoUrl || entry.photoUrl || '';
     }
   });
 
@@ -2987,7 +3047,9 @@ function handleCatalogSearchResult(dataset = {}) {
 
   if (kind === 'recent') {
     state.searchViewQuery = label;
-    render();
+    if (!syncCatalogSearchUi()) {
+      render();
+    }
     return;
   }
 
@@ -3004,8 +3066,17 @@ function handleCatalogSearchResult(dataset = {}) {
     return;
   }
 
-  if (kind === 'profile' && dataset.appSearchPostId) {
-    openPost(dataset.appSearchPostId);
+  if (kind === 'profile') {
+    if (dataset.appSearchActorId) {
+      ensureThread(dataset.appSearchActorId);
+      return;
+    }
+
+    if (dataset.appSearchPostId) {
+      openPost(dataset.appSearchPostId);
+      return;
+    }
+
     return;
   }
 

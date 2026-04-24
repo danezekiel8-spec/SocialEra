@@ -2333,9 +2333,15 @@ video {
 }
 
 .app-search-result-thumb.is-product img,
+.app-search-result-thumb img,
 .app-search-result-thumb.is-product .media-fallback {
   width: 100%;
   height: 100%;
+}
+
+.app-search-result-thumb img {
+  object-fit: cover;
+  display: block;
 }
 
 .app-search-result-copy {
