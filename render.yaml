@@ -21,7 +21,7 @@ services:
       - key: SUPPORT_ACCESS_CODE
         sync: false
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://socialera.onrender.com,https://socialera-app.onrender.com
       - key: SUPABASE_URL
         value: https://kfunqpatayfkscilhncx.supabase.co
       - key: SUPABASE_PUBLISHABLE_KEY
