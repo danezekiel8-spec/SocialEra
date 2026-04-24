@@ -3,12 +3,28 @@ services:
     name: socialera
     runtime: node
     rootDir: backend
+    plan: free
     buildCommand: npm install
     startCommand: npm start
+    healthCheckPath: /api/health
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: PORT
         value: 10000
+      - key: CHECKOUT_ENABLED
+        value: false
       - key: ADMIN_USERNAME
         sync: false
       - key: ADMIN_PASSWORD
+        sync: false
+      - key: SUPPORT_ACCESS_CODE
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: SUPABASE_URL
+        value: https://kfunqpatayfkscilhncx.supabase.co
+      - key: SUPABASE_PUBLISHABLE_KEY
+        value: sb_publishable_ByM_npvMJj4LM_WVntb_aw_qwFPgoMj
+      - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false

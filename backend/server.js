@@ -189,6 +189,17 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '100mb' }));
 
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    checkoutEnabled: CHECKOUT_ENABLED,
+    adminConfigured: ADMIN_CONFIGURED,
+    supportConfigured: SUPPORT_CONFIGURED,
+    productSource: getProductDataSource().getProductSourceStatus()
+  });
+});
+
 app.get('/supabase.js', (req, res) => {
   const config = getPublicSupabaseConfig();
   const payload = `import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
