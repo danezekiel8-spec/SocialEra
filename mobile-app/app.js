@@ -474,6 +474,14 @@ async function syncAuthSession(session, { renderNow = true, refreshNow = false }
 
   syncUsappLiveStream();
   syncActivityAutoRefresh();
+
+  if (nextUser) {
+    window.setTimeout(() => {
+      syncMessageProfile().catch((error) => {
+        console.error('Could not refresh member presence after sign-in:', error);
+      });
+    }, 0);
+  }
 }
 
 function bindEvents() {
@@ -1201,6 +1209,13 @@ async function refreshLiveActivity({ includePosts = true, includeThreads = state
     }
 
     if (threadsChanged && state.activeView === 'inbox') {
+      if (isUsappSearchFieldActive()) {
+        updateHeader();
+        updateNav();
+        syncUsappSearchUi();
+        return;
+      }
+
       refreshMessagingUi({
         renderMainView: false,
         renderUsapp: true,
@@ -2717,6 +2732,18 @@ function syncUsappSearchUi() {
   return true;
 }
 
+function isUsappSearchFieldActive() {
+  const active = document.activeElement;
+
+  return Boolean(
+    active
+    && active instanceof HTMLElement
+    && active.matches('[data-message-search]')
+    && normalizeView(state.activeView) === 'inbox'
+    && state.messagePanelMode === 'inbox'
+  );
+}
+
 function renderCatalogSearchSection(section) {
   if (!section || !Array.isArray(section.items) || !section.items.length) {
     return '';
@@ -3590,10 +3617,15 @@ function renderUsappPanelCard() {
         <div class="usapp-search-wrap ${state.messageSearchOpen ? 'is-open' : ''}">
           <input
             class="usapp-search"
-            type="search"
+            type="text"
             data-message-search="true"
             value="${escapeHtml(state.messageSearchQuery)}"
             placeholder="Search people or chats"
+            inputmode="search"
+            enterkeyhint="search"
+            autocapitalize="none"
+            autocomplete="off"
+            spellcheck="false"
           >
         </div>
 
