@@ -8243,3 +8243,50 @@ html.ios-optimized .usapp-sheet-panel.animate-in .usapp-bubble-row {
     transition-duration: 0.01ms !important;
   }
 }
+
+.usapp-presence {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.38rem;
+  padding: 0.18rem 0.56rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.usapp-presence.compact {
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.usapp-presence.online {
+  color: #18794e;
+  background: rgba(24, 121, 78, 0.1);
+}
+
+.usapp-presence.compact.online {
+  background: transparent;
+}
+
+.usapp-presence.idle {
+  color: rgba(67, 56, 202, 0.82);
+  background: rgba(67, 56, 202, 0.08);
+}
+
+.usapp-presence.compact.idle {
+  background: transparent;
+}
+
+.usapp-presence-dot {
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 0.14rem rgba(255, 255, 255, 0.72);
+  flex: 0 0 auto;
+}

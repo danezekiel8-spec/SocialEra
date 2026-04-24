@@ -312,6 +312,7 @@ const swipeState = {
   startX: 0,
   startY: 0
 };
+const USAPP_PRESENCE_ONLINE_WINDOW_MS = 5 * 60 * 1000;
 
 window.addEventListener('error', (event) => {
   reportStartupError(event && event.error ? event.error : event);
@@ -2698,6 +2699,24 @@ function syncCatalogSearchUi() {
   return true;
 }
 
+function syncUsappSearchUi() {
+  if (!elements.viewRoot || normalizeView(state.activeView) !== 'inbox' || state.messagePanelMode !== 'inbox') {
+    return false;
+  }
+
+  const threadList = elements.viewRoot.querySelector('[data-usapp-thread-list]');
+  const contactRow = elements.viewRoot.querySelector('[data-usapp-contact-row]');
+
+  if (!threadList || !contactRow) {
+    return false;
+  }
+
+  const selectedThread = getSelectedThread();
+  threadList.innerHTML = renderUsappThreadListContent();
+  contactRow.innerHTML = renderUsappContactRowContent(selectedThread);
+  return true;
+}
+
 function renderCatalogSearchSection(section) {
   if (!section || !Array.isArray(section.items) || !section.items.length) {
     return '';
@@ -3527,13 +3546,7 @@ function isUsappThreadMode(selectedThread = getSelectedThread()) {
 
 function renderUsappPanelCard() {
   const selectedThread = getSelectedThread();
-  const visibleContacts = getVisibleMessageContacts();
-  const threads = getVisibleMessageThreads();
   const showingThread = isUsappThreadMode(selectedThread);
-  const peopleEmptyTitle = state.authUser ? 'No people available' : 'Sign in to view people';
-  const peopleEmptyCopy = state.authUser
-    ? 'Open Usapp on your other signed-in member account, then refresh here.'
-    : 'Sign in with your SocialEra account to load member contacts.';
 
   if (showingThread) {
     return `
@@ -3585,19 +3598,43 @@ function renderUsappPanelCard() {
         </div>
 
         <div class="usapp-section usapp-section-threads">
-          <div class="thread-list usapp-thread-list">
-            ${threads.length ? threads.map((thread, index) => renderThreadRow(thread, index)).join('') : renderEmptyCard('No chats yet', 'Start a direct member conversation from your live SocialEra account.')}
+          <div class="thread-list usapp-thread-list" data-usapp-thread-list="true">
+            ${renderUsappThreadListContent()}
           </div>
         </div>
 
         <div class="usapp-section usapp-section-people">
-          <div class="usapp-contact-row">
-            ${visibleContacts.length ? visibleContacts.map((contact, index) => renderMessageContactChip(contact, selectedThread, index)).join('') : renderEmptyCard(peopleEmptyTitle, peopleEmptyCopy)}
+          <div class="usapp-contact-row" data-usapp-contact-row="true">
+            ${renderUsappContactRowContent(selectedThread)}
           </div>
         </div>
       </div>
     </section>
   `;
+}
+
+function renderUsappThreadListContent() {
+  const threads = getVisibleMessageThreads();
+
+  if (!threads.length) {
+    return renderEmptyCard('No chats yet', 'Start a direct member conversation from your live SocialEra account.');
+  }
+
+  return threads.map((thread, index) => renderThreadRow(thread, index)).join('');
+}
+
+function renderUsappContactRowContent(selectedThread = getSelectedThread()) {
+  const visibleContacts = getVisibleMessageContacts();
+  const peopleEmptyTitle = state.authUser ? 'No people available' : 'Sign in to view people';
+  const peopleEmptyCopy = state.authUser
+    ? 'Open Usapp on your other signed-in member account, then refresh here.'
+    : 'Sign in with your SocialEra account to load member contacts.';
+
+  if (!visibleContacts.length) {
+    return renderEmptyCard(peopleEmptyTitle, peopleEmptyCopy);
+  }
+
+  return visibleContacts.map((contact, index) => renderMessageContactChip(contact, selectedThread, index)).join('');
 }
 
 function renderInboxView() {
@@ -3644,6 +3681,7 @@ function renderMessageContactChip(contact, selectedThread, index = 0) {
     >
       <span class="usapp-contact-avatar">${renderAvatarMedia(contact)}</span>
       <strong>${escapeHtml(contact.displayName)}</strong>
+      ${renderUsappPresenceBadge(contact, { compact: true })}
       <span class="usapp-role-pill role-${escapeHtml(getRoleSlug(contact))}">${escapeHtml(getMessageRoleLabel(contact))}</span>
     </button>
   `;
@@ -4744,6 +4782,7 @@ function renderThreadRow(thread, index = 0) {
               <div class="usapp-thread-identity">
                 <h3>${escapeHtml(thread.contact.displayName)}</h3>
                 <span class="usapp-role-pill role-${escapeHtml(getRoleSlug(thread.contact))}">${escapeHtml(getMessageRoleLabel(thread.contact))}</span>
+                ${renderUsappPresenceBadge(thread.contact, { compact: true })}
               </div>
               <span class="thread-meta-side">
                 ${muted ? '<span class="thread-muted-mark">Muted</span>' : ''}
@@ -4785,6 +4824,7 @@ function renderConversation(thread) {
               <div class="usapp-chat-meta-row">
                 <span class="usapp-role-pill role-${escapeHtml(getRoleSlug(thread.contact))}">${escapeHtml(getMessageRoleLabel(thread.contact))}</span>
                 <span class="usapp-chat-subtitle">${escapeHtml(getMessageChatModeLabel(thread.contact))}</span>
+                ${renderUsappPresenceBadge(thread.contact)}
               </div>
             </div>
           </div>
@@ -5771,11 +5811,13 @@ function handleInput(event) {
   const messageSearchField = event.target.closest('[data-message-search]');
   if (messageSearchField) {
     state.messageSearchQuery = String(messageSearchField.value || '');
-    refreshMessagingUi({
-      focusSearch: true,
-      searchSelectionStart: messageSearchField.selectionStart,
-      searchSelectionEnd: messageSearchField.selectionEnd
-    });
+    if (!syncUsappSearchUi()) {
+      refreshMessagingUi({
+        focusSearch: true,
+        searchSelectionStart: messageSearchField.selectionStart,
+        searchSelectionEnd: messageSearchField.selectionEnd
+      });
+    }
     return;
   }
 
@@ -7906,6 +7948,66 @@ function getVisibleMessageThreads() {
     });
 }
 
+function getUsappPresenceTimestamp(contact) {
+  const timestamp = String(
+    contact && (
+      contact.lastActiveAt
+      || contact.last_active_at
+      || contact.updatedAt
+      || contact.updated_at
+    )
+      ? contact.lastActiveAt || contact.last_active_at || contact.updatedAt || contact.updated_at
+      : ''
+  ).trim();
+
+  return timestamp;
+}
+
+function isUsappContactOnline(contact) {
+  const timestamp = getUsappPresenceTimestamp(contact);
+
+  if (!timestamp) {
+    return false;
+  }
+
+  const time = Date.parse(timestamp);
+
+  if (!Number.isFinite(time)) {
+    return false;
+  }
+
+  return (Date.now() - time) <= USAPP_PRESENCE_ONLINE_WINDOW_MS;
+}
+
+function getUsappPresenceLabel(contact) {
+  const timestamp = getUsappPresenceTimestamp(contact);
+
+  if (isUsappContactOnline(contact)) {
+    return 'Online now';
+  }
+
+  if (!timestamp) {
+    return 'Away';
+  }
+
+  return `Active ${formatRelativeTime(timestamp)}`;
+}
+
+function renderUsappPresenceBadge(contact, { compact = false } = {}) {
+  if (!contact || !isMemberMessageContact(contact)) {
+    return '';
+  }
+
+  const online = isUsappContactOnline(contact);
+
+  return `
+    <span class="usapp-presence ${online ? 'online' : 'idle'}${compact ? ' compact' : ''}">
+      <span class="usapp-presence-dot" aria-hidden="true"></span>
+      <span>${escapeHtml(getUsappPresenceLabel(contact))}</span>
+    </span>
+  `;
+}
+
 function matchesMessageSearch(entity, extraText = '') {
   const query = String(state.messageSearchQuery || '').trim().toLowerCase();
 
@@ -9993,6 +10095,8 @@ function normalizeContact(contact, fallbackProvider = 'local') {
     mediaUrl: String(contact.mediaUrl || '').trim(),
     topic: String(contact.topic || '').trim(),
     sourcePostId: String(contact.sourcePostId || contact.source_post_id || '').trim(),
+    lastActiveAt: String(contact.lastActiveAt || contact.last_active_at || contact.updatedAt || contact.updated_at || '').trim(),
+    updatedAt: String(contact.updatedAt || contact.updated_at || contact.lastActiveAt || contact.last_active_at || '').trim(),
     role: roleText === 'support' || roleText === 'concierge'
       ? 'support'
       : roleText === 'member'

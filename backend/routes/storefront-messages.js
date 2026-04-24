@@ -27,6 +27,16 @@ function createMessageRoutes({
     return String(value || '').trim().toLowerCase();
   }
 
+  function touchMemberPresence(data, actorId) {
+    const normalizedActorId = String(actorId || '').trim();
+
+    if (!normalizedActorId || !getMemberProfile(data, normalizedActorId)) {
+      return null;
+    }
+
+    return upsertMemberProfile(data, { actorId: normalizedActorId });
+  }
+
   function normalizeMessageState(actorId, payload = {}) {
     const normalizedActorId = String(actorId || payload.actorId || '').trim();
     const threadReadState = Object.fromEntries(
@@ -235,9 +245,10 @@ function createMessageRoutes({
         forcedUnreadThreadIds: req.body.forcedUnreadThreadIds,
         threadReadState: req.body.threadReadState
       });
+      const presenceProfile = touchMemberPresence(data, actorId);
       const nextState = syncResult && syncResult.state ? syncResult.state : normalizeMessageState(actorId);
 
-      if (syncResult && syncResult.changed) {
+      if ((syncResult && syncResult.changed) || presenceProfile) {
         writeSocialMessages(data);
         emitActors([actorId], 'thread-state-sync', { actorId });
       }

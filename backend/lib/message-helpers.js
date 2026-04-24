@@ -97,6 +97,14 @@ function normalizeMessageContact(contact, fallback = {}) {
   const actorId = String(contact.actorId ?? fallback.actorId ?? '').trim() || `contact-${slugify(normalizedUserName || displayName)}`;
   const nativeUserId = String(contact.nativeUserId ?? fallback.nativeUserId ?? '').trim();
   const provider = String(contact.provider ?? fallback.provider ?? 'local').trim() || 'local';
+  const updatedAt = String(contact.updatedAt ?? contact.updated_at ?? fallback.updatedAt ?? fallback.updated_at ?? new Date().toISOString()).trim();
+  const lastActiveAt = String(
+    contact.lastActiveAt
+    ?? contact.last_active_at
+    ?? fallback.lastActiveAt
+    ?? fallback.last_active_at
+    ?? updatedAt
+  ).trim();
 
   return {
     actorId,
@@ -110,7 +118,9 @@ function normalizeMessageContact(contact, fallback = {}) {
     topic: String(contact.topic ?? fallback.topic ?? '').trim(),
     mediaUrl: sanitizeMessageMediaUrl(contact.mediaUrl ?? fallback.mediaUrl ?? ''),
     sourcePostId: String(contact.sourcePostId ?? fallback.sourcePostId ?? '').trim(),
-    provider
+    provider,
+    updatedAt,
+    lastActiveAt
   };
 }
 
@@ -169,6 +179,15 @@ function normalizeMemberProfile(profile, fallback = {}) {
     ?? (actorId.startsWith('user-') ? actorId.slice(5) : '')
   ).trim();
 
+  const updatedAt = String(profile.updatedAt ?? fallback.updatedAt ?? new Date().toISOString());
+  const lastActiveAt = String(
+    profile.lastActiveAt
+    ?? profile.last_active_at
+    ?? fallback.lastActiveAt
+    ?? fallback.last_active_at
+    ?? updatedAt
+  );
+
   return {
     actorId,
     nativeUserId,
@@ -180,7 +199,8 @@ function normalizeMemberProfile(profile, fallback = {}) {
     intro: 'Start a direct message with this member.',
     topic: '',
     sourcePostId: '',
-    updatedAt: String(profile.updatedAt ?? fallback.updatedAt ?? new Date().toISOString())
+    updatedAt,
+    lastActiveAt
   };
 }
 
@@ -288,7 +308,8 @@ function upsertMemberProfile(data, profileInput) {
     ...(existing || {}),
     ...(profileInput || {}),
     actorId,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    lastActiveAt: new Date().toISOString()
   });
 
   if (!Array.isArray(data.members)) {
