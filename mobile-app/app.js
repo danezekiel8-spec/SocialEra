@@ -249,6 +249,7 @@ const state = {
   sharedPosts: loadSharedPosts(initialGuestActorId),
   viewScrollTop: {},
   feedVisibleCount: createInitialFeedVisibleCount(),
+  expandedPostIds: new Set(),
   spotlightExpanded: false,
   spotlightPreviewIndex: 0,
   iosOptimized: IOS_DEVICE,
@@ -303,6 +304,7 @@ let voiceRecorderStream = null;
 let voiceRecorderChunks = [];
 let viewportVideoObserver = null;
 let chromeMetricsFrame = 0;
+let feedAutoExpandFrame = 0;
 let authMetadataRepairPromise = null;
 const viewportVideoVisibility = new WeakMap();
 const swipeState = {
@@ -542,6 +544,7 @@ function handleViewScroll() {
   }
 
   lastDockScrollTop = currentScrollTop;
+  scheduleFeedAutoExpandCheck();
 }
 
 function bindSwipeNavigation() {
@@ -1489,6 +1492,7 @@ function render() {
   renderCommentSheet();
   renderNotificationSheet();
   syncViewportVideoPlayback();
+  scheduleFeedAutoExpandCheck();
 }
 
 function scheduleChromeMetricsSync() {
@@ -1537,6 +1541,8 @@ function refreshMessagingUi({
   scrollToLatest = false,
   scrollBehavior = 'auto',
   focusSearch = false,
+  searchSelectionStart = null,
+  searchSelectionEnd = null,
   preserveThreadScroll = state.messagePanelMode === 'thread' && !scrollToLatest
 } = {}) {
   const threadScrollSnapshot = preserveThreadScroll ? getUsappThreadScrollSnapshot() : null;
@@ -1568,6 +1574,9 @@ function refreshMessagingUi({
 
       if (searchField) {
         searchField.focus();
+        if (Number.isInteger(searchSelectionStart) && Number.isInteger(searchSelectionEnd) && typeof searchField.setSelectionRange === 'function') {
+          searchField.setSelectionRange(searchSelectionStart, searchSelectionEnd);
+        }
       }
     }, 20);
   }
@@ -1982,7 +1991,9 @@ function handleKeyDown(event) {
         state.searchQuery = value;
       }
 
-      render();
+      if (!syncCatalogSearchUi()) {
+        render();
+      }
     }
 
     return;
@@ -2477,8 +2488,8 @@ function renderFeedContinuation(view, hasMore) {
   }
 
   return `
-    <section class="feed-continuation">
-      <button class="ghost-button feed-load-more" type="button" data-load-more-feed="${escapeHtml(view)}">Load more</button>
+    <section class="feed-continuation auto" data-feed-autoload="${escapeHtml(view)}" aria-hidden="true">
+      <span class="feed-autoload-marker"></span>
     </section>
   `;
 }
@@ -2501,7 +2512,6 @@ function renderPostCardList(posts, surface = 'feed') {
 
 function renderDiscoverView() {
   const catalogContext = getCatalogContext('shop');
-  const products = getFilteredProducts({ view: 'shop' });
   const channels = Array.from(new Set(state.products.map((product) => product.category))).filter(Boolean);
   const bagCount = isSignedIn() ? getBagCount() : 0;
   const searchExperience = renderCatalogSearchExperience({
@@ -2541,28 +2551,15 @@ function renderDiscoverView() {
         </div>
       </section>
 
-      ${searchExperience}
+      <div data-catalog-search-experience="shop">${searchExperience}</div>
 
-      <section class="discover-stack">
-        <div class="section-header">
-          <div>
-            <p class="section-label">Catalog</p>
-            <h3 class="section-title">${products.length} products in view</h3>
-          </div>
-          <p class="section-note">${catalogContext.query ? `Filtered by "${escapeHtml(catalogContext.query)}"` : 'Pulling from the shared backend.'}</p>
-        </div>
-
-        <div class="product-grid">
-          ${products.length ? products.map((product) => renderProductCard(product)).join('') : renderEmptyCard('Nothing matched that search', 'Try a broader keyword or swap back to all categories.')}
-        </div>
-      </section>
+      ${renderCatalogResultsSection('shop')}
     </div>
   `;
 }
 
 function renderSearchView() {
   const catalogContext = getCatalogContext('search');
-  const products = getFilteredProducts({ view: 'search' });
   const channels = Array.from(new Set(state.products.map((product) => product.category))).filter(Boolean);
   const searchExperience = renderCatalogSearchExperience({
     view: 'search',
@@ -2589,19 +2586,39 @@ function renderSearchView() {
       </div>
     </section>
 
-    ${searchExperience}
+    <div data-catalog-search-experience="search">${searchExperience}</div>
 
-    <section class="discover-stack">
+    ${renderCatalogResultsSection('search')}
+  `;
+}
+
+function renderCatalogResultsSection(view) {
+  const normalizedView = normalizeView(view) === 'search' ? 'search' : 'shop';
+  const catalogContext = getCatalogContext(normalizedView);
+  const products = getFilteredProducts({ view: normalizedView });
+  const title = normalizedView === 'search'
+    ? `${products.length} matches`
+    : `${products.length} products in view`;
+  const note = normalizedView === 'search'
+    ? (catalogContext.query ? `Searching for "${escapeHtml(catalogContext.query)}"` : 'Start typing to narrow the catalog.')
+    : (catalogContext.query ? `Filtered by "${escapeHtml(catalogContext.query)}"` : 'Pulling from the shared backend.');
+  const emptyTitle = normalizedView === 'search' ? 'No search results' : 'Nothing matched that search';
+  const emptyNote = normalizedView === 'search'
+    ? 'Try a different keyword or switch the category chips.'
+    : 'Try a broader keyword or swap back to all categories.';
+
+  return `
+    <section class="discover-stack" data-catalog-results="${escapeHtml(normalizedView)}">
       <div class="section-header">
         <div>
-          <p class="section-label">Results</p>
-          <h3 class="section-title">${products.length} matches</h3>
+          <p class="section-label">${escapeHtml(normalizedView === 'search' ? 'Results' : 'Catalog')}</p>
+          <h3 class="section-title">${title}</h3>
         </div>
-        <p class="section-note">${catalogContext.query ? `Searching for "${escapeHtml(catalogContext.query)}"` : 'Start typing to narrow the catalog.'}</p>
+        <p class="section-note">${note}</p>
       </div>
 
       <div class="product-grid">
-        ${products.length ? products.map((product) => renderProductCard(product)).join('') : renderEmptyCard('No search results', 'Try a different keyword or switch the category chips.')}
+        ${products.length ? products.map((product) => renderProductCard(product)).join('') : renderEmptyCard(emptyTitle, emptyNote)}
       </div>
     </section>
   `;
@@ -2635,6 +2652,28 @@ function renderCatalogSearchExperience({
       </div>
     </section>
   `;
+}
+
+function syncCatalogSearchUi() {
+  const normalizedView = normalizeView(state.activeView);
+
+  if (!elements.viewRoot || (normalizedView !== 'shop' && normalizedView !== 'search')) {
+    return false;
+  }
+
+  const experienceSlot = elements.viewRoot.querySelector(`[data-catalog-search-experience="${normalizedView}"]`);
+  const resultsSection = elements.viewRoot.querySelector(`[data-catalog-results="${normalizedView}"]`);
+
+  if (!experienceSlot || !resultsSection) {
+    return false;
+  }
+
+  experienceSlot.innerHTML = renderCatalogSearchExperience({
+    view: normalizedView,
+    includeRecentWhenEmpty: normalizedView === 'search'
+  });
+  resultsSection.outerHTML = renderCatalogResultsSection(normalizedView);
+  return true;
 }
 
 function renderCatalogSearchSection(section) {
@@ -4240,6 +4279,9 @@ function renderPostCard(post) {
   const hasMedia = hasPostMedia(post);
   const suggestions = findSuggestedProducts(post, { limit: 4 });
   const postKindLabel = getPostKindLabel(post);
+  const captionText = String(post.captionText || '');
+  const postExpanded = state.expandedPostIds.has(post.id);
+  const canExpandPost = canExpandPostText(captionText);
   const actionRow = `
     <div class="metric-row post-actions ${hasMedia ? 'post-media-actions' : 'post-copy-actions'}">
       ${renderPostMetricButton({
@@ -4285,7 +4327,17 @@ function renderPostCard(post) {
       <div class="post-copy">
         <div class="post-body">
           <h3 class="post-title">${escapeHtml(post.captionTitle)}</h3>
-          <p class="post-text">${escapeHtml(post.captionText)}</p>
+          <p class="post-text ${postExpanded ? 'is-expanded' : ''}">${escapeHtml(captionText)}</p>
+          ${canExpandPost ? `
+            <button
+              class="post-expand-toggle"
+              type="button"
+              data-toggle-post-expand="${escapeHtml(post.id)}"
+              aria-expanded="${postExpanded ? 'true' : 'false'}"
+            >
+              ${escapeHtml(postExpanded ? 'Show less' : 'Read more')}
+            </button>
+          ` : ''}
         </div>
       </div>
 
@@ -4312,6 +4364,11 @@ function renderPostCard(post) {
       </div>
     </article>
   `;
+}
+
+function canExpandPostText(text) {
+  const normalizedText = String(text || '').trim();
+  return normalizedText.length > 180 || normalizedText.includes('\n');
 }
 
 function hasPostMedia(post) {
@@ -5116,9 +5173,21 @@ async function handleClick(event) {
     return;
   }
 
-  const loadMoreFeedButton = event.target.closest('[data-load-more-feed]');
-  if (loadMoreFeedButton) {
-    expandFeedView(loadMoreFeedButton.dataset.loadMoreFeed || 'home');
+  const postExpandToggle = event.target.closest('[data-toggle-post-expand]');
+  if (postExpandToggle) {
+    const postId = String(postExpandToggle.dataset.togglePostExpand || '').trim();
+
+    if (!postId) {
+      return;
+    }
+
+    if (state.expandedPostIds.has(postId)) {
+      state.expandedPostIds.delete(postId);
+    } else {
+      state.expandedPostIds.add(postId);
+    }
+
+    render();
     return;
   }
 
@@ -5622,7 +5691,11 @@ function handleInput(event) {
   const messageSearchField = event.target.closest('[data-message-search]');
   if (messageSearchField) {
     state.messageSearchQuery = String(messageSearchField.value || '');
-    refreshMessagingUi();
+    refreshMessagingUi({
+      focusSearch: true,
+      searchSelectionStart: messageSearchField.selectionStart,
+      searchSelectionEnd: messageSearchField.selectionEnd
+    });
     return;
   }
 
@@ -5640,12 +5713,15 @@ function handleInput(event) {
 
   const searchField = event.target.closest('input[name="discoverQuery"]');
   if (searchField) {
+    const value = String(searchField.value || '');
     if (normalizeView(state.activeView) === 'search') {
-      state.searchViewQuery = searchField.value;
+      state.searchViewQuery = value;
     } else {
-      state.searchQuery = searchField.value;
+      state.searchQuery = value;
     }
-    render();
+    if (!syncCatalogSearchUi()) {
+      render();
+    }
   }
 }
 
@@ -7140,6 +7216,57 @@ function expandFeedView(view) {
   const normalizedView = normalizeFeedView(view);
   state.feedVisibleCount[normalizedView] = getFeedVisibleCount(normalizedView) + FEED_RENDER_BATCH[normalizedView];
   render();
+}
+
+function getAutoExpandableFeedPosts(view = state.activeView) {
+  const normalizedView = normalizeFeedView(view);
+
+  if (normalizedView === 'videos') {
+    const videoPosts = state.posts.filter((post) => post.mediaType === 'video');
+    return videoPosts.length ? videoPosts : state.posts;
+  }
+
+  return getFilteredPosts();
+}
+
+function scheduleFeedAutoExpandCheck() {
+  if (feedAutoExpandFrame) {
+    window.cancelAnimationFrame(feedAutoExpandFrame);
+  }
+
+  feedAutoExpandFrame = window.requestAnimationFrame(() => {
+    feedAutoExpandFrame = 0;
+    tryAutoExpandFeed();
+  });
+}
+
+function tryAutoExpandFeed() {
+  const normalizedView = normalizeFeedView(state.activeView);
+
+  if (!elements.viewRoot || !['home', 'videos'].includes(normalizedView)) {
+    return;
+  }
+
+  const sentinel = elements.viewRoot.querySelector(`[data-feed-autoload="${normalizedView}"]`);
+
+  if (!sentinel) {
+    return;
+  }
+
+  const posts = getAutoExpandableFeedPosts(normalizedView);
+  const { hasMore } = getVisibleFeedPosts(normalizedView, posts);
+
+  if (!hasMore) {
+    return;
+  }
+
+  const containerRect = elements.viewRoot.getBoundingClientRect();
+  const sentinelRect = sentinel.getBoundingClientRect();
+  const threshold = 220;
+
+  if (sentinelRect.top <= containerRect.bottom + threshold) {
+    expandFeedView(normalizedView);
+  }
 }
 
 function openPost(postId, { fromView = state.activeView } = {}) {

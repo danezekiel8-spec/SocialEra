@@ -2206,8 +2206,15 @@ video {
   justify-content: center;
 }
 
-.feed-load-more {
-  min-width: 9.5rem;
+.feed-continuation.auto {
+  min-height: 0.5rem;
+  padding: 0;
+}
+
+.feed-autoload-marker {
+  width: 100%;
+  height: 1px;
+  display: block;
 }
 
 .post-card {
@@ -2828,6 +2835,23 @@ video {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
+}
+
+.post-text.is-expanded {
+  display: block;
+  overflow: visible;
+  -webkit-line-clamp: unset;
+}
+
+.post-expand-toggle {
+  width: fit-content;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 .tag-row {
