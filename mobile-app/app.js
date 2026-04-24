@@ -3628,18 +3628,16 @@ function renderProfileView() {
         <div>
           <p class="section-label">App settings</p>
           <h3>Appearance and personalization</h3>
-          <p>${signedIn ? 'Open Settings to manage your account theme and background across the app.' : 'Sign in to unlock account-based appearance settings that can follow you across devices.'}</p>
+          <p>${signedIn ? 'Open Settings to manage your profile photo, theme, and background across the app.' : 'Open Settings to manage your guest profile photo now, or sign in to sync profile and appearance changes across devices.'}</p>
         </div>
 
         <button class="settings-entry-button" type="button" data-open-view="settings">
           <span class="settings-entry-icon" aria-hidden="true">${renderSettingsIcon()}</span>
           <span class="settings-entry-copy">
             <strong>Settings</strong>
-            <span>${signedIn ? 'Theme, background, and page targeting' : 'Sign in to open appearance settings'}</span>
+            <span>${signedIn ? 'Profile photo, theme, background, and page targeting' : 'Profile photo plus app appearance controls'}</span>
           </span>
         </button>
-
-        ${renderProfileEditor()}
       </section>
 
       <section class="card connection-card">
@@ -3676,15 +3674,26 @@ function renderSettingsView() {
     <section class="card hero-card hero-card-compact settings-hero-card">
       <div class="hero-content">
         <div class="settings-hero-topline">
-          <span class="mode-badge">Signed-in only</span>
+          <span class="mode-badge">${signedIn ? 'Account synced' : 'Device profile'}</span>
           <button class="ghost-button settings-back-button" type="button" data-open-view="profile" ${state.appearanceSaving ? 'disabled' : ''}>Back to profile</button>
         </div>
         <div>
           <p class="section-label">Profile settings</p>
-          <h2 class="settings-hero-title">Control how SocialEra looks in your app.</h2>
-          <p class="settings-hero-note">Changes preview live here first, then save them to follow your signed-in account after refresh.</p>
+          <h2 class="settings-hero-title">Control your profile and app appearance.</h2>
+          <p class="settings-hero-note">${signedIn ? 'Profile photo, theme, and background preview live here first, then save them to follow your signed-in account after refresh.' : 'Guest profile photo changes save on this device, while account appearance settings unlock after sign-in.'}</p>
         </div>
       </div>
+    </section>
+
+    <section class="card settings-section-card">
+      <div class="settings-section-head">
+        <div>
+          <p class="mini-label">Profile</p>
+          <h3>Profile photo</h3>
+        </div>
+        <span class="featured-badge">${signedIn ? 'Syncs across devices' : 'Saved on this device'}</span>
+      </div>
+      ${renderProfileEditor({ inSettings: true })}
     </section>
 
     <form class="settings-form" data-appearance-form="true">
@@ -3913,7 +3922,7 @@ function renderAuthCard({ standalone = false } = {}) {
   `;
 }
 
-function renderProfileEditor() {
+function renderProfileEditor({ inSettings = false } = {}) {
   const signedIn = Boolean(state.authUser);
   const disabled = state.profilePhotoBusy;
   const currentPhotoUrl = normalizeProfilePhotoValue(state.profile.photoUrl);
@@ -3926,7 +3935,7 @@ function renderProfileEditor() {
       : 'Use an image URL or upload a photo. Larger images will be optimized automatically for the app.';
 
   return `
-    <form class="profile-form" data-profile-form="true">
+    <form class="profile-form ${inSettings ? 'settings-profile-form' : ''}" data-profile-form="true">
       ${signedIn ? `
         <div class="auth-sync-note">
           <p class="helper-text">Your display name and handle still come from the connected SocialEra account. Saving the profile picture here now syncs it across devices and flows through Usapp, app-created posts, and the connected website account.</p>
@@ -3949,7 +3958,7 @@ function renderProfileEditor() {
       <div class="summary-actions">
         <button class="primary-button" type="submit" ${disabled ? 'disabled' : ''}>${disabled ? 'Saving...' : signedIn ? 'Save photo' : 'Save guest profile'}</button>
         <button class="ghost-button" type="button" data-clear-profile-photo="true" ${disabled || !previewPhotoUrl ? 'disabled' : ''}>Remove photo</button>
-        <button class="ghost-button" type="button" data-open-view="home">Back to feed</button>
+        ${inSettings ? '' : '<button class="ghost-button" type="button" data-open-view="home">Back to feed</button>'}
       </div>
     </form>
   `;
