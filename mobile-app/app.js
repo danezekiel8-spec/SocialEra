@@ -21,6 +21,17 @@ import {
   USAPP_MESSAGE_LONG_PRESS_MS,
   USAPP_PREVIEW_REPLY_DELAY_MS
 } from './src/config/constants.js';
+import { createInitialState } from './src/state/store.js';
+import {
+  getMessageContactsSignature,
+  getMessagingSignature,
+  getNotificationSignature,
+  getPostActivitySignature,
+  getUnreadNotificationCount,
+  normalizeView,
+  shouldRenderMainViewForMessaging,
+  titleCase
+} from './src/state/selectors.js';
 import { VIEW_META } from './src/config/view-meta.js';
 import { detectAndroidChromeDevice, detectIOSDevice } from './src/platform/device.js';
 
@@ -39,91 +50,26 @@ const initialAppearanceSettings = loadCachedAppearanceSettings(initialGuestActor
   themeFallback: loadTheme()
 });
 
-const state = {
+const state = createInitialState({
   apiBase: normalizeApiBase(APP_CONFIG.apiBase || '/api'),
   assetBase: String(APP_CONFIG.assetBase || '/').trim() || '/',
-  activeView: initialActiveView,
-  actorId: initialGuestActorId,
-  deviceActorId: initialGuestActorId,
-  guestProfile: initialGuestProfile,
-  profile: { ...initialGuestProfile },
-  theme: initialAppearanceSettings.theme,
   appearanceSettings: initialAppearanceSettings,
-  appearanceDraft: cloneAppearanceSettings(initialAppearanceSettings),
-  appearancePendingBackgroundUrl: '',
-  appearanceLoading: false,
-  appearanceSaving: false,
-  profilePhotoBusy: false,
-  profilePhotoDraftUrl: '',
-  profilePhotoDraftName: '',
-  authMode: 'login',
-  authBusy: false,
-  authReady: false,
-  authAvailable: true,
-  authMessage: null,
-  authRedirectView: '',
-  authSession: null,
-  authUser: null,
-  posts: [],
-  localPosts: [],
-  products: [],
-  contacts: [],
-  threads: [],
   bag: loadBag(),
-  feedFilter: 'all',
-  discoverFilter: 'all',
-  searchQuery: '',
-  searchViewQuery: '',
-  searchViewFilter: 'all',
-  messageSearchQuery: '',
-  messageSearchOpen: false,
-  messageSearchFocused: false,
-  messageSearchPendingSync: false,
-  messageDraftText: '',
-  messageBusy: false,
-  messageReplyToMessageId: '',
-  messageReplyThreadId: '',
-  messageRecording: false,
-  messageStatus: '',
-  messageStatusType: '',
-  messagePanelMode: 'inbox',
-  composerEmojiOpen: false,
-  reactionPickerMessageId: '',
-  reactionRevealMessageId: '',
-  pendingMessageAttachment: null,
-  threadSettingsOpen: false,
-  forcedUnreadThreadIds: loadForcedUnreadThreadIds(initialGuestActorId),
-  mutedThreadIds: loadMutedThreadIds(initialGuestActorId),
-  messageReplyDecorations: loadMessageReplyDecorations(initialGuestActorId),
-  uploadDraft: createUploadDraft(),
-  uploadStep: UPLOAD_STEPS[0].id,
-  uploadPreviewOpen: false,
-  selectedThreadId: loadText(STORAGE_KEYS.selectedThread) || '',
-  selectedPostId: '',
-  activeCommentPostId: '',
-  activeReplyCommentId: '',
-  activeNotificationPanel: false,
-  usappOpen: false,
-  usappAnimateIn: false,
-  liveMessageEffects: {},
-  liveThreadEffects: {},
-  commentDraftText: '',
-  notificationSeenAt: loadNotificationSeenAt(initialGuestActorId),
-  postReturnView: 'home',
-  sharedPosts: loadSharedPosts(initialGuestActorId),
-  viewScrollTop: {},
-  feedVisibleCount: createInitialFeedVisibleCount(),
-  expandedPostIds: new Set(),
-  spotlightExpanded: false,
-  spotlightPreviewIndex: 0,
+  createUploadDraft,
+  feedRenderBatch: FEED_RENDER_BATCH,
+  guestProfile: initialGuestProfile,
+  initialActiveView,
+  initialForcedUnreadThreadIds: loadForcedUnreadThreadIds(initialGuestActorId),
+  initialGuestActorId,
+  initialMessageReplyDecorations: loadMessageReplyDecorations(initialGuestActorId),
+  initialMutedThreadIds: loadMutedThreadIds(initialGuestActorId),
+  initialNotificationSeenAt: loadNotificationSeenAt(initialGuestActorId),
+  initialSelectedThreadId: loadText(STORAGE_KEYS.selectedThread) || '',
+  initialSharedPosts: loadSharedPosts(initialGuestActorId),
+  initialTheme: initialAppearanceSettings.theme,
   iosOptimized: IOS_DEVICE,
-  usappLiveConnected: false,
-  coreBackendFailureCount: 0,
-  loading: true,
-  ready: false,
-  offlineMode: false,
-  installPrompt: null
-};
+  uploadSteps: UPLOAD_STEPS
+});
 
 const elements = {
   phoneShell: document.querySelector('.phone-shell'),
@@ -222,13 +168,6 @@ function reportStartupError(error) {
       </div>
     </div>
   `;
-}
-
-function createInitialFeedVisibleCount() {
-  return {
-    home: FEED_RENDER_BATCH.home,
-    videos: FEED_RENDER_BATCH.videos
-  };
 }
 
 async function init() {
@@ -612,36 +551,6 @@ async function refreshConnectedAccountProfile() {
   }
 
   return state.authUser;
-}
-
-function getMessagingSignature(threads = state.threads) {
-  return (Array.isArray(threads) ? threads : []).map((thread) => {
-    const latestMessage = Array.isArray(thread.messages) && thread.messages.length
-      ? thread.messages[thread.messages.length - 1]
-      : null;
-
-    return [
-      thread.id,
-      thread.updatedAt,
-      thread.lastReadAt,
-      latestMessage ? latestMessage.id : '',
-      latestMessage ? latestMessage.createdAt : '',
-      Array.isArray(thread.messages) ? thread.messages.length : 0
-    ].join(':');
-  }).join('|');
-}
-
-function getMessageContactsSignature(contacts = state.contacts) {
-  return (Array.isArray(contacts) ? contacts : []).map((contact) => {
-    return [
-      contact.actorId,
-      contact.nativeUserId,
-      contact.displayName,
-      contact.userName,
-      contact.photoUrl,
-      contact.provider
-    ].join(':');
-  }).join('|');
 }
 
 function pruneUsappLiveEffects(now = Date.now()) {
@@ -1418,12 +1327,8 @@ function syncChromeMetrics() {
   root.style.setProperty('--app-dock-clearance', `${dockClearance}px`);
 }
 
-function shouldRenderMainViewForMessaging() {
-  return normalizeView(state.activeView) === 'inbox';
-}
-
 function refreshMessagingUi({
-  renderMainView = shouldRenderMainViewForMessaging(),
+  renderMainView = shouldRenderMainViewForMessaging(state.activeView, normalizeView),
   renderUsapp = false,
   renderNotifications = state.activeNotificationPanel,
   scrollToLatest = false,
@@ -7014,19 +6919,6 @@ function setActiveView(nextView, { renderNow = true } = {}) {
   }
 }
 
-function normalizeView(value) {
-  const view = String(value || 'home').trim().toLowerCase();
-  if (view === 'discover') {
-    return 'shop';
-  }
-
-  if (view === 'sell') {
-    return 'upload';
-  }
-
-  return view;
-}
-
 function normalizeStoredView(value) {
   const view = normalizeView(value);
   return view === 'inbox' ? 'home' : view;
@@ -7667,44 +7559,6 @@ function getNotificationItems() {
   return items
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
     .slice(0, 18);
-}
-
-function getNotificationSignature(items = getNotificationItems()) {
-  return (Array.isArray(items) ? items : [])
-    .map((item) => [
-      String(item.id || ''),
-      String(item.createdAt || ''),
-      item.unread ? '1' : '0'
-    ].join(':'))
-    .join('|');
-}
-
-function getPostActivitySignature(posts = state.posts) {
-  return (Array.isArray(posts) ? posts : [])
-    .map((post) => {
-      const comments = flattenCommentsForNotifications(getPostComments(post));
-      const latestComment = comments.length ? comments[comments.length - 1] : null;
-      const likeSignature = Array.isArray(post.likeActors)
-        ? post.likeActors
-            .map((actor) => `${String(actor.actorId || '')}:${String(actor.createdAt || actor.reactedAt || '')}`)
-            .join(',')
-        : '';
-
-      return [
-        String(post.id || ''),
-        Number(post.likes || 0),
-        Number(getPostCommentCount(post)),
-        Number(post.saves || 0),
-        latestComment ? String(latestComment.id || '') : '',
-        latestComment ? String(latestComment.createdAt || '') : '',
-        likeSignature
-      ].join(':');
-    })
-    .join('|');
-}
-
-function getUnreadNotificationCount() {
-  return getNotificationItems().filter((item) => item.unread).length;
 }
 
 function getThreadNotificationItems() {
@@ -11561,14 +11415,6 @@ function formatRelativeTime(value) {
 
   const days = Math.max(1, Math.round(diff / day));
   return `${days}d ago`;
-}
-
-function titleCase(value) {
-  return String(value || 'all')
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
 }
 
 function showToast(message) {
