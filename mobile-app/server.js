@@ -5,6 +5,7 @@ const path = require('path');
 
 const ROOT_DIR = __dirname;
 const PORT = Number(process.env.PORT || 4100);
+const HOST = String(process.env.HOST || '').trim();
 const BACKEND_ORIGIN = String(process.env.SOCIALERA_BACKEND_ORIGIN || 'http://localhost:5001').trim().replace(/\/+$/, '');
 const backendUrl = new URL(BACKEND_ORIGIN);
 
@@ -151,7 +152,9 @@ const server = http.createServer((req, res) => {
   serveStatic(req, res, requestUrl);
 });
 
-server.listen(PORT, () => {
+const listenArgs = HOST ? [PORT, HOST] : [PORT];
+
+server.listen(...listenArgs, () => {
   console.log(`SocialEra mobile app running at http://localhost:${PORT}`);
   console.log(`Proxying backend requests to ${BACKEND_ORIGIN}`);
 });

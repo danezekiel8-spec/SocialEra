@@ -69,6 +69,7 @@ loadEnvFile(path.join(__dirname, '.env'));
 
 const app = express();
 const PORT = Number(process.env.PORT || 5001);
+const HOST = String(process.env.HOST || '').trim();
 const PRODUCTS_FILE = path.join(__dirname, 'products.json');
 const SUPPORT_WORKSPACE_FILE = path.join(__dirname, 'support-workspace.json');
 const SOCIAL_POSTS_FILE = path.join(__dirname, 'social-posts.json');
@@ -1002,7 +1003,9 @@ app.use('/api', createMessageRoutes({
   emitMessageEvent
 }));
 
-app.listen(PORT, () => {
+const listenArgs = HOST ? [PORT, HOST] : [PORT];
+
+app.listen(...listenArgs, () => {
   console.log(`SocialEra backend running at http://localhost:${PORT}`);
 
   if (!ADMIN_CONFIGURED) {

@@ -5,7 +5,8 @@
     "test:smoke": "playwright test",
     "test:smoke:headed": "playwright test --headed",
     "test:smoke:debug": "playwright test --debug",
-    "test:smoke:list": "playwright test --list"
+    "test:smoke:list": "playwright test --list",
+    "test:smoke:local": "./scripts/run-smoke-local.sh"
   },
   "dependencies": {
     "cors": "^2.8.6",
