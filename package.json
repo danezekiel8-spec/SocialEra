@@ -1,7 +1,18 @@
 {
+  "name": "lovada-workspace",
+  "private": true,
+  "scripts": {
+    "test:smoke": "playwright test",
+    "test:smoke:headed": "playwright test --headed",
+    "test:smoke:debug": "playwright test --debug",
+    "test:smoke:list": "playwright test --list"
+  },
   "dependencies": {
     "cors": "^2.8.6",
     "npm": "^11.11.1",
     "start": "^5.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
   }
 }
