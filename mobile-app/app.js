@@ -286,6 +286,7 @@ let activityPollTimer = null;
 let activityRefreshPromise = null;
 let messagePollTimer = null;
 let messageRefreshTimer = null;
+let messageSearchSyncTimer = null;
 let messageRefreshPromise = null;
 let messageStateSyncTimer = null;
 let messageStateSyncPromise = null;
@@ -2047,6 +2048,7 @@ function handleKeyDown(event) {
   if (event.key === 'Escape' && state.activeView === 'inbox' && state.messageSearchOpen) {
     state.messageSearchOpen = false;
     setUsappSearchFocusState(false);
+    clearUsappSearchUiSyncTimer();
     state.messageSearchQuery = '';
     refreshMessagingUi();
     return;
@@ -2741,6 +2743,17 @@ function syncUsappSearchUi() {
   return true;
 }
 
+function queueUsappSearchUiSync({ delayMs = 90 } = {}) {
+  if (messageSearchSyncTimer) {
+    window.clearTimeout(messageSearchSyncTimer);
+  }
+
+  messageSearchSyncTimer = window.setTimeout(() => {
+    messageSearchSyncTimer = null;
+    syncUsappSearchUi();
+  }, delayMs);
+}
+
 function setUsappSearchFocusState(isFocused) {
   state.messageSearchFocused = Boolean(isFocused)
     && normalizeView(state.activeView) === 'inbox'
@@ -2775,6 +2788,15 @@ function handleFocusOut(event) {
     const active = document.activeElement;
     setUsappSearchFocusState(Boolean(active instanceof HTMLElement && active.matches('[data-message-search]')));
   }, 0);
+}
+
+function clearUsappSearchUiSyncTimer() {
+  if (!messageSearchSyncTimer) {
+    return;
+  }
+
+  window.clearTimeout(messageSearchSyncTimer);
+  messageSearchSyncTimer = null;
 }
 
 function renderCatalogSearchSection(section) {
@@ -5620,6 +5642,7 @@ async function handleClick(event) {
     }
 
     if (!state.messageSearchOpen) {
+      clearUsappSearchUiSyncTimer();
       state.messageSearchQuery = '';
     }
 
@@ -5881,12 +5904,14 @@ function handleInput(event) {
   const messageSearchField = event.target.closest('[data-message-search]');
   if (messageSearchField) {
     state.messageSearchQuery = String(messageSearchField.value || '');
-    if (!syncUsappSearchUi()) {
+    if (!elements.viewRoot || normalizeView(state.activeView) !== 'inbox' || state.messagePanelMode !== 'inbox') {
       refreshMessagingUi({
         focusSearch: true,
         searchSelectionStart: messageSearchField.selectionStart,
         searchSelectionEnd: messageSearchField.selectionEnd
       });
+    } else {
+      queueUsappSearchUiSync();
     }
     return;
   }
