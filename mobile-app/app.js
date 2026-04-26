@@ -1,182 +1,43 @@
+import {
+  APP_THEMES,
+  APP_THEME_IDS,
+  APPEARANCE_PAGE_IDS,
+  APPEARANCE_PAGE_OPTIONS,
+  DEFAULT_UPLOAD_CHANNELS,
+  FEED_RENDER_BATCH,
+  GUEST_ACCESSIBLE_VIEWS,
+  MAX_APPEARANCE_BACKGROUND_BYTES,
+  MAX_APPEARANCE_BACKGROUND_DIMENSION,
+  MAX_APPEARANCE_BACKGROUND_FILE_BYTES,
+  MAX_PROFILE_PHOTO_BYTES,
+  MAX_PROFILE_PHOTO_DIMENSION,
+  MAX_VOICE_MESSAGE_BYTES,
+  MESSAGE_COMPOSER_EMOJIS,
+  MESSAGE_REACTION_EMOJIS,
+  PRIMARY_SWIPE_VIEWS,
+  STORAGE_KEYS,
+  UPLOAD_STEPS,
+  USAPP_LIVE_EFFECT_WINDOW_MS,
+  USAPP_MESSAGE_LONG_PRESS_MS,
+  USAPP_PREVIEW_REPLY_DELAY_MS
+} from './src/config/constants.js';
+import { VIEW_META } from './src/config/view-meta.js';
+import { detectAndroidChromeDevice, detectIOSDevice } from './src/platform/device.js';
+
 const APP_CONFIG = window.SOCIALERA_APP_CONFIG || {};
 let runtimeSupabaseUrl = '';
 let runtimeSupabasePublishableKey = '';
 const IOS_DEVICE = detectIOSDevice();
 const ANDROID_CHROME_DEVICE = detectAndroidChromeDevice();
-
-const STORAGE_KEYS = {
-  actorId: 'socialera.mobile.actor-id',
-  activeView: 'socialera.mobile.active-view',
-  appearanceSettings: 'socialera.mobile.appearance-settings',
-  bag: 'socialera.mobile.bag',
-  notificationSeenAt: 'socialera.mobile.notification-seen-at',
-  profile: 'socialera.mobile.profile',
-  profilePhoto: 'socialera.mobile.profile-photo',
-  recentSearches: 'socialera.mobile.recent-searches',
-  sharedPosts: 'socialera.mobile.shared-posts',
-  selectedThread: 'socialera.mobile.selected-thread',
-  threadReadState: 'socialera.mobile.thread-read-state',
-  forcedUnreadThreads: 'socialera.mobile.forced-unread-threads',
-  messageReplyDecorations: 'socialera.mobile.message-reply-decorations',
-  mutedThreads: 'socialera.mobile.muted-threads',
-  theme: 'socialera.mobile.theme'
-};
-
-const PRIMARY_SWIPE_VIEWS = ['home', 'shop', 'videos', 'upload'];
-const FEED_RENDER_BATCH = {
-  home: 8,
-  videos: 6
-};
-
-const VIEW_META = {
-  auth: {
-    title: 'Account',
-    subtitle: 'Sign in or create a SocialEra account to unlock the full app experience.'
-  },
-  home: {
-    title: 'Home',
-    subtitle: 'SocialEra feed, products, and creator momentum from one floating dock.'
-  },
-  videos: {
-    title: 'Videos',
-    subtitle: 'A vertical-style stream for clips, motion-first drops, and creator storytelling.'
-  },
-  shop: {
-    title: 'Shop',
-    subtitle: 'Browse products and collections directly from the floating bottom navigation.'
-  },
-  upload: {
-    title: 'Composer',
-    subtitle: 'Create SocialEra posts inside a dedicated composer without touching the separate website experience.'
-  },
-  search: {
-    title: 'Search',
-    subtitle: 'Search products, creators, and categories from the dock without leaving the app flow.'
-  },
-  bag: {
-    title: 'Bag',
-    subtitle: 'Bag stays reachable from product actions while the main dock stays brand-first.'
-  },
-  inbox: {
-    title: 'Usapp Chats',
-    subtitle: 'Talk to real SocialEra members inside Usapp Chats from the mobile app shell.'
-  },
-  post: {
-    title: 'Post',
-    subtitle: 'Open a single SocialEra post from spotlight without losing the app shell.'
-  },
-  profile: {
-    title: 'Profile',
-    subtitle: 'This app runs separately and can share the same backend safely.'
-  },
-  settings: {
-    title: 'Settings',
-    subtitle: 'Adjust the app appearance for your signed-in SocialEra account.'
-  }
-};
-
-const DEFAULT_UPLOAD_CHANNELS = ['night-code', 'soft-power', 'studio-note', 'drop-alert'];
-const GUEST_ACCESSIBLE_VIEWS = new Set(['auth', 'shop']);
-const MAX_PROFILE_PHOTO_BYTES = 512 * 1024;
-const MAX_PROFILE_PHOTO_DIMENSION = 720;
-const MAX_APPEARANCE_BACKGROUND_FILE_BYTES = 5 * 1024 * 1024;
-const MAX_APPEARANCE_BACKGROUND_BYTES = 900 * 1024;
-const MAX_APPEARANCE_BACKGROUND_DIMENSION = 1440;
 const ACTIVITY_POLL_INTERVAL_MS = IOS_DEVICE ? 10000 : 5000;
 const MESSAGE_POLL_INTERVAL_MS = IOS_DEVICE ? 8000 : 5000;
 const SPOTLIGHT_SLIDESHOW_INTERVAL_MS = IOS_DEVICE ? 5200 : 3200;
-const USAPP_LIVE_EFFECT_WINDOW_MS = 2200;
-const USAPP_PREVIEW_REPLY_DELAY_MS = 950;
-const USAPP_MESSAGE_LONG_PRESS_MS = 420;
-const MAX_VOICE_MESSAGE_BYTES = 4 * 1024 * 1024;
-const MESSAGE_COMPOSER_EMOJIS = ['🙂', '🔥', '✨', '🖤', '🙌', '😍', '👌', '🙏'];
-const MESSAGE_REACTION_EMOJIS = ['❤️', '🔥', '😂', '👏', '🙌', '😍'];
-const UPLOAD_STEPS = [
-  {
-    id: 'media',
-    label: 'Media',
-    title: 'Add media if you want it',
-    note: 'Photo or video is optional now, so text-only posts stay text-only.'
-  },
-  {
-    id: 'caption',
-    label: 'Caption',
-    title: 'Write the post',
-    note: 'Set the title and caption so the card lands with the right voice.'
-  },
-  {
-    id: 'placement',
-    label: 'Placement',
-    title: 'Choose where it lands',
-    note: 'Pick the channel, tags, and any linked products for the post.'
-  },
-  {
-    id: 'review',
-    label: 'Review',
-    title: 'Review before publishing',
-    note: 'Check the final card, linked products, and publish when it feels right.'
-  }
-];
-const APP_THEME_IDS = ['socialera', 'editorial', 'coast', 'midnight', 'terracotta', 'moss', 'sunroom'];
-const APPEARANCE_PAGE_IDS = ['home', 'shop', 'videos', 'upload', 'profile', 'inbox'];
 const initialGuestActorId = ensureActorId();
 const initialGuestProfile = loadProfile();
 const initialActiveView = normalizeStoredView(loadText(STORAGE_KEYS.activeView) || 'home');
 const initialAppearanceSettings = loadCachedAppearanceSettings(initialGuestActorId, {
   themeFallback: loadTheme()
 });
-const APP_THEMES = [
-  {
-    id: 'socialera',
-    label: 'SocialEra',
-    note: 'Warm ivory and gold',
-    swatches: ['#f8f5f0', '#c8a96b', '#111111']
-  },
-  {
-    id: 'editorial',
-    label: 'Editorial',
-    note: 'Rose paper and oxblood',
-    swatches: ['#f5ece7', '#b77468', '#24171a']
-  },
-  {
-    id: 'coast',
-    label: 'Coast',
-    note: 'Porcelain and blue slate',
-    swatches: ['#eef5f7', '#7ea6bb', '#11202b']
-  },
-  {
-    id: 'midnight',
-    label: 'Midnight',
-    note: 'Ink black and champagne',
-    swatches: ['#171a20', '#d2b06d', '#f3ecdf']
-  },
-  {
-    id: 'terracotta',
-    label: 'Terracotta',
-    note: 'Clay, sand, and ember',
-    swatches: ['#f4e7df', '#d27b55', '#3a241f']
-  },
-  {
-    id: 'moss',
-    label: 'Moss',
-    note: 'Stone and pine green',
-    swatches: ['#edf1ea', '#7d9071', '#1f2a22']
-  },
-  {
-    id: 'sunroom',
-    label: 'Sunroom',
-    note: 'Pearl and saffron',
-    swatches: ['#fbf6e9', '#d7a43a', '#352919']
-  }
-];
-const APPEARANCE_PAGE_OPTIONS = [
-  { id: 'home', label: 'Home' },
-  { id: 'shop', label: 'Shop' },
-  { id: 'videos', label: 'Videos' },
-  { id: 'upload', label: 'Composer' },
-  { id: 'profile', label: 'Profile' },
-  { id: 'inbox', label: 'Usapp' }
-];
 
 const state = {
   apiBase: normalizeApiBase(APP_CONFIG.apiBase || '/api'),
@@ -7293,19 +7154,6 @@ function shouldAutoplayVideo(type = 'post') {
   }
 
   return state.activeView === 'videos' || state.activeView === 'post';
-}
-
-function detectIOSDevice() {
-  const ua = String(navigator.userAgent || '');
-  const platform = String(navigator.platform || '');
-  const maxTouchPoints = Number(navigator.maxTouchPoints || 0);
-
-  return /iPad|iPhone|iPod/i.test(ua) || (/Mac/i.test(platform) && maxTouchPoints > 1);
-}
-
-function detectAndroidChromeDevice() {
-  const ua = String(navigator.userAgent || '');
-  return /Android/i.test(ua) && /Chrome\//i.test(ua) && !/EdgA|OPR|SamsungBrowser/i.test(ua);
 }
 
 async function publishUploadDraft() {
