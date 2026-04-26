@@ -34,6 +34,9 @@ import {
 } from './src/state/selectors.js';
 import { VIEW_META } from './src/config/view-meta.js';
 import { detectAndroidChromeDevice, detectIOSDevice } from './src/platform/device.js';
+import { createApiService, getRequestErrorMessage, isAuthRequestError } from './src/services/api.js';
+import { createRuntimeSupabaseConfigService } from './src/services/runtime-supabase.js';
+import { createSupabaseSessionService } from './src/services/auth-session.js';
 
 const APP_CONFIG = window.SOCIALERA_APP_CONFIG || {};
 let runtimeSupabaseUrl = '';
@@ -69,6 +72,41 @@ const state = createInitialState({
   initialTheme: initialAppearanceSettings.theme,
   iosOptimized: IOS_DEVICE,
   uploadSteps: UPLOAD_STEPS
+});
+
+const apiService = createApiService({
+  fetchImpl: (...args) => fetch(...args),
+  getApiBase: () => state.apiBase,
+  getAuthSession: () => state.authSession,
+  getBackendOrigin: () => String(APP_CONFIG.backendOrigin || '').trim().replace(/\/+$/, '')
+});
+
+const runtimeSupabaseConfigService = createRuntimeSupabaseConfigService({
+  fetchImpl: (...args) => fetch(...args),
+  getApiBase: () => state.apiBase,
+  getRuntimeSupabaseUrl: () => runtimeSupabaseUrl,
+  setRuntimeSupabaseConfig: ({ supabaseUrl, supabasePublishableKey }) => {
+    runtimeSupabaseUrl = supabaseUrl;
+    runtimeSupabasePublishableKey = supabasePublishableKey;
+  }
+});
+
+const supabaseSessionService = createSupabaseSessionService({
+  forceReauth,
+  getAuthSession: () => state.authSession,
+  getAuthUser: () => state.authUser,
+  getSupabaseClient: () => (
+    supabaseClient && typeof supabaseClient.from === 'function'
+      ? supabaseClient
+      : null
+  ),
+  logger: console,
+  setAuthSession: (session) => {
+    state.authSession = session;
+  },
+  setAuthUser: (user) => {
+    state.authUser = user;
+  }
 });
 
 const elements = {
@@ -185,7 +223,7 @@ async function initSupabase() {
   state.authAvailable = true;
 
   try {
-    const runtimeSupabaseConfig = await loadRuntimeSupabaseConfig();
+    const runtimeSupabaseConfig = await runtimeSupabaseConfigService.loadRuntimeSupabaseConfig();
 
     if (!runtimeSupabaseConfig.supabaseConfigured) {
       throw new Error('Supabase runtime config is missing. Add SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY to the backend environment.');
@@ -444,7 +482,7 @@ async function refreshData({ quiet = false } = {}) {
   const requests = await Promise.allSettled([
     refreshConnectedAccountProfile(),
     loadSocialFeedPosts(),
-    fetchJson('/products', { omitAuth: true }),
+    apiService.fetchJson('/products', { omitAuth: true }),
     loadMessagingContacts(),
     loadMessagingThreads(),
     state.authUser ? loadRemoteMessageState() : Promise.resolve(null),
@@ -524,7 +562,7 @@ async function refreshData({ quiet = false } = {}) {
 }
 
 async function refreshConnectedAccountProfile() {
-  const supabase = getSupabaseClient();
+  const supabase = supabaseSessionService.getSupabaseClient();
 
   if (!supabase || !state.authUser) {
     return null;
@@ -1169,7 +1207,7 @@ function syncUsappLiveStream() {
     return;
   }
 
-  const streamUrl = createApiUrl(`/messages/events?actorId=${encodeURIComponent(getMessageActorId())}`);
+  const streamUrl = apiService.createApiUrl(`/messages/events?actorId=${encodeURIComponent(getMessageActorId())}`);
 
   if (usappEventSource && usappEventSource.url === streamUrl) {
     return;
@@ -6089,7 +6127,7 @@ function clearLocalSupabaseSessionArtifacts() {
       return;
     }
 
-    getSupabaseSessionStorageKeys().forEach((key) => {
+    runtimeSupabaseConfigService.getSupabaseSessionStorageKeys().forEach((key) => {
       try {
         storage.removeItem(key);
       } catch (error) {
@@ -6284,7 +6322,7 @@ async function submitComment(postId) {
   };
 
   try {
-    const response = await fetchJson(`/social/posts/${encodeURIComponent(postId)}/comments`, {
+    const response = await apiService.fetchJson(`/social/posts/${encodeURIComponent(postId)}/comments`, {
       method: 'POST',
       body: JSON.stringify(commentPayload)
     });
@@ -6311,7 +6349,7 @@ async function toggleCommentReaction(postId, commentId) {
   }
 
   try {
-    const response = await fetchJson(`/social/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}/reactions`, {
+    const response = await apiService.fetchJson(`/social/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}/reactions`, {
       method: 'POST',
       body: JSON.stringify({
         actorId: state.actorId,
@@ -6351,7 +6389,7 @@ async function togglePostMetric(postId, metric) {
   refreshPostSurfaces(postId, { includeSpotlight: metric === 'likes' });
 
   try {
-    const response = await fetchJson(`/social/posts/${encodeURIComponent(postId)}/reactions`, {
+    const response = await apiService.fetchJson(`/social/posts/${encodeURIComponent(postId)}/reactions`, {
       method: 'POST',
       body: JSON.stringify({
         metric,
@@ -6496,7 +6534,7 @@ async function ensureThread(contactId) {
 
     await syncMessageProfile().catch(() => null);
 
-    const response = await fetchMessageJson('/messages/member-threads', {
+    const response = await apiService.fetchMessageJson('/messages/member-threads', {
       method: 'POST',
       body: JSON.stringify({
         actorId: getMessageActorId(),
@@ -6668,7 +6706,7 @@ async function sendMessage(threadId, text, attachment = null) {
       return;
     }
 
-    const response = await fetchMessageJson(`/messages/member-threads/${encodeURIComponent(thread.nativeId)}/messages`, {
+    const response = await apiService.fetchMessageJson(`/messages/member-threads/${encodeURIComponent(thread.nativeId)}/messages`, {
       method: 'POST',
       body: JSON.stringify({
         actorId: getMessageActorId(),
@@ -6731,7 +6769,7 @@ async function sendMessageReaction(thread, messageId, emoji) {
     let nextThread = null;
 
     if (thread.provider === 'member') {
-      const response = await fetchMessageJson(`/messages/member-threads/${encodeURIComponent(thread.nativeId)}/messages/${encodeURIComponent(message.nativeId)}/reactions`, {
+      const response = await apiService.fetchMessageJson(`/messages/member-threads/${encodeURIComponent(thread.nativeId)}/messages/${encodeURIComponent(message.nativeId)}/reactions`, {
         method: 'POST',
         body: JSON.stringify({
           actorId: getMessageActorId(),
@@ -6741,7 +6779,7 @@ async function sendMessageReaction(thread, messageId, emoji) {
 
       nextThread = normalizeThread(response.thread, 'member');
     } else {
-      const response = await fetchMessageJson(`/messages/threads/${encodeURIComponent(thread.nativeId)}/messages/${encodeURIComponent(message.nativeId)}/reactions`, {
+      const response = await apiService.fetchMessageJson(`/messages/threads/${encodeURIComponent(thread.nativeId)}/messages/${encodeURIComponent(message.nativeId)}/reactions`, {
         method: 'POST',
         body: JSON.stringify({
           actorId: getMessageActorId(),
@@ -7099,7 +7137,7 @@ async function publishUploadDraft() {
   let publishedPost = normalizePost(postPayload);
 
   try {
-    const response = await fetchJson('/social/posts', {
+    const response = await apiService.fetchJson('/social/posts', {
       method: 'POST',
       body: JSON.stringify(postPayload)
     });
@@ -8400,7 +8438,7 @@ function toggleActor(actorIds, actorId, currentlyActive) {
 
 async function loadSocialFeedPosts() {
   try {
-    const payload = await fetchJson('/social/posts', { omitAuth: true });
+    const payload = await apiService.fetchJson('/social/posts', { omitAuth: true });
     const normalizedPosts = normalizePosts(payload);
 
     if (normalizedPosts.length || !Array.isArray(payload)) {
@@ -8414,7 +8452,7 @@ async function loadSocialFeedPosts() {
     }
 
     console.warn('Social feed proxy returned an empty list. Retrying directly against the backend origin.');
-    const backendPayload = await fetchBackendJson('/social/posts', { omitAuth: true });
+    const backendPayload = await apiService.fetchBackendJson('/social/posts', { omitAuth: true });
     const backendPosts = normalizePosts(backendPayload);
 
     return backendPosts.length ? backendPosts : normalizedPosts;
@@ -8422,7 +8460,7 @@ async function loadSocialFeedPosts() {
     console.warn('Falling back to Supabase social posts for the mobile app:', apiError);
 
     try {
-      const backendPayload = await fetchBackendJson('/social/posts', { omitAuth: true });
+      const backendPayload = await apiService.fetchBackendJson('/social/posts', { omitAuth: true });
       const backendPosts = normalizePosts(backendPayload);
 
       if (backendPosts.length) {
@@ -8701,205 +8739,6 @@ function countCommentTree(comments) {
   }, 0);
 }
 
-function shouldBypassAuthForApiPath(pathname) {
-  return /^\/messages(?:\/|$)/.test(String(pathname || '').trim());
-}
-
-async function fetchJson(pathname, options = {}) {
-  const {
-    headers: optionHeaders = {},
-    credentials: requestCredentials = 'omit',
-    omitAuth = false,
-    allowMessageAuth = false,
-    ...requestOptions
-  } = options;
-  const headers = {
-    ...optionHeaders
-  };
-  const bypassAuth = shouldBypassAuthForApiPath(pathname) && !allowMessageAuth;
-  const effectiveOmitAuth = omitAuth || bypassAuth;
-
-  if (!('Content-Type' in headers) && !('content-type' in headers)) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  if (bypassAuth) {
-    delete headers.Authorization;
-    delete headers.authorization;
-  }
-
-  if (!effectiveOmitAuth && !headers.Authorization && !headers.authorization && state.authSession && state.authSession.access_token) {
-    headers.Authorization = `Bearer ${state.authSession.access_token}`;
-  }
-
-  const response = await fetch(`${state.apiBase}${pathname}`, {
-    ...requestOptions,
-    credentials: requestCredentials,
-    headers
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '');
-    const error = new Error(parseRequestErrorText(errorText) || `Request failed: ${response.status}`);
-    error.status = response.status;
-    error.rawText = errorText;
-    throw error;
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
-}
-
-function fetchMessageJson(pathname, options = {}) {
-  return fetchJson(pathname, {
-    ...options,
-    omitAuth: true
-  });
-}
-
-async function fetchBackendJson(pathname, options = {}) {
-  const backendOrigin = String(APP_CONFIG.backendOrigin || '').trim().replace(/\/+$/, '');
-
-  if (!backendOrigin) {
-    throw new Error('No backend origin configured for direct requests.');
-  }
-
-  const {
-    headers: optionHeaders = {},
-    credentials: requestCredentials = 'omit',
-    omitAuth = false,
-    ...requestOptions
-  } = options;
-  const headers = {
-    ...optionHeaders
-  };
-
-  if (!('Content-Type' in headers) && !('content-type' in headers)) {
-    headers['Content-Type'] = 'application/json';
-  }
-
-  if (!omitAuth && !headers.Authorization && !headers.authorization && state.authSession && state.authSession.access_token) {
-    headers.Authorization = `Bearer ${state.authSession.access_token}`;
-  }
-
-  const response = await fetch(`${backendOrigin}/api${pathname}`, {
-    ...requestOptions,
-    credentials: requestCredentials,
-    headers
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => '');
-    const error = new Error(parseRequestErrorText(errorText) || `Direct backend request failed: ${response.status}`);
-    error.status = response.status;
-    error.rawText = errorText;
-    throw error;
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  const text = await response.text();
-  return text ? JSON.parse(text) : null;
-}
-
-function parseRequestErrorText(value) {
-  const raw = String(value || '').trim();
-
-  if (!raw) {
-    return '';
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-
-    if (parsed && typeof parsed === 'object') {
-      return String(
-        parsed.error
-        || parsed.message
-        || parsed.detail
-        || raw
-      ).trim();
-    }
-  } catch (error) {
-    return raw;
-  }
-
-  return raw;
-}
-
-function getSupabaseProjectRef(url = runtimeSupabaseUrl) {
-  try {
-    return new URL(String(url || '').trim()).host.split('.')[0] || '';
-  } catch (error) {
-    return '';
-  }
-}
-
-function getSupabaseSessionStorageKeys() {
-  const projectRef = getSupabaseProjectRef();
-  return Array.from(new Set([
-    projectRef ? `sb-${projectRef}-auth-token` : '',
-    projectRef ? `sb-${projectRef}-auth-token-code-verifier` : '',
-    'supabase.auth.token'
-  ].filter(Boolean)));
-}
-
-async function loadRuntimeSupabaseConfig() {
-  const response = await fetch(`${state.apiBase}/storefront-config`, {
-    credentials: 'omit'
-  });
-
-  if (!response.ok) {
-    throw new Error(`Could not load auth config (${response.status}).`);
-  }
-
-  const payload = await response.json().catch(() => null);
-  const supabaseUrl = String(payload && payload.supabaseUrl ? payload.supabaseUrl : '').trim();
-  const supabasePublishableKey = String(payload && payload.supabasePublishableKey ? payload.supabasePublishableKey : '').trim();
-
-  runtimeSupabaseUrl = supabaseUrl;
-  runtimeSupabasePublishableKey = supabasePublishableKey;
-
-  return {
-    supabaseUrl,
-    supabasePublishableKey,
-    supabaseConfigured: Boolean(payload && payload.supabaseConfigured && supabaseUrl && supabasePublishableKey),
-    supabaseSource: String(payload && payload.supabaseSource ? payload.supabaseSource : '').trim()
-  };
-}
-
-function getRequestErrorMessage(error, fallback = 'Something went wrong.') {
-  const status = Number(error && error.status ? error.status : 0);
-  const directMessage = String(error && error.message ? error.message : '').trim();
-  const parsedRawMessage = parseRequestErrorText(error && error.rawText ? error.rawText : '');
-
-  if (status === 431) {
-    return 'The browser sent too much local session data with this request. Refresh the app and try again.';
-  }
-
-  return parsedRawMessage || directMessage || fallback;
-}
-
-function isAuthRequestError(error) {
-  const status = Number(error && error.status ? error.status : 0);
-  const message = getRequestErrorMessage(error, '').toLowerCase();
-
-  return status === 401
-    || /unauthorized/.test(message)
-    || /authentication required/.test(message)
-    || /sign in again/.test(message);
-}
-
-function createApiUrl(pathname) {
-  return new URL(`${String(state.apiBase || '/api').replace(/\/$/, '')}${pathname}`, window.location.origin).toString();
-}
-
 function normalizeMessageStatePayload(payload, actorId = getMessageActorId()) {
   const normalizedActorId = String(payload && payload.actorId ? payload.actorId : actorId).trim();
   const threadReadState = Object.fromEntries(
@@ -9022,7 +8861,7 @@ async function loadRemoteMessageState() {
     return remoteMessageStatePromise;
   }
 
-  remoteMessageStatePromise = fetchMessageJson(`/messages/state?actorId=${encodeURIComponent(getMessageActorId())}`)
+  remoteMessageStatePromise = apiService.fetchMessageJson(`/messages/state?actorId=${encodeURIComponent(getMessageActorId())}`)
     .finally(() => {
       remoteMessageStatePromise = null;
     });
@@ -9039,7 +8878,7 @@ async function syncRemoteMessageState() {
     return messageStateSyncPromise;
   }
 
-  messageStateSyncPromise = fetchMessageJson('/messages/state/sync', {
+  messageStateSyncPromise = apiService.fetchMessageJson('/messages/state/sync', {
     method: 'POST',
     body: JSON.stringify(buildMessageStateSnapshot())
   }).finally(() => {
@@ -9214,10 +9053,10 @@ async function ensureUsappMemberSession() {
   const hadAuthUser = Boolean(state.authUser && state.authUser.id);
 
   try {
-    let session = await ensureSupabaseSessionState();
+    let session = await supabaseSessionService.ensureSupabaseSessionState();
 
     if (!session || !session.access_token) {
-      session = await ensureSupabaseSessionState({ forceRefresh: true });
+      session = await supabaseSessionService.ensureSupabaseSessionState({ forceRefresh: true });
     }
 
     if (session && session.access_token) {
@@ -9278,7 +9117,7 @@ async function loadMessagingContacts() {
   });
 
   try {
-    const payload = await fetchMessageJson(`/messages/members?actorId=${encodeURIComponent(actorId)}`);
+    const payload = await apiService.fetchMessageJson(`/messages/members?actorId=${encodeURIComponent(actorId)}`);
     const memberContacts = normalizeContacts(payload && payload.contacts, 'member');
     return mergeMessageContacts(memberContacts.filter((contact) => isMemberMessageContact(contact)));
   } catch (error) {
@@ -9307,7 +9146,7 @@ async function loadMessagingThreads() {
   let memberThreads = [];
 
   try {
-    const payload = await fetchMessageJson(`/messages/member-threads?actorId=${encodeURIComponent(actorId)}`);
+    const payload = await apiService.fetchMessageJson(`/messages/member-threads?actorId=${encodeURIComponent(actorId)}`);
     memberThreads = normalizeThreads(payload && payload.threads, 'member');
   } catch (error) {
     console.error('Member threads could not be loaded:', error);
@@ -9323,7 +9162,7 @@ async function syncMessageProfile() {
     return null;
   }
 
-  return fetchMessageJson('/messages/profiles/sync', {
+  return apiService.fetchMessageJson('/messages/profiles/sync', {
     method: 'POST',
     body: JSON.stringify({
       actorId: getMessageActorId(),
@@ -9333,12 +9172,6 @@ async function syncMessageProfile() {
       photoUrl: state.profile.photoUrl
     })
   });
-}
-
-function getSupabaseClient() {
-  return supabaseClient && typeof supabaseClient.from === 'function'
-    ? supabaseClient
-    : null;
 }
 
 function isChatProfileRlsError(error) {
@@ -9380,74 +9213,6 @@ function forceReauth(targetView = 'profile', message = 'Your app session expired
   stopActivityAutoRefresh();
   syncUsappLiveStream();
   requestAuthAccess(targetView, message);
-}
-
-async function ensureSupabaseSessionState({ forceRefresh = false } = {}) {
-  const supabase = getSupabaseClient();
-
-  if (!supabase) {
-    return null;
-  }
-
-  const result = await supabase.auth.getSession();
-
-  if (result.error) {
-    throw result.error;
-  }
-
-  let session = result.data && result.data.session ? result.data.session : null;
-
-  if (forceRefresh && supabase.auth && typeof supabase.auth.refreshSession === 'function') {
-    const refreshResult = await supabase.auth.refreshSession();
-
-    if (refreshResult.error) {
-      if (!session) {
-        throw refreshResult.error;
-      }
-
-      console.error('Could not force refresh Supabase session:', refreshResult.error);
-    } else if (refreshResult.data && refreshResult.data.session) {
-      session = refreshResult.data.session;
-    }
-  }
-
-  if (session) {
-    state.authSession = session;
-    state.authUser = session.user || state.authUser;
-  }
-
-  return session;
-}
-
-async function recoverSupabaseSessionOrRedirect(
-  targetView = 'profile',
-  message = 'Your app session expired. Sign in again to continue.',
-  { forceRefresh = false } = {}
-) {
-  try {
-    const session = await ensureSupabaseSessionState({ forceRefresh });
-
-    if (session && session.access_token) {
-      return false;
-    }
-  } catch (error) {
-    console.error('Could not recover Supabase session:', error);
-  }
-
-  if (!forceRefresh) {
-    try {
-      const refreshedSession = await ensureSupabaseSessionState({ forceRefresh: true });
-
-      if (refreshedSession && refreshedSession.access_token) {
-        return false;
-      }
-    } catch (error) {
-      console.error('Could not force refresh Supabase session:', error);
-    }
-  }
-
-  forceReauth(targetView, message);
-  return true;
 }
 
 function getActorIdFromUserId(userId) {
@@ -9600,7 +9365,7 @@ function normalizeSupabaseMessageThread(thread) {
 }
 
 async function syncSupabaseMessageProfile() {
-  const supabase = getSupabaseClient();
+  const supabase = supabaseSessionService.getSupabaseClient();
 
   if (!supabase || !state.authUser || !state.authUser.id) {
     throw new Error('Supabase is not available for member chats.');
@@ -9633,7 +9398,7 @@ async function syncSupabaseMessageProfile() {
 }
 
 async function loadSupabaseMessageContacts() {
-  const supabase = getSupabaseClient();
+  const supabase = supabaseSessionService.getSupabaseClient();
 
   if (!supabase || !state.authUser || !state.authUser.id) {
     throw new Error('Supabase is not available for member chats.');
@@ -9655,7 +9420,7 @@ async function loadSupabaseMessageContacts() {
 }
 
 async function loadSupabaseMessageThreads(conversationIds = []) {
-  const supabase = getSupabaseClient();
+  const supabase = supabaseSessionService.getSupabaseClient();
 
   if (!supabase || !state.authUser || !state.authUser.id) {
     throw new Error('Supabase is not available for member chats.');
@@ -9864,7 +9629,7 @@ async function syncSupabaseThreadRead(thread, readAt) {
     return;
   }
 
-  const supabase = getSupabaseClient();
+  const supabase = supabaseSessionService.getSupabaseClient();
 
   if (!supabase) {
     return;
@@ -10554,7 +10319,7 @@ function normalizeSyncedAccountProfile(profile) {
 }
 
 async function loadSyncedAccountProfile(userId = state.authUser && state.authUser.id ? String(state.authUser.id).trim() : '') {
-  const supabase = getSupabaseClient();
+  const supabase = supabaseSessionService.getSupabaseClient();
   const normalizedUserId = String(userId || '').trim();
 
   if (!supabase || !normalizedUserId) {
@@ -10638,7 +10403,7 @@ async function repairOversizedAuthProfileMetadata() {
 
   persistProfilePhotoOverride(localPhotoUrl.startsWith('data:') ? localPhotoUrl : '', state.actorId);
 
-  const refreshedSession = await ensureSupabaseSessionState({ forceRefresh: true }).catch(() => null);
+  const refreshedSession = await supabaseSessionService.ensureSupabaseSessionState({ forceRefresh: true }).catch(() => null);
 
   if (refreshedSession) {
     await syncAuthSession(refreshedSession, {
@@ -11020,13 +10785,13 @@ async function getAppearanceAccessToken({ forceRefresh = false } = {}) {
     await maybeRepairOversizedAuthSession();
   }
 
-  let session = await ensureSupabaseSessionState({ forceRefresh }).catch((error) => {
+  let session = await supabaseSessionService.ensureSupabaseSessionState({ forceRefresh }).catch((error) => {
     console.error('Could not read appearance settings session:', error);
     return null;
   });
 
   if ((!session || !session.access_token) && !forceRefresh) {
-    session = await ensureSupabaseSessionState({ forceRefresh: true }).catch((error) => {
+    session = await supabaseSessionService.ensureSupabaseSessionState({ forceRefresh: true }).catch((error) => {
       console.error('Could not refresh appearance settings session:', error);
       return null;
     });
@@ -11049,7 +10814,7 @@ async function createAuthenticatedAppearanceBody(payload = {}, options = {}) {
 }
 
 async function fetchAppearanceSettingsFromBackend(options = {}) {
-  return fetchJson('/appearance-settings/read', {
+  return apiService.fetchJson('/appearance-settings/read', {
     method: 'POST',
     omitAuth: true,
     body: await createAuthenticatedAppearanceBody({}, options)
@@ -11057,7 +10822,7 @@ async function fetchAppearanceSettingsFromBackend(options = {}) {
 }
 
 async function saveAppearanceSettingsToBackend(settings, options = {}) {
-  return fetchJson('/appearance-settings', {
+  return apiService.fetchJson('/appearance-settings', {
     method: 'PUT',
     omitAuth: true,
     body: await createAuthenticatedAppearanceBody(settings, options)
@@ -11082,7 +10847,7 @@ async function loadAppearanceSettings({ quiet = false, syncDraft = false } = {})
         return state.appearanceSettings;
       }
 
-      const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to load your appearance settings.');
+      const redirected = await supabaseSessionService.recoverSupabaseSessionOrRedirect('settings', 'Sign in again to load your appearance settings.');
 
       if (redirected) {
         return state.appearanceSettings;
@@ -11102,7 +10867,7 @@ async function loadAppearanceSettings({ quiet = false, syncDraft = false } = {})
         return state.appearanceSettings;
       }
 
-      const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to load your appearance settings.');
+      const redirected = await supabaseSessionService.recoverSupabaseSessionOrRedirect('settings', 'Sign in again to load your appearance settings.');
 
       if (!redirected) {
         try {
@@ -11148,7 +10913,7 @@ async function saveAppearanceSettings(retried = false, draftOverride = null) {
 
   try {
     if (!state.authSession || !state.authSession.access_token) {
-      const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.');
+      const redirected = await supabaseSessionService.recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.');
 
       if (redirected) {
         return;
@@ -11188,7 +10953,7 @@ async function saveAppearanceSettings(retried = false, draftOverride = null) {
       }
 
       if (!retried && isAuthRequestError(saveError)) {
-        const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.', {
+        const redirected = await supabaseSessionService.recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.', {
           forceRefresh: true
         });
 
@@ -11213,7 +10978,7 @@ async function saveAppearanceSettings(retried = false, draftOverride = null) {
     showToast('Appearance settings saved.');
   } catch (error) {
     if (!retried && isAuthRequestError(error)) {
-      const redirected = await recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.');
+      const redirected = await supabaseSessionService.recoverSupabaseSessionOrRedirect('settings', 'Sign in again to save your appearance settings.');
 
       if (!redirected) {
         state.appearanceSaving = false;
