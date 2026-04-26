@@ -2,6 +2,7 @@ const APP_CONFIG = window.SOCIALERA_APP_CONFIG || {};
 let runtimeSupabaseUrl = '';
 let runtimeSupabasePublishableKey = '';
 const IOS_DEVICE = detectIOSDevice();
+const ANDROID_CHROME_DEVICE = detectAndroidChromeDevice();
 
 const STORAGE_KEYS = {
   actorId: 'socialera.mobile.actor-id',
@@ -216,6 +217,7 @@ const state = {
   messageSearchQuery: '',
   messageSearchOpen: false,
   messageSearchFocused: false,
+  messageSearchPendingSync: false,
   messageDraftText: '',
   messageBusy: false,
   messageReplyToMessageId: '',
@@ -2001,6 +2003,16 @@ function handleVisibilityChange() {
 }
 
 function handleKeyDown(event) {
+  const messageSearchField = event.target.closest('[data-message-search]');
+
+  if (messageSearchField && event.key === 'Enter') {
+    event.preventDefault();
+    clearUsappSearchUiSyncTimer();
+    state.messageSearchPendingSync = false;
+    syncUsappSearchUi();
+    return;
+  }
+
   const searchField = event.target.closest('input[name="discoverQuery"]');
 
   if (searchField && event.key === 'Enter') {
@@ -2049,6 +2061,7 @@ function handleKeyDown(event) {
     state.messageSearchOpen = false;
     setUsappSearchFocusState(false);
     clearUsappSearchUiSyncTimer();
+    state.messageSearchPendingSync = false;
     state.messageSearchQuery = '';
     refreshMessagingUi();
     return;
@@ -2761,6 +2774,10 @@ function setUsappSearchFocusState(isFocused) {
     && state.messageSearchOpen;
 }
 
+function shouldDeferUsappSearchWhileTyping() {
+  return ANDROID_CHROME_DEVICE && isUsappSearchFieldActive();
+}
+
 function isUsappSearchFieldActive() {
   const active = document.activeElement;
 
@@ -2786,7 +2803,13 @@ function handleFocusOut(event) {
 
   window.setTimeout(() => {
     const active = document.activeElement;
-    setUsappSearchFocusState(Boolean(active instanceof HTMLElement && active.matches('[data-message-search]')));
+    const stillFocused = Boolean(active instanceof HTMLElement && active.matches('[data-message-search]'));
+    setUsappSearchFocusState(stillFocused);
+
+    if (!stillFocused && state.messageSearchPendingSync) {
+      state.messageSearchPendingSync = false;
+      syncUsappSearchUi();
+    }
   }, 0);
 }
 
@@ -5639,6 +5662,7 @@ async function handleClick(event) {
     state.messageSearchOpen = !state.messageSearchOpen;
     if (!state.messageSearchOpen) {
       setUsappSearchFocusState(false);
+      state.messageSearchPendingSync = false;
     }
 
     if (!state.messageSearchOpen) {
@@ -5910,7 +5934,10 @@ function handleInput(event) {
         searchSelectionStart: messageSearchField.selectionStart,
         searchSelectionEnd: messageSearchField.selectionEnd
       });
+    } else if (shouldDeferUsappSearchWhileTyping()) {
+      state.messageSearchPendingSync = true;
     } else {
+      state.messageSearchPendingSync = false;
       queueUsappSearchUiSync();
     }
     return;
@@ -7274,6 +7301,11 @@ function detectIOSDevice() {
   const maxTouchPoints = Number(navigator.maxTouchPoints || 0);
 
   return /iPad|iPhone|iPod/i.test(ua) || (/Mac/i.test(platform) && maxTouchPoints > 1);
+}
+
+function detectAndroidChromeDevice() {
+  const ua = String(navigator.userAgent || '');
+  return /Android/i.test(ua) && /Chrome\//i.test(ua) && !/EdgA|OPR|SamsungBrowser/i.test(ua);
 }
 
 async function publishUploadDraft() {
