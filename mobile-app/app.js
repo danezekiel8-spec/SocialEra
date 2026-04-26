@@ -215,6 +215,7 @@ const state = {
   searchViewFilter: 'all',
   messageSearchQuery: '',
   messageSearchOpen: false,
+  messageSearchFocused: false,
   messageDraftText: '',
   messageBusy: false,
   messageReplyToMessageId: '',
@@ -490,6 +491,8 @@ function bindEvents() {
   document.addEventListener('input', handleInput);
   document.addEventListener('change', handleChange);
   document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('focusin', handleFocusIn);
+  document.addEventListener('focusout', handleFocusOut);
   document.addEventListener('pointerdown', handleUsappPointerDown);
   document.addEventListener('pointermove', handleUsappPointerMove, { passive: false });
   document.addEventListener('pointerup', handleUsappPointerUp);
@@ -1018,17 +1021,16 @@ async function refreshMessagingData({ includeContacts = false, renderNow = true 
       : { selectedThreadUpdated: false };
 
     if (renderNow) {
-      const nextSignature = getMessagingSignature();
-      const nextContactsSignature = getMessageContactsSignature();
-      const threadsChanged = previousSignature !== nextSignature;
-      const contactsChanged = previousContactsSignature !== nextContactsSignature;
-      const statusChanged = previousMessageStatus !== state.messageStatus || previousMessageStatusType !== state.messageStatusType;
+    const nextSignature = getMessagingSignature();
+    const nextContactsSignature = getMessageContactsSignature();
+    const threadsChanged = previousSignature !== nextSignature;
+    const contactsChanged = previousContactsSignature !== nextContactsSignature;
+    const statusChanged = previousMessageStatus !== state.messageStatus || previousMessageStatusType !== state.messageStatusType;
 
       if (threadsChanged || contactsChanged || statusChanged) {
         if (isUsappSearchFieldActive()) {
           updateHeader();
           updateNav();
-          syncUsappSearchUi();
           return;
         }
 
@@ -1219,7 +1221,6 @@ async function refreshLiveActivity({ includePosts = true, includeThreads = state
       if (isUsappSearchFieldActive()) {
         updateHeader();
         updateNav();
-        syncUsappSearchUi();
         return;
       }
 
@@ -1287,7 +1288,7 @@ function queueMessageRefresh({ delayMs = 1200, includeContacts = false } = {}) {
   messageRefreshTimer = window.setTimeout(() => {
     messageRefreshTimer = null;
 
-    if (document.hidden || state.activeView !== 'inbox' || state.messageBusy) {
+    if (document.hidden || state.activeView !== 'inbox' || state.messageBusy || isUsappSearchFieldActive()) {
       return;
     }
 
@@ -1309,7 +1310,7 @@ function startMessageAutoRefresh() {
     : MESSAGE_POLL_INTERVAL_MS;
 
   messagePollTimer = window.setInterval(() => {
-    if (!state.messageBusy) {
+    if (!state.messageBusy && !isUsappSearchFieldActive()) {
       refreshMessagingData({ includeContacts: false, renderNow: true }).catch((error) => {
         console.error('Usapp poll refresh failed:', error);
       });
@@ -2045,6 +2046,7 @@ function handleKeyDown(event) {
 
   if (event.key === 'Escape' && state.activeView === 'inbox' && state.messageSearchOpen) {
     state.messageSearchOpen = false;
+    setUsappSearchFocusState(false);
     state.messageSearchQuery = '';
     refreshMessagingUi();
     return;
@@ -2739,16 +2741,40 @@ function syncUsappSearchUi() {
   return true;
 }
 
+function setUsappSearchFocusState(isFocused) {
+  state.messageSearchFocused = Boolean(isFocused)
+    && normalizeView(state.activeView) === 'inbox'
+    && state.messagePanelMode === 'inbox'
+    && state.messageSearchOpen;
+}
+
 function isUsappSearchFieldActive() {
   const active = document.activeElement;
 
-  return Boolean(
+  return state.messageSearchFocused || Boolean(
     active
     && active instanceof HTMLElement
     && active.matches('[data-message-search]')
     && normalizeView(state.activeView) === 'inbox'
     && state.messagePanelMode === 'inbox'
   );
+}
+
+function handleFocusIn(event) {
+  if (event.target instanceof HTMLElement && event.target.matches('[data-message-search]')) {
+    setUsappSearchFocusState(true);
+  }
+}
+
+function handleFocusOut(event) {
+  if (!(event.target instanceof HTMLElement) || !event.target.matches('[data-message-search]')) {
+    return;
+  }
+
+  window.setTimeout(() => {
+    const active = document.activeElement;
+    setUsappSearchFocusState(Boolean(active instanceof HTMLElement && active.matches('[data-message-search]')));
+  }, 0);
 }
 
 function renderCatalogSearchSection(section) {
@@ -5557,6 +5583,7 @@ async function handleClick(event) {
     state.selectedThreadId = threadButton.dataset.selectThread || '';
     state.messagePanelMode = 'thread';
     state.messageSearchOpen = false;
+    setUsappSearchFocusState(false);
     state.messageDraftText = '';
     state.pendingMessageAttachment = null;
     clearMessageReplyTarget({ refresh: false });
@@ -5575,6 +5602,7 @@ async function handleClick(event) {
   const messageBackButton = event.target.closest('[data-message-back]');
   if (messageBackButton) {
     state.messagePanelMode = 'inbox';
+    setUsappSearchFocusState(false);
     state.threadSettingsOpen = false;
     clearMessageReplyTarget({ refresh: false });
     state.composerEmojiOpen = false;
@@ -5587,6 +5615,9 @@ async function handleClick(event) {
   const messageSearchToggle = event.target.closest('[data-message-search-toggle]');
   if (messageSearchToggle) {
     state.messageSearchOpen = !state.messageSearchOpen;
+    if (!state.messageSearchOpen) {
+      setUsappSearchFocusState(false);
+    }
 
     if (!state.messageSearchOpen) {
       state.messageSearchQuery = '';
@@ -6346,6 +6377,7 @@ function openNotificationThread(threadId) {
   state.selectedThreadId = threadId;
   state.messagePanelMode = 'thread';
   state.messageSearchOpen = false;
+  setUsappSearchFocusState(false);
   persistText(STORAGE_KEYS.selectedThread, state.selectedThreadId);
   markSelectedThreadRead();
   closeNotificationSheet({ renderNow: false });
@@ -6624,6 +6656,7 @@ async function ensureThread(contactId) {
     state.selectedThreadId = existing.id;
     state.messagePanelMode = 'thread';
     state.messageSearchOpen = false;
+    setUsappSearchFocusState(false);
     persistText(STORAGE_KEYS.selectedThread, state.selectedThreadId);
     openUsappSheet({ mode: 'thread' });
     return;
@@ -6664,6 +6697,7 @@ async function ensureThread(contactId) {
     state.selectedThreadId = thread.id;
     state.messagePanelMode = 'thread';
     state.messageSearchOpen = false;
+    setUsappSearchFocusState(false);
     state.messageDraftText = '';
     state.pendingMessageAttachment = null;
     clearMessageReplyTarget({ refresh: false });
@@ -6726,6 +6760,9 @@ function openUsappSheet({ mode = '', threadId = '', renderNow = true } = {}) {
   state.usappOpen = false;
   state.usappAnimateIn = false;
   state.messageSearchOpen = state.messagePanelMode === 'inbox' ? state.messageSearchOpen : false;
+  if (!state.messageSearchOpen) {
+    setUsappSearchFocusState(false);
+  }
   state.threadSettingsOpen = false;
 
   if (state.messagePanelMode === 'thread') {
@@ -6756,6 +6793,7 @@ function closeUsappSheet({ renderNow = true, resetMode = false } = {}) {
   state.usappOpen = false;
   state.usappAnimateIn = false;
   state.messageSearchOpen = false;
+  setUsappSearchFocusState(false);
   state.threadSettingsOpen = false;
   clearMessageReplyTarget({ refresh: false });
   state.composerEmojiOpen = false;
@@ -7036,6 +7074,7 @@ function setActiveView(nextView, { renderNow = true } = {}) {
   closeUsappSheet({ renderNow: false });
 
   state.messageSearchOpen = false;
+  setUsappSearchFocusState(false);
   state.composerEmojiOpen = false;
   state.reactionPickerMessageId = '';
   state.reactionRevealMessageId = '';
