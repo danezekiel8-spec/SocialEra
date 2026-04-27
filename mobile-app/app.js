@@ -51,6 +51,7 @@ import {
   renderUsappReplyIcon,
   renderUsappSearchIcon
 } from './src/usapp/render-icons.js';
+import { createUsappContactRenderService } from './src/usapp/render-contacts.js';
 import { createUsappPresenceRenderService } from './src/usapp/render-presence.js';
 import { createUsappSessionService } from './src/usapp/session.js';
 
@@ -276,6 +277,30 @@ const swipeState = {
   startY: 0
 };
 const USAPP_PRESENCE_ONLINE_WINDOW_MS = 5 * 60 * 1000;
+
+const usappPresenceRenderService = createUsappPresenceRenderService({
+  escapeHtml,
+  formatRelativeTime,
+  isMemberMessageContact,
+  onlineWindowMs: USAPP_PRESENCE_ONLINE_WINDOW_MS
+});
+
+const getUsappPresenceTimestamp = (...args) => usappPresenceRenderService.getUsappPresenceTimestamp(...args);
+const isUsappContactOnline = (...args) => usappPresenceRenderService.isUsappContactOnline(...args);
+const getUsappPresenceLabel = (...args) => usappPresenceRenderService.getUsappPresenceLabel(...args);
+const renderUsappPresenceBadge = (...args) => usappPresenceRenderService.renderUsappPresenceBadge(...args);
+
+const usappContactRenderService = createUsappContactRenderService({
+  escapeHtml,
+  getContactProvider,
+  getMessageRoleLabel,
+  getRoleSlug,
+  renderAvatarMedia,
+  renderEmptyCard,
+  renderUsappPresenceBadge
+});
+
+const renderMessageContactChip = (...args) => usappContactRenderService.renderMessageContactChip(...args);
 
 window.addEventListener('error', (event) => {
   reportStartupError(event && event.error ? event.error : event);
@@ -3740,17 +3765,11 @@ function renderUsappThreadListContent() {
 }
 
 function renderUsappContactRowContent(selectedThread = getSelectedThread()) {
-  const visibleContacts = getVisibleMessageContacts();
-  const peopleEmptyTitle = state.authUser ? 'No people available' : 'Sign in to view people';
-  const peopleEmptyCopy = state.authUser
-    ? 'Open Usapp on your other signed-in member account, then refresh here.'
-    : 'Sign in with your SocialEra account to load member contacts.';
-
-  if (!visibleContacts.length) {
-    return renderEmptyCard(peopleEmptyTitle, peopleEmptyCopy);
-  }
-
-  return visibleContacts.map((contact, index) => renderMessageContactChip(contact, selectedThread, index)).join('');
+  return usappContactRenderService.renderUsappContactRowContent({
+    selectedThread,
+    visibleContacts: getVisibleMessageContacts(),
+    signedIn: Boolean(state.authUser)
+  });
 }
 
 function renderInboxView() {
@@ -3783,24 +3802,6 @@ function renderUsappSheet() {
     lastUsappSheetMarkup = '';
   }
   state.usappAnimateIn = false;
-}
-
-function renderMessageContactChip(contact, selectedThread, index = 0) {
-  const selected = Boolean(selectedThread && selectedThread.contact && selectedThread.contact.actorId === contact.actorId && selectedThread.provider === getContactProvider(contact));
-  const motionOrder = Math.max(0, Math.min(Number(index) || 0, 9));
-  return `
-    <button
-      class="usapp-contact-chip ${selected ? 'active' : ''}"
-      type="button"
-      data-start-thread="${escapeHtml(contact.actorId)}"
-      style="--usapp-order:${motionOrder}"
-    >
-      <span class="usapp-contact-avatar">${renderAvatarMedia(contact)}</span>
-      <strong>${escapeHtml(contact.displayName)}</strong>
-      ${renderUsappPresenceBadge(contact, { compact: true })}
-      <span class="usapp-role-pill role-${escapeHtml(getRoleSlug(contact))}">${escapeHtml(getMessageRoleLabel(contact))}</span>
-    </button>
-  `;
 }
 
 function renderProfileView() {
@@ -7945,18 +7946,6 @@ function getMessageRoleLabel(contact) {
 
   return 'Creator';
 }
-
-const usappPresenceRenderService = createUsappPresenceRenderService({
-  escapeHtml,
-  formatRelativeTime,
-  isMemberMessageContact,
-  onlineWindowMs: USAPP_PRESENCE_ONLINE_WINDOW_MS
-});
-
-const getUsappPresenceTimestamp = (...args) => usappPresenceRenderService.getUsappPresenceTimestamp(...args);
-const isUsappContactOnline = (...args) => usappPresenceRenderService.isUsappContactOnline(...args);
-const getUsappPresenceLabel = (...args) => usappPresenceRenderService.getUsappPresenceLabel(...args);
-const renderUsappPresenceBadge = (...args) => usappPresenceRenderService.renderUsappPresenceBadge(...args);
 
 function getMessageChatModeLabel(contact) {
   if (isMemberMessageContact(contact)) {
