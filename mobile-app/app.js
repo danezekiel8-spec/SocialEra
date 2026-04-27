@@ -51,6 +51,7 @@ import {
   renderUsappReplyIcon,
   renderUsappSearchIcon
 } from './src/usapp/render-icons.js';
+import { createUsappPresenceRenderService } from './src/usapp/render-presence.js';
 import { createUsappSessionService } from './src/usapp/session.js';
 
 const APP_CONFIG = window.SOCIALERA_APP_CONFIG || {};
@@ -7903,66 +7904,6 @@ function getVisibleMessageThreads() {
     });
 }
 
-function getUsappPresenceTimestamp(contact) {
-  const timestamp = String(
-    contact && (
-      contact.lastActiveAt
-      || contact.last_active_at
-      || contact.updatedAt
-      || contact.updated_at
-    )
-      ? contact.lastActiveAt || contact.last_active_at || contact.updatedAt || contact.updated_at
-      : ''
-  ).trim();
-
-  return timestamp;
-}
-
-function isUsappContactOnline(contact) {
-  const timestamp = getUsappPresenceTimestamp(contact);
-
-  if (!timestamp) {
-    return false;
-  }
-
-  const time = Date.parse(timestamp);
-
-  if (!Number.isFinite(time)) {
-    return false;
-  }
-
-  return (Date.now() - time) <= USAPP_PRESENCE_ONLINE_WINDOW_MS;
-}
-
-function getUsappPresenceLabel(contact) {
-  const timestamp = getUsappPresenceTimestamp(contact);
-
-  if (isUsappContactOnline(contact)) {
-    return 'Online now';
-  }
-
-  if (!timestamp) {
-    return 'Away';
-  }
-
-  return `Active ${formatRelativeTime(timestamp)}`;
-}
-
-function renderUsappPresenceBadge(contact, { compact = false } = {}) {
-  if (!contact || !isMemberMessageContact(contact)) {
-    return '';
-  }
-
-  const online = isUsappContactOnline(contact);
-
-  return `
-    <span class="usapp-presence ${online ? 'online' : 'idle'}${compact ? ' compact' : ''}">
-      <span class="usapp-presence-dot" aria-hidden="true"></span>
-      <span>${escapeHtml(getUsappPresenceLabel(contact))}</span>
-    </span>
-  `;
-}
-
 function matchesMessageSearch(entity, extraText = '') {
   const query = String(state.messageSearchQuery || '').trim().toLowerCase();
 
@@ -8004,6 +7945,18 @@ function getMessageRoleLabel(contact) {
 
   return 'Creator';
 }
+
+const usappPresenceRenderService = createUsappPresenceRenderService({
+  escapeHtml,
+  formatRelativeTime,
+  isMemberMessageContact,
+  onlineWindowMs: USAPP_PRESENCE_ONLINE_WINDOW_MS
+});
+
+const getUsappPresenceTimestamp = (...args) => usappPresenceRenderService.getUsappPresenceTimestamp(...args);
+const isUsappContactOnline = (...args) => usappPresenceRenderService.isUsappContactOnline(...args);
+const getUsappPresenceLabel = (...args) => usappPresenceRenderService.getUsappPresenceLabel(...args);
+const renderUsappPresenceBadge = (...args) => usappPresenceRenderService.renderUsappPresenceBadge(...args);
 
 function getMessageChatModeLabel(contact) {
   if (isMemberMessageContact(contact)) {
