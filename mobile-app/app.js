@@ -37,7 +37,9 @@ import { detectAndroidChromeDevice, detectIOSDevice } from './src/platform/devic
 import { createApiService, getRequestErrorMessage, isAuthRequestError } from './src/services/api.js';
 import { createRuntimeSupabaseConfigService } from './src/services/runtime-supabase.js';
 import { createSupabaseSessionService } from './src/services/auth-session.js';
+import { createUsappMessageStateService } from './src/usapp/message-state.js';
 import { createUsappIdentityService, createUsappNormalizationService } from './src/usapp/normalizers.js';
+import { createUsappSessionService } from './src/usapp/session.js';
 
 const APP_CONFIG = window.SOCIALERA_APP_CONFIG || {};
 let runtimeSupabaseUrl = '';
@@ -144,6 +146,72 @@ const buildMessageContactKey = (...args) => usappNormalizationService.buildMessa
 const mergeMessageContacts = (...args) => usappNormalizationService.mergeMessageContacts(...args);
 const buildFallbackSupabaseThread = (...args) => usappNormalizationService.buildFallbackSupabaseThread(...args);
 
+const usappMessageStateService = createUsappMessageStateService({
+  apiService,
+  buildProfileFromAuthUser,
+  getAuthUser: () => state.authUser,
+  getForcedUnreadThreadIds: () => state.forcedUnreadThreadIds,
+  getMessageActorId: () => usappIdentityService.getMessageActorId(),
+  getMutedThreadIds: () => state.mutedThreadIds,
+  getNotificationSeenAt: () => state.notificationSeenAt,
+  getThreadReadState: () => loadThreadReadState(),
+  getThreads: () => state.threads,
+  persistForcedUnreadThreadIds,
+  persistMutedThreadIds,
+  persistNotificationSeenAt,
+  persistProfilePhotoOverride,
+  persistThreadReadState,
+  setForcedUnreadThreadIds: (value) => {
+    state.forcedUnreadThreadIds = value;
+  },
+  setMutedThreadIds: (value) => {
+    state.mutedThreadIds = value;
+  },
+  setNotificationSeenAt: (value) => {
+    state.notificationSeenAt = value;
+  },
+  setProfile: (value) => {
+    state.profile = value;
+  },
+  setThreads: (value) => {
+    state.threads = value;
+  },
+  normalizeProfilePhotoValue,
+  normalizeUserName,
+  queueSyncFallback: (error) => {
+    console.error('Could not sync shared message state:', error);
+  }
+});
+
+const usappSessionService = createUsappSessionService({
+  apiService,
+  ensureSupabaseSessionState: (...args) => supabaseSessionService.ensureSupabaseSessionState(...args),
+  getAuthUser: () => state.authUser,
+  getMessageActorId: () => usappIdentityService.getMessageActorId(),
+  hydrateMessageReplyDecorations,
+  isMemberMessageContact,
+  mergeMessageContacts: (...args) => usappNormalizationService.mergeMessageContacts(...args),
+  normalizeContacts: (...args) => usappNormalizationService.normalizeContacts(...args),
+  normalizeThreads: (...args) => usappNormalizationService.normalizeThreads(...args),
+  onSessionReady: async (session) => {
+    await syncAuthSession(session, {
+      renderNow: false,
+      refreshNow: false
+    });
+  }
+});
+
+const normalizeMessageStatePayload = (...args) => usappMessageStateService.normalizeMessageStatePayload(...args);
+const buildMessageStateSnapshot = (...args) => usappMessageStateService.buildMessageStateSnapshot(...args);
+const applyThreadReadStateToThreads = (...args) => usappMessageStateService.applyThreadReadStateToThreads(...args);
+const applyRemoteMessageStatePayload = (...args) => usappMessageStateService.applyRemoteMessageStatePayload(...args);
+const loadRemoteMessageState = (...args) => usappMessageStateService.loadRemoteMessageState(...args);
+const syncRemoteMessageState = (...args) => usappMessageStateService.syncRemoteMessageState(...args);
+const queueRemoteMessageStateSync = (...args) => usappMessageStateService.queueRemoteMessageStateSync(...args);
+const ensureUsappMemberSession = (...args) => usappSessionService.ensureUsappMemberSession(...args);
+const loadMessagingContacts = (...args) => usappSessionService.loadMessagingContacts(...args);
+const loadMessagingThreads = (...args) => usappSessionService.loadMessagingThreads(...args);
+
 const elements = {
   phoneShell: document.querySelector('.phone-shell'),
   topbar: document.querySelector('.topbar'),
@@ -170,13 +238,11 @@ let messagePollTimer = null;
 let messageRefreshTimer = null;
 let messageSearchSyncTimer = null;
 let messageRefreshPromise = null;
-let messageStateSyncTimer = null;
-let messageStateSyncPromise = null;
+let pendingMessageRefreshOptions = null;
 let coreBackendRetryTimer = null;
 let lastRenderedView = '';
 let usappEventSource = null;
 let usappEventReconnectTimer = null;
-let remoteMessageStatePromise = null;
 let lastUsappSheetMarkup = '';
 let lastDockScrollTop = 0;
 let liveNotificationSeeded = false;
@@ -740,6 +806,69 @@ function markUsappLiveChanges(previousThreads = [], nextThreads = []) {
   };
 }
 
+function applyIncomingMemberMessageEvent(payload = {}) {
+  const nativeThreadId = String(payload.threadId || '').trim();
+
+  if (!nativeThreadId || !payload.message) {
+    return false;
+  }
+
+  const thread = state.threads.find((entry) => (
+    entry
+    && entry.provider === 'member'
+    && (
+      String(entry.nativeId || '').trim() === nativeThreadId
+      || String(entry.id || '').trim() === nativeThreadId
+      || String(entry.id || '').trim() === `member:${nativeThreadId}`
+    )
+  ));
+
+  if (!thread) {
+    return false;
+  }
+
+  const nextMessage = normalizeMessage(payload.message, 'member', thread.contact || {});
+
+  if (!nextMessage) {
+    return false;
+  }
+
+  if (Array.isArray(thread.messages) && thread.messages.some((message) => message.id === nextMessage.id)) {
+    return true;
+  }
+
+  const previousThreadSnapshot = {
+    id: thread.id,
+    messages: Array.isArray(thread.messages)
+      ? thread.messages.map((message) => ({
+          id: message.id,
+          senderActorId: message.senderActorId
+        }))
+      : []
+  };
+  const nextThread = {
+    ...thread,
+    messages: [...(Array.isArray(thread.messages) ? thread.messages : []), nextMessage]
+      .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()),
+    updatedAt: String(payload.updatedAt || nextMessage.createdAt || thread.updatedAt || new Date().toISOString()).trim()
+  };
+
+  state.threads = [nextThread, ...state.threads.filter((entry) => entry.id !== nextThread.id)];
+  const liveUpdate = markUsappLiveChanges([previousThreadSnapshot], [nextThread]);
+
+  if (state.activeView === 'inbox' && state.messagePanelMode === 'thread' && state.selectedThreadId === nextThread.id) {
+    markThreadRead(nextThread);
+  }
+
+  refreshMessagingUi({
+    scrollToLatest: liveUpdate.selectedThreadUpdated && state.activeView === 'inbox' && state.messagePanelMode === 'thread',
+    scrollBehavior: 'auto'
+  });
+
+  queueMessageRefresh({ delayMs: 600, includeContacts: false });
+  return true;
+}
+
 function queueLocalPreviewReply(threadId, contact) {
   const normalizedThreadId = String(threadId || '').trim();
 
@@ -787,6 +916,10 @@ function queueLocalPreviewReply(threadId, contact) {
 
 async function refreshMessagingData({ includeContacts = false, renderNow = true } = {}) {
   if (messageRefreshPromise) {
+    pendingMessageRefreshOptions = {
+      includeContacts: Boolean((pendingMessageRefreshOptions && pendingMessageRefreshOptions.includeContacts) || includeContacts),
+      renderNow: Boolean((pendingMessageRefreshOptions && pendingMessageRefreshOptions.renderNow) || renderNow)
+    };
     return messageRefreshPromise;
   }
 
@@ -893,7 +1026,17 @@ async function refreshMessagingData({ includeContacts = false, renderNow = true 
       }
     }
   })().finally(() => {
+    const queuedRefreshOptions = pendingMessageRefreshOptions;
     messageRefreshPromise = null;
+
+    if (!queuedRefreshOptions) {
+      return;
+    }
+
+    pendingMessageRefreshOptions = null;
+    refreshMessagingData(queuedRefreshOptions).catch((error) => {
+      console.error('Queued Usapp refresh failed:', error);
+    });
   });
 
   return messageRefreshPromise;
@@ -1151,9 +1294,11 @@ function startMessageAutoRefresh() {
     return;
   }
 
-  const intervalMs = state.usappLiveConnected
-    ? Math.max(MESSAGE_POLL_INTERVAL_MS * 4, 20000)
-    : MESSAGE_POLL_INTERVAL_MS;
+  const intervalMs = state.messagePanelMode === 'thread'
+    ? Math.min(Math.max(MESSAGE_POLL_INTERVAL_MS, 2200), 3000)
+    : state.usappLiveConnected
+      ? Math.max(MESSAGE_POLL_INTERVAL_MS * 4, 20000)
+      : MESSAGE_POLL_INTERVAL_MS;
 
   messagePollTimer = window.setInterval(() => {
     if (!state.messageBusy && !isUsappSearchFieldActive()) {
@@ -1218,6 +1363,13 @@ async function handleUsappLiveEvent(payload = {}) {
     }
   }
 
+  if (kind === 'member-message-sent' && applyIncomingMemberMessageEvent(payload)) {
+    if (state.activeView !== 'inbox') {
+      announceLiveNotificationItems();
+    }
+    return;
+  }
+
   await refreshMessagingData({
     includeContacts: kind === 'profile-sync' || kind === 'member-thread-opened',
     renderNow: true
@@ -1242,7 +1394,9 @@ function syncUsappLiveStream() {
     return;
   }
 
-  const streamUrl = apiService.createApiUrl(`/messages/events?actorId=${encodeURIComponent(getMessageActorId())}`);
+  const streamUrl = apiService.createApiUrl(`/messages/events?actorId=${encodeURIComponent(getMessageActorId())}`, {
+    directBackend: true
+  });
 
   if (usappEventSource && usappEventSource.url === streamUrl) {
     return;
@@ -5477,6 +5631,8 @@ async function handleClick(event) {
     state.reactionRevealMessageId = '';
     persistText(STORAGE_KEYS.selectedThread, state.selectedThreadId);
     markSelectedThreadRead();
+    syncMessageAutoRefresh();
+    queueMessageRefresh({ delayMs: 80, includeContacts: false });
     refreshMessagingUi({
       scrollToLatest: true
     });
@@ -5492,6 +5648,7 @@ async function handleClick(event) {
     state.composerEmojiOpen = false;
     state.reactionPickerMessageId = '';
     state.reactionRevealMessageId = '';
+    syncMessageAutoRefresh();
     refreshMessagingUi();
     return;
   }
@@ -8774,172 +8931,6 @@ function countCommentTree(comments) {
   }, 0);
 }
 
-function normalizeMessageStatePayload(payload, actorId = getMessageActorId()) {
-  const normalizedActorId = String(payload && payload.actorId ? payload.actorId : actorId).trim();
-  const threadReadState = Object.fromEntries(
-    Object.entries(payload && payload.threadReadState && typeof payload.threadReadState === 'object' ? payload.threadReadState : {})
-      .map(([threadId, seenAt]) => [String(threadId || '').trim(), String(seenAt || '').trim()])
-      .filter(([threadId, seenAt]) => threadId && seenAt)
-  );
-
-  return {
-    actorId: normalizedActorId,
-    notificationSeenAt: String(payload && payload.notificationSeenAt ? payload.notificationSeenAt : '').trim(),
-    mutedThreadIds: Array.from(new Set(
-      (Array.isArray(payload && payload.mutedThreadIds) ? payload.mutedThreadIds : [])
-        .map((threadId) => String(threadId || '').trim())
-        .filter(Boolean)
-    )),
-    forcedUnreadThreadIds: Array.from(new Set(
-      (Array.isArray(payload && payload.forcedUnreadThreadIds) ? payload.forcedUnreadThreadIds : [])
-        .map((threadId) => String(threadId || '').trim())
-        .filter(Boolean)
-    )),
-    threadReadState,
-    updatedAt: String(payload && payload.updatedAt ? payload.updatedAt : '').trim()
-  };
-}
-
-function normalizeRemoteMessageProfile(profile) {
-  if (!profile || typeof profile !== 'object') {
-    return null;
-  }
-
-  const displayName = String(profile.displayName || profile.display_name || '').trim();
-  const rawUserName = String(profile.userName || profile.user_name || profile.username || '').trim();
-  const photoUrl = normalizeProfilePhotoValue(profile.photoUrl || profile.photo_url || '');
-
-  if (!displayName && !rawUserName && !photoUrl) {
-    return null;
-  }
-
-  return {
-    displayName,
-    userName: rawUserName ? normalizeUserName(rawUserName) : '',
-    photoUrl
-  };
-}
-
-function isMeaningfulMessageState(payload) {
-  const normalized = normalizeMessageStatePayload(payload);
-  return Boolean(
-    normalized.notificationSeenAt
-    || normalized.mutedThreadIds.length
-    || normalized.forcedUnreadThreadIds.length
-    || Object.keys(normalized.threadReadState).length
-  );
-}
-
-function buildMessageStateSnapshot(actorId = getMessageActorId()) {
-  return normalizeMessageStatePayload({
-    actorId,
-    notificationSeenAt: state.notificationSeenAt,
-    mutedThreadIds: state.mutedThreadIds,
-    forcedUnreadThreadIds: state.forcedUnreadThreadIds,
-    threadReadState: loadThreadReadState()
-  }, actorId);
-}
-
-function applyThreadReadStateToThreads(threadReadState = {}) {
-  const normalizedState = threadReadState && typeof threadReadState === 'object' ? threadReadState : {};
-
-  state.threads = (Array.isArray(state.threads) ? state.threads : []).map((thread) => {
-    if (!thread || !thread.id || thread.provider !== 'member') {
-      return thread;
-    }
-
-    return {
-      ...thread,
-      lastReadAt: String(normalizedState[thread.id] || thread.lastReadAt || '').trim()
-    };
-  });
-}
-
-function applyRemoteMessageStatePayload(payload, { syncIfMissing = false } = {}) {
-  if (!state.authUser) {
-    return;
-  }
-
-  const remoteState = normalizeMessageStatePayload(payload && payload.state ? payload.state : payload, getMessageActorId());
-  const remoteProfile = normalizeRemoteMessageProfile(payload && payload.profile ? payload.profile : null);
-
-  if (remoteProfile && state.authUser) {
-    state.profile = buildProfileFromAuthUser(state.authUser, remoteProfile);
-    if (remoteProfile.photoUrl) {
-      persistProfilePhotoOverride(remoteProfile.photoUrl, state.actorId);
-    }
-  }
-
-  if (!isMeaningfulMessageState(remoteState)) {
-    if (syncIfMissing && isMeaningfulMessageState(buildMessageStateSnapshot())) {
-      queueRemoteMessageStateSync({ delayMs: 80 });
-    }
-    return;
-  }
-
-  state.notificationSeenAt = remoteState.notificationSeenAt;
-  state.mutedThreadIds = remoteState.mutedThreadIds;
-  state.forcedUnreadThreadIds = remoteState.forcedUnreadThreadIds;
-  persistNotificationSeenAt(state.notificationSeenAt);
-  persistMutedThreadIds(state.mutedThreadIds);
-  persistForcedUnreadThreadIds(state.forcedUnreadThreadIds);
-  persistThreadReadState(remoteState.threadReadState);
-  applyThreadReadStateToThreads(remoteState.threadReadState);
-}
-
-async function loadRemoteMessageState() {
-  if (!state.authUser) {
-    return null;
-  }
-
-  if (remoteMessageStatePromise) {
-    return remoteMessageStatePromise;
-  }
-
-  remoteMessageStatePromise = apiService.fetchMessageJson(`/messages/state?actorId=${encodeURIComponent(getMessageActorId())}`)
-    .finally(() => {
-      remoteMessageStatePromise = null;
-    });
-
-  return remoteMessageStatePromise;
-}
-
-async function syncRemoteMessageState() {
-  if (!state.authUser) {
-    return null;
-  }
-
-  if (messageStateSyncPromise) {
-    return messageStateSyncPromise;
-  }
-
-  messageStateSyncPromise = apiService.fetchMessageJson('/messages/state/sync', {
-    method: 'POST',
-    body: JSON.stringify(buildMessageStateSnapshot())
-  }).finally(() => {
-    messageStateSyncPromise = null;
-  });
-
-  return messageStateSyncPromise;
-}
-
-function queueRemoteMessageStateSync({ delayMs = 140 } = {}) {
-  if (!state.authUser) {
-    return;
-  }
-
-  if (messageStateSyncTimer) {
-    window.clearTimeout(messageStateSyncTimer);
-  }
-
-  messageStateSyncTimer = window.setTimeout(() => {
-    messageStateSyncTimer = null;
-    syncRemoteMessageState().catch((error) => {
-      console.error('Could not sync shared message state:', error);
-    });
-  }, delayMs);
-}
-
 function normalizePosts(payload) {
   if (!Array.isArray(payload)) {
     return [];
@@ -9082,114 +9073,6 @@ function normalizeProduct(product) {
     featured: Boolean(product.featured),
     description: String(product.description || 'Curated directly from the SocialEra catalog.').trim() || 'Curated directly from the SocialEra catalog.'
   };
-}
-
-async function ensureUsappMemberSession() {
-  const hadAuthUser = Boolean(state.authUser && state.authUser.id);
-
-  try {
-    let session = await supabaseSessionService.ensureSupabaseSessionState();
-
-    if (!session || !session.access_token) {
-      session = await supabaseSessionService.ensureSupabaseSessionState({ forceRefresh: true });
-    }
-
-    if (session && session.access_token) {
-      await syncAuthSession(session, {
-        renderNow: false,
-        refreshNow: false
-      });
-
-      return {
-        ready: true,
-        guest: false,
-        session
-      };
-    }
-  } catch (error) {
-    return {
-      ready: false,
-      guest: false,
-      error
-    };
-  }
-
-  if (!hadAuthUser) {
-    return {
-      ready: false,
-      guest: true,
-      session: null
-    };
-  }
-
-  return {
-    ready: false,
-    guest: false,
-    error: new Error('Your SocialEra member session expired. Sign in again to load Usapp.')
-  };
-}
-
-async function loadMessagingContacts() {
-  const sessionState = await ensureUsappMemberSession();
-
-  if (sessionState.guest) {
-    return [];
-  }
-
-  if (!sessionState.ready) {
-    throw sessionState.error || new Error('Sign in again to load member people.');
-  }
-
-  const actorId = getMessageActorId();
-
-  if (!actorId) {
-    throw new Error('Sign in again to load member people.');
-  }
-
-  await syncMessageProfile().catch((error) => {
-    console.error('Message profile sync could not be completed:', error);
-    return null;
-  });
-
-  try {
-    const payload = await apiService.fetchMessageJson(`/messages/members?actorId=${encodeURIComponent(actorId)}`);
-    const memberContacts = normalizeContacts(payload && payload.contacts, 'member');
-    return mergeMessageContacts(memberContacts.filter((contact) => isMemberMessageContact(contact)));
-  } catch (error) {
-    console.error('Member contacts could not be loaded:', error);
-    throw error;
-  }
-}
-
-async function loadMessagingThreads() {
-  const sessionState = await ensureUsappMemberSession();
-
-  if (sessionState.guest) {
-    return [];
-  }
-
-  if (!sessionState.ready) {
-    throw sessionState.error || new Error('Sign in again to load member chats.');
-  }
-
-  const actorId = getMessageActorId();
-
-  if (!actorId) {
-    throw new Error('Sign in again to load member chats.');
-  }
-
-  let memberThreads = [];
-
-  try {
-    const payload = await apiService.fetchMessageJson(`/messages/member-threads?actorId=${encodeURIComponent(actorId)}`);
-    memberThreads = normalizeThreads(payload && payload.threads, 'member');
-  } catch (error) {
-    console.error('Member threads could not be loaded:', error);
-    throw error;
-  }
-
-  return hydrateMessageReplyDecorations(memberThreads.filter((thread) => thread && thread.provider === 'member'))
-    .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
 }
 
 async function syncMessageProfile() {

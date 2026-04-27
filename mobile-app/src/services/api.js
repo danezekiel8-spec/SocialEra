@@ -85,6 +85,7 @@ export function createApiService({
     const {
       headers: optionHeaders = {},
       credentials: requestCredentials = 'omit',
+      cache: requestCache,
       omitAuth = false,
       allowMessageAuth = false,
       ...requestOptions
@@ -110,8 +111,11 @@ export function createApiService({
       headers.Authorization = `Bearer ${session.access_token}`;
     }
 
+    const method = String(requestOptions.method || 'GET').trim().toUpperCase() || 'GET';
+    const cacheMode = requestCache || (method === 'GET' || method === 'HEAD' ? 'no-store' : undefined);
     const response = await fetchImpl(`${getNormalizedApiBase()}${pathname}`, {
       ...requestOptions,
+      ...(cacheMode ? { cache: cacheMode } : {}),
       credentials: requestCredentials,
       headers
     });
@@ -164,9 +168,19 @@ export function createApiService({
     return readJsonResponse(response, (status) => `Direct backend request failed: ${status}`);
   }
 
-  function createApiUrl(pathname) {
-    const origin = String(globalThis.location && globalThis.location.origin ? globalThis.location.origin : 'http://localhost').trim();
-    return new URL(`${getNormalizedApiBase().replace(/\/$/, '')}${pathname}`, origin).toString();
+  function createApiUrl(pathname, { directBackend = false } = {}) {
+    const backendOrigin = String(
+      typeof getBackendOrigin === 'function' ? getBackendOrigin() : ''
+    ).trim().replace(/\/+$/, '');
+    const useDirectBackend = shouldUseDirectBackend(directBackend);
+    const origin = useDirectBackend && backendOrigin
+      ? backendOrigin
+      : String(globalThis.location && globalThis.location.origin ? globalThis.location.origin : 'http://localhost').trim();
+    const basePath = useDirectBackend && backendOrigin
+      ? '/api'
+      : getNormalizedApiBase().replace(/\/$/, '');
+
+    return new URL(`${basePath}${pathname}`, origin).toString();
   }
 
   return {
@@ -176,3 +190,28 @@ export function createApiService({
     fetchMessageJson
   };
 }
+  const isLoopbackHostname = (hostname) => {
+    const value = String(hostname || '').trim().toLowerCase();
+    return value === 'localhost' || value === '127.0.0.1' || value === '::1';
+  };
+
+  const shouldUseDirectBackend = (directBackendRequested) => {
+    if (!directBackendRequested) {
+      return false;
+    }
+
+    const backendOrigin = String(
+      typeof getBackendOrigin === 'function' ? getBackendOrigin() : ''
+    ).trim().replace(/\/+$/, '');
+
+    if (!backendOrigin) {
+      return false;
+    }
+
+    try {
+      const parsed = new URL(backendOrigin);
+      return !isLoopbackHostname(parsed.hostname);
+    } catch (error) {
+      return false;
+    }
+  };

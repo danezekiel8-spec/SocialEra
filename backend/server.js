@@ -522,14 +522,23 @@ function emitMessageEvent(payload = {}) {
       .map((actorId) => String(actorId || '').trim())
       .filter(Boolean)
   ));
+  const {
+    actorIds: _ignoredActorIds,
+    kind,
+    threadId,
+    actorId,
+    at,
+    ...extra
+  } = payload || {};
 
   messageEvents.emit('message-event', {
     id: crypto.randomUUID(),
-    kind: String(payload.kind || 'messages-updated').trim() || 'messages-updated',
+    kind: String(kind || 'messages-updated').trim() || 'messages-updated',
     actorIds,
-    threadId: String(payload.threadId || '').trim(),
-    actorId: String(payload.actorId || '').trim(),
-    at: new Date().toISOString()
+    threadId: String(threadId || '').trim(),
+    actorId: String(actorId || '').trim(),
+    at: String(at || '').trim() || new Date().toISOString(),
+    ...extra
   });
 }
 const { buildMessageContacts, resolveMessageContact } = createMessageContactHelpers({

@@ -24,6 +24,11 @@ function createMessageRoutes({
 }) {
   const router = express.Router();
 
+  router.use('/messages', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    next();
+  });
+
   function normalizeLookupValue(value) {
     return String(value || '').trim().toLowerCase();
   }
@@ -53,6 +58,24 @@ function createMessageRoutes({
     }
 
     return upsertMemberProfile(data, { actorId: normalizedActorId });
+  }
+
+  function getComparableMemberProfileSnapshot(profile) {
+    const normalized = normalizeMemberProfile(profile || {});
+
+    return {
+      actorId: normalized.actorId,
+      nativeUserId: normalized.nativeUserId,
+      displayName: normalized.displayName,
+      userName: normalized.userName,
+      avatar: normalized.avatar,
+      photoUrl: normalized.photoUrl
+    };
+  }
+
+  function hasMeaningfulMemberProfileChange(previousProfile, nextProfile) {
+    return JSON.stringify(getComparableMemberProfileSnapshot(previousProfile))
+      !== JSON.stringify(getComparableMemberProfileSnapshot(nextProfile));
   }
 
   function normalizeMessageState(actorId, payload = {}) {
@@ -205,6 +228,7 @@ function createMessageRoutes({
       }
 
       const data = readSocialMessages();
+      const previousProfile = getMemberProfile(data, actorId);
       const profile = upsertMemberProfile(data, {
         actorId,
         displayName: req.body.displayName,
@@ -214,12 +238,14 @@ function createMessageRoutes({
       });
 
       writeSocialMessages(data);
-      emitActors(
-        Array.isArray(data.members) ? data.members.map((member) => member.actorId) : [actorId],
-        'profile-sync',
-        { actorId }
-      );
-      return res.status(201).json({ profile });
+      if (!previousProfile || hasMeaningfulMemberProfileChange(previousProfile, profile)) {
+        emitActors(
+          Array.isArray(data.members) ? data.members.map((member) => member.actorId) : [actorId],
+          'profile-sync',
+          { actorId }
+        );
+      }
+      return res.status(previousProfile ? 200 : 201).json({ profile });
     } catch (error) {
       console.error('Error syncing message profile:', error);
       return res.status(500).json({ error: 'Failed to sync message profile' });
@@ -548,7 +574,9 @@ function createMessageRoutes({
       writeSocialMessages(data);
       emitActors(thread.participantActorIds || [actorId], 'member-message-sent', {
         actorId,
-        threadId: thread.id
+        threadId: thread.id,
+        updatedAt: thread.updatedAt,
+        message: outgoingMessage
       });
 
       return res.status(201).json({
