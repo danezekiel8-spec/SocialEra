@@ -56,6 +56,7 @@ import { createUsappPresenceRenderService } from './src/usapp/render-presence.js
 import { createUsappThreadSettingsRenderService } from './src/usapp/render-thread-settings.js';
 import { createUsappThreadRenderService } from './src/usapp/render-threads.js';
 import { createUsappSessionService } from './src/usapp/session.js';
+import { createDiscoverViewRenderService } from './src/views/discover.js';
 import { createSearchViewRenderService } from './src/views/search.js';
 
 const APP_CONFIG = window.SOCIALERA_APP_CONFIG || {};
@@ -330,6 +331,16 @@ const searchViewRenderService = createSearchViewRenderService({
   escapeHtml,
   getCatalogContext,
   renderCatalogResultsSection
+});
+
+const discoverViewRenderService = createDiscoverViewRenderService({
+  escapeHtml,
+  getBagCount,
+  getCatalogContext,
+  isSignedIn,
+  renderCatalogResultsSection,
+  renderCatalogSearchExperience,
+  renderFilterChip
 });
 
 window.addEventListener('error', (event) => {
@@ -2612,51 +2623,7 @@ function renderPostCardList(posts, surface = 'feed') {
 }
 
 function renderDiscoverView() {
-  const catalogContext = getCatalogContext('shop');
-  const channels = Array.from(new Set(state.products.map((product) => product.category))).filter(Boolean);
-  const bagCount = isSignedIn() ? getBagCount() : 0;
-  const searchExperience = renderCatalogSearchExperience({
-    view: 'shop',
-    includeRecentWhenEmpty: false
-  });
-
-  return `
-    <div class="shop-page-shell">
-      <div class="shop-floating-utility">
-        <button class="shop-bag-shortcut ${bagCount ? 'has-items' : ''}" type="button" data-open-view="bag" aria-label="${escapeHtml(isSignedIn() ? 'Open bag' : 'Sign in to continue shopping')}">
-          ${bagCount ? `<span class="live-indicator-badge shop-bag-badge" aria-hidden="true">${Math.min(bagCount, 99)}</span>` : ''}
-          <svg class="shop-bag-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M7.5 8.5V7.5a4.5 4.5 0 0 1 9 0v1"></path>
-            <path d="M5.5 8.5H18.5L17.5 20.5H6.5Z"></path>
-          </svg>
-          <span>${escapeHtml(isSignedIn() ? 'Bag' : 'Sign in')}</span>
-        </button>
-      </div>
-
-      <section class="card search-card">
-        <div>
-          <p class="section-label">Shop</p>
-          <h3 class="section-title">Shop from the floating bottom dock</h3>
-        </div>
-        <input
-          class="field"
-          type="search"
-          name="discoverQuery"
-          autocomplete="off"
-          placeholder="Search product, category, or creator mood"
-          value="${escapeHtml(catalogContext.query)}"
-        >
-        <div class="chip-row">
-          ${renderFilterChip('all', catalogContext.filter, 'discover')}
-          ${channels.map((channel) => renderFilterChip(channel, catalogContext.filter, 'discover')).join('')}
-        </div>
-      </section>
-
-      <div data-catalog-search-experience="shop">${searchExperience}</div>
-
-      ${renderCatalogResultsSection('shop')}
-    </div>
-  `;
+  return discoverViewRenderService.renderDiscoverView(state.products);
 }
 
 function renderSearchView() {
