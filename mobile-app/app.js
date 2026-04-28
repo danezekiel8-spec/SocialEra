@@ -56,6 +56,7 @@ import { createUsappPresenceRenderService } from './src/usapp/render-presence.js
 import { createUsappThreadSettingsRenderService } from './src/usapp/render-thread-settings.js';
 import { createUsappThreadRenderService } from './src/usapp/render-threads.js';
 import { createUsappSessionService } from './src/usapp/session.js';
+import { createAuthProfileController } from './src/controllers/auth-profile.js';
 import { createSheetPanelController } from './src/controllers/sheet-panels.js';
 import { createViewNavigationController } from './src/controllers/view-navigation.js';
 import { createAuthViewRenderService } from './src/views/auth.js';
@@ -363,6 +364,13 @@ const bagViewRenderService = createBagViewRenderService({
 const viewNavigationController = createViewNavigationController({
   openUsappSheet,
   setActiveView
+});
+
+const authProfileController = createAuthProfileController({
+  clearProfilePhoto,
+  render,
+  signOutAccount,
+  state
 });
 
 const sheetPanelController = createSheetPanelController({
@@ -5074,34 +5082,7 @@ async function handleClick(event) {
     return;
   }
 
-  const authModeButton = event.target.closest('[data-set-auth-mode]');
-  if (authModeButton) {
-    state.authMode = authModeButton.dataset.setAuthMode === 'signup' ? 'signup' : 'login';
-    state.authMessage = null;
-    render();
-    return;
-  }
-
-  const authSignOutButton = event.target.closest('[data-auth-signout]');
-  if (authSignOutButton) {
-    await signOutAccount();
-    return;
-  }
-
-  const clearProfilePhotoButton = event.target.closest('[data-clear-profile-photo]');
-  if (clearProfilePhotoButton) {
-    await clearProfilePhoto();
-    return;
-  }
-
-  const profilePhotoPickButton = event.target.closest('[data-profile-photo-pick]');
-  if (profilePhotoPickButton) {
-    const fileInput = document.querySelector('[data-profile-photo-file-input]');
-
-    if (fileInput) {
-      fileInput.click();
-    }
-
+  if (await authProfileController.handleAuthProfileClick(event)) {
     return;
   }
 
