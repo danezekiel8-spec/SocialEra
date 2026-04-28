@@ -1,11 +1,12 @@
 (function () {
   var loginForm = document.getElementById('login-form');
   var loginButton = document.getElementById('login-button');
+  var forgotPasswordButton = document.getElementById('forgot-password-button');
   var statusMessage = document.getElementById('status-message');
   var emailInput = document.getElementById('email');
   var passwordInput = document.getElementById('password');
 
-  if (!loginForm || !loginButton || !statusMessage || !emailInput || !passwordInput) {
+  if (!loginForm || !loginButton || !forgotPasswordButton || !statusMessage || !emailInput || !passwordInput) {
     return;
   }
 
@@ -17,6 +18,14 @@
   function clearStatus() {
     statusMessage.textContent = '';
     statusMessage.className = 'status';
+  }
+
+  function getResetRedirectUrl() {
+    try {
+      return new URL('reset-password.html', window.location.href).toString();
+    } catch (error) {
+      return window.location.origin.replace(/\/+$/, '') + '/reset-password.html';
+    }
   }
 
   function markRecentLoginAttempt() {
@@ -94,6 +103,45 @@
 
   window.setTimeout(redirectIfAlreadySignedIn, 0);
 
+  forgotPasswordButton.addEventListener('click', async function () {
+    clearStatus();
+
+    var email = emailInput.value.trim();
+
+    if (!email) {
+      showStatus('Enter your email address first, then request a password reset.', 'error');
+      return;
+    }
+
+    if (!window.supabase || !window.supabase.auth) {
+      showStatus('Supabase is not connected yet.', 'error');
+      return;
+    }
+
+    forgotPasswordButton.disabled = true;
+    forgotPasswordButton.textContent = 'Sending reset link...';
+
+    try {
+      var result = await window.supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: getResetRedirectUrl()
+      });
+      var error = result.error;
+
+      if (error) {
+        showStatus(error.message, 'error');
+        return;
+      }
+
+      showStatus('Password reset link sent. Check your email, then open the link to choose a new password.', 'success');
+    } catch (error) {
+      showStatus('Something went wrong while requesting a password reset.', 'error');
+      console.error(error);
+    } finally {
+      forgotPasswordButton.disabled = false;
+      forgotPasswordButton.textContent = 'Forgot password?';
+    }
+  });
+
   loginForm.addEventListener('submit', async function (event) {
     event.preventDefault();
     clearStatus();
@@ -123,7 +171,19 @@
       var error = result.error;
 
       if (error) {
-        showStatus(error.message, 'error');
+        var rawMessage = String(error.message || '').trim();
+        var normalizedMessage = rawMessage.toLowerCase();
+
+        if (
+          normalizedMessage.indexOf('invalid login credentials') !== -1
+          || normalizedMessage.indexOf('invalid email or password') !== -1
+          || normalizedMessage.indexOf('email not confirmed') !== -1
+        ) {
+          showStatus('Login failed. Check your email and password, or use “Forgot password?” to reset access.', 'error');
+          return;
+        }
+
+        showStatus(rawMessage, 'error');
         return;
       }
 

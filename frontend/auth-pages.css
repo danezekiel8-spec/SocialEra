@@ -316,6 +316,30 @@ body.auth-page-body .auth-bottom{
   line-height:1.7;
 }
 
+body.auth-page-body .auth-recovery-row{
+  margin-top:14px;
+}
+
+body.auth-page-body .auth-text-button{
+  appearance:none;
+  border:none;
+  background:transparent;
+  color:#111;
+  font:inherit;
+  font-weight:700;
+  cursor:pointer;
+  padding:0;
+}
+
+body.auth-page-body .auth-text-button:hover{
+  color:var(--gold-dark);
+}
+
+body.auth-page-body .auth-text-button:disabled{
+  opacity:.65;
+  cursor:not-allowed;
+}
+
 body.auth-page-body .auth-bottom a{
   color:#111;
   font-weight:700;
