@@ -56,6 +56,7 @@ import { createUsappPresenceRenderService } from './src/usapp/render-presence.js
 import { createUsappThreadSettingsRenderService } from './src/usapp/render-thread-settings.js';
 import { createUsappThreadRenderService } from './src/usapp/render-threads.js';
 import { createUsappSessionService } from './src/usapp/session.js';
+import { createViewNavigationController } from './src/controllers/view-navigation.js';
 import { createAuthViewRenderService } from './src/views/auth.js';
 import { createBagViewRenderService } from './src/views/bag.js';
 import { createDiscoverViewRenderService } from './src/views/discover.js';
@@ -358,6 +359,11 @@ const bagViewRenderService = createBagViewRenderService({
   renderEmptyCard
 });
 
+const viewNavigationController = createViewNavigationController({
+  openUsappSheet,
+  setActiveView
+});
+
 window.addEventListener('error', (event) => {
   reportStartupError(event && event.error ? event.error : event);
 });
@@ -550,7 +556,7 @@ function bindEvents() {
   elements.refreshButton.addEventListener('click', toggleNotificationSheet);
 
   elements.profileShortcut.addEventListener('click', () => {
-    setActiveView('profile');
+    viewNavigationController.handleProfileShortcutClick();
   });
 
   elements.installButton.addEventListener('click', async () => {
@@ -5129,25 +5135,7 @@ async function handleClick(event) {
     return;
   }
 
-  const navButton = event.target.closest('[data-nav-view]');
-  if (navButton) {
-    setActiveView(navButton.dataset.navView);
-    return;
-  }
-
-  const openUsappButton = event.target.closest('[data-toggle-usapp]');
-  if (openUsappButton) {
-    openUsappSheet({ mode: openUsappButton.dataset.toggleUsapp === 'thread' ? 'thread' : 'inbox' });
-    return;
-  }
-
-  const openViewButton = event.target.closest('[data-open-view]');
-  if (openViewButton) {
-    if (openViewButton.dataset.openView === 'inbox') {
-      openUsappSheet({ mode: 'inbox' });
-      return;
-    }
-    setActiveView(openViewButton.dataset.openView);
+  if (viewNavigationController.handleViewNavigationClick(event)) {
     return;
   }
 
