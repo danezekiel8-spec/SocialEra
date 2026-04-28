@@ -56,6 +56,7 @@ import { createUsappPresenceRenderService } from './src/usapp/render-presence.js
 import { createUsappThreadSettingsRenderService } from './src/usapp/render-thread-settings.js';
 import { createUsappThreadRenderService } from './src/usapp/render-threads.js';
 import { createUsappSessionService } from './src/usapp/session.js';
+import { createAuthViewRenderService } from './src/views/auth.js';
 import { createDiscoverViewRenderService } from './src/views/discover.js';
 import { createSearchViewRenderService } from './src/views/search.js';
 
@@ -341,6 +342,10 @@ const discoverViewRenderService = createDiscoverViewRenderService({
   renderCatalogResultsSection,
   renderCatalogSearchExperience,
   renderFilterChip
+});
+
+const authViewRenderService = createAuthViewRenderService({
+  renderAuthCard
 });
 
 window.addEventListener('error', (event) => {
@@ -3757,13 +3762,7 @@ function renderInboxView() {
 }
 
 function renderAuthView() {
-  return `
-    <section class="auth-page-shell">
-      <section class="card connection-card auth-card auth-page-card">
-        ${renderAuthCard({ standalone: true })}
-      </section>
-    </section>
-  `;
+  return authViewRenderService.renderAuthView();
 }
 
 function renderUsappSheet() {
