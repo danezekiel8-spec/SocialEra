@@ -56,6 +56,7 @@ import { createUsappPresenceRenderService } from './src/usapp/render-presence.js
 import { createUsappThreadSettingsRenderService } from './src/usapp/render-thread-settings.js';
 import { createUsappThreadRenderService } from './src/usapp/render-threads.js';
 import { createUsappSessionService } from './src/usapp/session.js';
+import { createSearchViewRenderService } from './src/views/search.js';
 
 const APP_CONFIG = window.SOCIALERA_APP_CONFIG || {};
 let runtimeSupabaseUrl = '';
@@ -323,6 +324,12 @@ const usappThreadSettingsRenderService = createUsappThreadSettingsRenderService(
   isThreadMuted: (...args) => isThreadMuted(...args),
   isThreadUnread: (...args) => isThreadUnread(...args),
   renderThreadSettingIcon
+});
+
+const searchViewRenderService = createSearchViewRenderService({
+  escapeHtml,
+  getCatalogContext,
+  renderCatalogResultsSection
 });
 
 window.addEventListener('error', (event) => {
@@ -2653,26 +2660,7 @@ function renderDiscoverView() {
 }
 
 function renderSearchView() {
-  const catalogContext = getCatalogContext('search');
-
-  return `
-    <section class="card search-card">
-      <div>
-        <p class="section-label">Search</p>
-        <h3 class="section-title">Search members, products, and posts</h3>
-      </div>
-      <input
-        class="field"
-        type="search"
-        name="discoverQuery"
-        autocomplete="off"
-        placeholder="Search by member, product, post, or style"
-        value="${escapeHtml(catalogContext.query)}"
-      >
-    </section>
-
-    ${renderCatalogResultsSection('search')}
-  `;
+  return searchViewRenderService.renderSearchView();
 }
 
 function renderCatalogResultsSection(view) {
