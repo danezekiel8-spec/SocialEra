@@ -53,6 +53,7 @@ import {
 } from './src/usapp/render-icons.js';
 import { createUsappContactRenderService } from './src/usapp/render-contacts.js';
 import { createUsappPresenceRenderService } from './src/usapp/render-presence.js';
+import { createUsappThreadSettingsRenderService } from './src/usapp/render-thread-settings.js';
 import { createUsappThreadRenderService } from './src/usapp/render-threads.js';
 import { createUsappSessionService } from './src/usapp/session.js';
 
@@ -315,6 +316,13 @@ const usappThreadRenderService = createUsappThreadRenderService({
   renderAvatarMedia,
   renderEmptyCard,
   renderUsappPresenceBadge
+});
+
+const usappThreadSettingsRenderService = createUsappThreadSettingsRenderService({
+  escapeHtml,
+  isThreadMuted: (...args) => isThreadMuted(...args),
+  isThreadUnread: (...args) => isThreadUnread(...args),
+  renderThreadSettingIcon
 });
 
 window.addEventListener('error', (event) => {
@@ -4865,35 +4873,9 @@ function renderConversation(thread) {
 }
 
 function renderThreadSettingsMenu(thread) {
-  if (!state.threadSettingsOpen || !thread) {
-    return '';
-  }
-
-  const muted = isThreadMuted(thread.id);
-  const unread = isThreadUnread(thread);
-
-  return `
-    <div class="usapp-thread-settings">
-      <button class="usapp-thread-settings-action" type="button" data-thread-setting-action="mute">
-        <span class="usapp-thread-settings-icon" aria-hidden="true">${renderThreadSettingIcon('mute')}</span>
-        <span>${escapeHtml(muted ? 'Unmute thread' : 'Mute thread')}</span>
-      </button>
-      <button class="usapp-thread-settings-action" type="button" data-thread-setting-action="unread">
-        <span class="usapp-thread-settings-icon" aria-hidden="true">${renderThreadSettingIcon(unread ? 'read' : 'unread')}</span>
-        <span>${escapeHtml(unread ? 'Mark read' : 'Mark unread')}</span>
-      </button>
-      ${thread.contact && thread.contact.sourcePostId ? `
-        <button class="usapp-thread-settings-action" type="button" data-thread-setting-action="post" data-post-id="${escapeHtml(thread.contact.sourcePostId)}">
-          <span class="usapp-thread-settings-icon" aria-hidden="true">${renderThreadSettingIcon('post')}</span>
-          <span>Open related post</span>
-        </button>
-      ` : ''}
-      <button class="usapp-thread-settings-action danger" type="button" data-thread-setting-action="close">
-        <span class="usapp-thread-settings-icon" aria-hidden="true">${renderThreadSettingIcon('close')}</span>
-        <span>Close chat</span>
-      </button>
-    </div>
-  `;
+  return usappThreadSettingsRenderService.renderThreadSettingsMenu(thread, {
+    threadSettingsOpen: state.threadSettingsOpen
+  });
 }
 
 function renderMessageBubble(thread, message, currentActorId, index = 0) {
