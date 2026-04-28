@@ -4104,6 +4104,7 @@ function renderAuthCard({ standalone = false } = {}) {
       </form>
 
       <p class="auth-bottom">${state.authAvailable ? (standalone ? 'The app unlocks right after you sign in. The Shop can still be browsed in guest mode.' : 'Login stays inside the app, while the website remains untouched.') : 'Account login is temporarily unavailable, so only guest Shop browsing is available right now.'}</p>
+      ${isSignup ? '' : '<p class="auth-bottom"><button class="auth-link-button" type="button" data-auth-reset-password="true">Forgot password?</button></p>'}
 
       ${renderAuthMessage()}
     </div>
@@ -5086,6 +5087,12 @@ async function handleClick(event) {
     return;
   }
 
+  const authResetButton = event.target.closest('[data-auth-reset-password]');
+  if (authResetButton) {
+    await requestPasswordResetFromApp();
+    return;
+  }
+
   if (viewNavigationController.handleViewNavigationClick(event)) {
     return;
   }
@@ -5855,9 +5862,17 @@ async function signInAccount(formData) {
   });
 
   if (error) {
+    const rawMessage = String(error.message || '').trim();
+    const normalizedMessage = rawMessage.toLowerCase();
     state.authMessage = {
       type: 'error',
-      text: error.message
+      text: (
+        normalizedMessage.includes('invalid login credentials')
+        || normalizedMessage.includes('invalid email or password')
+        || normalizedMessage.includes('email not confirmed')
+      )
+        ? 'Login failed. Check your email and password, or use “Forgot password?” to reset access.'
+        : rawMessage
     };
     return;
   }
@@ -5905,6 +5920,7 @@ async function signUpAccount(formData) {
     email,
     password,
     options: {
+      emailRedirectTo: buildWebsiteResetPasswordUrl(),
       data: {
         full_name: fullName,
         username
@@ -5942,9 +5958,72 @@ async function signUpAccount(formData) {
   state.authMode = 'login';
   state.authMessage = {
     type: 'success',
-    text: 'Account created. Check your email if confirmation is required, then log in here.'
+    text: 'Account created. If email confirmation is enabled, check your inbox before logging in. If you lose access later, use “Forgot password?”.'
   };
   showToast('Account created.');
+}
+
+function buildWebsiteResetPasswordUrl() {
+  try {
+    const origin = String(window.location.origin || '').trim().replace(/\/+$/, '');
+
+    if (origin) {
+      return `${origin}/reset-password.html`;
+    }
+  } catch (error) {
+    // no-op
+  }
+
+  return 'reset-password.html';
+}
+
+async function requestPasswordResetFromApp() {
+  if (!supabaseClient || !state.authAvailable) {
+    state.authMessage = {
+      type: 'error',
+      text: 'Account recovery is unavailable right now.'
+    };
+    render();
+    return;
+  }
+
+  const emailField = document.querySelector('.auth-form input[name="email"]');
+  const email = String(emailField && emailField.value ? emailField.value : '').trim();
+
+  if (!email) {
+    state.authMessage = {
+      type: 'error',
+      text: 'Enter your email address first, then request a password reset.'
+    };
+    render();
+    return;
+  }
+
+  state.authBusy = true;
+  state.authMessage = null;
+  render();
+
+  try {
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: buildWebsiteResetPasswordUrl()
+    });
+
+    if (error) {
+      state.authMessage = {
+        type: 'error',
+        text: String(error.message || 'Could not send a password reset email.').trim()
+      };
+      return;
+    }
+
+    state.authMessage = {
+      type: 'success',
+      text: 'Password reset link sent. Check your email, then open the link to choose a new password.'
+    };
+  } finally {
+    state.authBusy = false;
+    render();
+  }
 }
 
 async function signOutAccount() {
