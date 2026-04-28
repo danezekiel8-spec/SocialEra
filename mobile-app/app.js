@@ -56,6 +56,7 @@ import { createUsappPresenceRenderService } from './src/usapp/render-presence.js
 import { createUsappThreadSettingsRenderService } from './src/usapp/render-thread-settings.js';
 import { createUsappThreadRenderService } from './src/usapp/render-threads.js';
 import { createUsappSessionService } from './src/usapp/session.js';
+import { createSheetPanelController } from './src/controllers/sheet-panels.js';
 import { createViewNavigationController } from './src/controllers/view-navigation.js';
 import { createAuthViewRenderService } from './src/views/auth.js';
 import { createBagViewRenderService } from './src/views/bag.js';
@@ -362,6 +363,16 @@ const bagViewRenderService = createBagViewRenderService({
 const viewNavigationController = createViewNavigationController({
   openUsappSheet,
   setActiveView
+});
+
+const sheetPanelController = createSheetPanelController({
+  clearCommentReply,
+  closeCommentSheet,
+  closeNotificationSheet,
+  openCommentSheet,
+  openNotificationPost,
+  openNotificationThread,
+  startCommentReply
 });
 
 window.addEventListener('error', (event) => {
@@ -5053,48 +5064,7 @@ async function handleClick(event) {
     shouldRefreshMessaging = true;
   }
 
-  const closeNotificationsTarget = event.target.closest('[data-close-notifications]');
-  if (closeNotificationsTarget) {
-    closeNotificationSheet();
-    return;
-  }
-
-  const openNotificationThreadTarget = event.target.closest('[data-open-notification-thread]');
-  if (openNotificationThreadTarget) {
-    openNotificationThread(openNotificationThreadTarget.dataset.openNotificationThread);
-    return;
-  }
-
-  const openNotificationPostTarget = event.target.closest('[data-open-notification-post]');
-  if (openNotificationPostTarget) {
-    openNotificationPost(
-      openNotificationPostTarget.dataset.openNotificationPost,
-      openNotificationPostTarget.dataset.openNotificationComments === 'true'
-    );
-    return;
-  }
-
-  const closeCommentsTarget = event.target.closest('[data-close-comments]');
-  if (closeCommentsTarget) {
-    closeCommentSheet();
-    return;
-  }
-
-  const clearReplyTarget = event.target.closest('[data-clear-comment-reply]');
-  if (clearReplyTarget) {
-    clearCommentReply();
-    return;
-  }
-
-  const openCommentsTarget = event.target.closest('[data-open-comments]');
-  if (openCommentsTarget) {
-    openCommentSheet(openCommentsTarget.dataset.openComments);
-    return;
-  }
-
-  const replyTarget = event.target.closest('[data-comment-reply]');
-  if (replyTarget) {
-    startCommentReply(replyTarget.dataset.commentReply, replyTarget.dataset.commentAuthor || 'SocialEra Member');
+  if (sheetPanelController.handleSheetPanelClick(event)) {
     return;
   }
 
