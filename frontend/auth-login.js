@@ -20,6 +20,21 @@
     statusMessage.className = 'status';
   }
 
+  function normalizeAuthErrorMessage(message) {
+    var rawMessage = String(message || '').trim();
+    var normalizedMessage = rawMessage.toLowerCase();
+
+    if (
+      normalizedMessage.indexOf('email rate limit exceeded') !== -1
+      || normalizedMessage.indexOf('rate limit exceeded') !== -1
+      || normalizedMessage.indexOf('too many requests') !== -1
+    ) {
+      return 'Too many reset or login emails were requested. Wait a few minutes, then try again.';
+    }
+
+    return rawMessage;
+  }
+
   function getResetRedirectUrl() {
     try {
       return new URL('reset-password.html', window.location.href).toString();
@@ -128,7 +143,7 @@
       var error = result.error;
 
       if (error) {
-        showStatus(error.message, 'error');
+        showStatus(normalizeAuthErrorMessage(error.message), 'error');
         return;
       }
 
@@ -183,7 +198,7 @@
           return;
         }
 
-        showStatus(rawMessage, 'error');
+        showStatus(normalizeAuthErrorMessage(rawMessage), 'error');
         return;
       }
 

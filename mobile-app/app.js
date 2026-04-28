@@ -5872,7 +5872,7 @@ async function signInAccount(formData) {
         || normalizedMessage.includes('email not confirmed')
       )
         ? 'Login failed. Check your email and password, or use “Forgot password?” to reset access.'
-        : rawMessage
+        : normalizeAuthErrorMessage(rawMessage)
     };
     return;
   }
@@ -5977,6 +5977,21 @@ function buildWebsiteResetPasswordUrl() {
   return 'reset-password.html';
 }
 
+function normalizeAuthErrorMessage(message) {
+  const rawMessage = String(message || '').trim();
+  const normalizedMessage = rawMessage.toLowerCase();
+
+  if (
+    normalizedMessage.includes('email rate limit exceeded')
+    || normalizedMessage.includes('rate limit exceeded')
+    || normalizedMessage.includes('too many requests')
+  ) {
+    return 'Too many reset or login emails were requested. Wait a few minutes, then try again.';
+  }
+
+  return rawMessage;
+}
+
 async function requestPasswordResetFromApp() {
   if (!supabaseClient || !state.authAvailable) {
     state.authMessage = {
@@ -6011,7 +6026,7 @@ async function requestPasswordResetFromApp() {
     if (error) {
       state.authMessage = {
         type: 'error',
-        text: String(error.message || 'Could not send a password reset email.').trim()
+        text: normalizeAuthErrorMessage(error.message || 'Could not send a password reset email.')
       };
       return;
     }
