@@ -4048,7 +4048,7 @@ function renderAuthCard({ standalone = false } = {}) {
         </div>
         <span class="mode-badge ${state.authReady && state.authAvailable ? '' : 'preview'}">${!state.authReady ? 'Connecting' : state.authAvailable ? 'Ready' : 'Unavailable'}</span>
       </div>
-      <p class="auth-card-subtitle">Use the same SocialEra account as the website. The app stays separate, but your identity is real.</p>
+      <p class="auth-card-subtitle">${isSignup ? 'Create one account for the app and website.' : 'Use the same account as the website.'}</p>
     </div>
 
     <div class="auth-card-body">
@@ -4081,7 +4081,7 @@ function renderAuthCard({ standalone = false } = {}) {
             <div class="auth-field">
               <label for="${standalone ? 'auth-standalone-username' : 'auth-profile-username'}">Username</label>
               <input class="text-field" id="${standalone ? 'auth-standalone-username' : 'auth-profile-username'}" type="text" name="userName" maxlength="36" autocomplete="username" placeholder="@username" ${disabled ? 'disabled' : ''}>
-              <div class="auth-field-helper">This becomes part of your SocialEra identity.</div>
+              <div class="auth-field-helper">Shown on your profile.</div>
             </div>
           </div>
         ` : ''}
@@ -4092,7 +4092,7 @@ function renderAuthCard({ standalone = false } = {}) {
         <div class="auth-field">
           <label for="${standalone ? 'auth-standalone-password' : 'auth-profile-password'}">Password</label>
           <input class="text-field" id="${standalone ? 'auth-standalone-password' : 'auth-profile-password'}" type="password" name="password" autocomplete="${isSignup ? 'new-password' : 'current-password'}" placeholder="${isSignup ? 'Create a password' : 'Enter your password'}" ${disabled ? 'disabled' : ''}>
-          <div class="auth-field-helper">${isSignup ? 'Use at least 6 characters.' : 'Use the same email and password as the website.'}</div>
+          <div class="auth-field-helper">${isSignup ? 'Minimum 6 characters.' : 'Use your website password.'}</div>
         </div>
 
         <div class="summary-actions">
@@ -4103,7 +4103,7 @@ function renderAuthCard({ standalone = false } = {}) {
         </div>
       </form>
 
-      <p class="auth-bottom">${state.authAvailable ? (standalone ? 'The app unlocks right after you sign in. The Shop can still be browsed in guest mode.' : 'Login stays inside the app, while the website remains untouched.') : 'Account login is temporarily unavailable, so only guest Shop browsing is available right now.'}</p>
+      <p class="auth-bottom">${state.authAvailable ? (standalone ? 'Guest Shop still works without signing in.' : 'Profile and messages unlock after sign-in.') : 'Account login is temporarily unavailable. Guest Shop still works.'}</p>
       ${isSignup ? '' : '<p class="auth-bottom"><button class="auth-link-button" type="button" data-auth-reset-password="true">Forgot password?</button></p>'}
 
       ${renderAuthMessage()}
