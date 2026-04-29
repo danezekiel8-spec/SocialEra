@@ -19,6 +19,23 @@
     statusMessage.className = 'status';
   }
 
+  async function waitForSupabaseClient() {
+    var attempt = 0;
+
+    while (attempt < 30) {
+      if (window.supabase && window.supabase.auth) {
+        return window.supabase;
+      }
+
+      attempt += 1;
+      await new Promise(function (resolve) {
+        window.setTimeout(resolve, 100);
+      });
+    }
+
+    return null;
+  }
+
   async function getRecoverySession() {
     if (!window.supabase || !window.supabase.auth) {
       return null;
@@ -34,7 +51,9 @@
   }
 
   window.setTimeout(async function () {
-    if (!window.supabase || !window.supabase.auth) {
+    var supabase = await waitForSupabaseClient();
+
+    if (!supabase || !supabase.auth) {
       showStatus('Supabase is not connected yet.', 'error');
       resetButton.disabled = true;
       return;
@@ -76,7 +95,9 @@
       return;
     }
 
-    if (!window.supabase || !window.supabase.auth) {
+    var supabase = await waitForSupabaseClient();
+
+    if (!supabase || !supabase.auth) {
       showStatus('Supabase is not connected yet.', 'error');
       return;
     }
