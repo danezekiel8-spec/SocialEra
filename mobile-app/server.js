@@ -7,6 +7,7 @@ const ROOT_DIR = __dirname;
 const PORT = Number(process.env.PORT || 4100);
 const HOST = String(process.env.HOST || '').trim();
 const BACKEND_ORIGIN = String(process.env.SOCIALERA_BACKEND_ORIGIN || 'http://localhost:5001').trim().replace(/\/+$/, '');
+const PUBLIC_AUTH_ORIGIN = String(process.env.SOCIALERA_PUBLIC_AUTH_ORIGIN || '').trim().replace(/\/+$/, '');
 const backendUrl = new URL(BACKEND_ORIGIN);
 
 const MIME_TYPES = {
@@ -31,7 +32,8 @@ function serveConfig(res) {
   const payload = `window.SOCIALERA_APP_CONFIG = ${JSON.stringify({
     apiBase: '/api',
     assetBase: '/',
-    backendOrigin: BACKEND_ORIGIN
+    backendOrigin: BACKEND_ORIGIN,
+    publicAuthOrigin: PUBLIC_AUTH_ORIGIN
   })};\n`;
 
   res.writeHead(200, {

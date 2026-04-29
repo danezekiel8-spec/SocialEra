@@ -4,6 +4,7 @@ const fallbackConfig = {
   supabaseUrl: 'https://kfunqpatayfkscilhncx.supabase.co',
   supabasePublishableKey: 'sb_publishable_ByM_npvMJj4LM_WVntb_aw_qwFPgoMj',
   supabaseProjectRef: 'kfunqpatayfkscilhncx',
+  publicAuthOrigin: '',
   supabaseConfigured: true,
   supabaseSource: 'fallback'
 };
@@ -31,6 +32,7 @@ async function loadSupabaseConfig() {
       supabaseUrl,
       supabasePublishableKey,
       supabaseProjectRef: String(payload && payload.supabaseProjectRef ? payload.supabaseProjectRef : '').trim(),
+      publicAuthOrigin: String(payload && payload.publicAuthOrigin ? payload.publicAuthOrigin : '').trim().replace(/\/+$/, ''),
       supabaseConfigured: true,
       supabaseSource: String(payload && payload.supabaseSource ? payload.supabaseSource : 'runtime').trim()
     };

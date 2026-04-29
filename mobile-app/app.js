@@ -67,6 +67,7 @@ import { createSearchViewRenderService } from './src/views/search.js';
 const APP_CONFIG = window.SOCIALERA_APP_CONFIG || {};
 let runtimeSupabaseUrl = '';
 let runtimeSupabasePublishableKey = '';
+let runtimePublicAuthOrigin = '';
 const IOS_DEVICE = detectIOSDevice();
 const ANDROID_CHROME_DEVICE = detectAndroidChromeDevice();
 const ACTIVITY_POLL_INTERVAL_MS = IOS_DEVICE ? 10000 : 5000;
@@ -111,9 +112,10 @@ const runtimeSupabaseConfigService = createRuntimeSupabaseConfigService({
   fetchImpl: (...args) => fetch(...args),
   getApiBase: () => state.apiBase,
   getRuntimeSupabaseUrl: () => runtimeSupabaseUrl,
-  setRuntimeSupabaseConfig: ({ supabaseUrl, supabasePublishableKey }) => {
+  setRuntimeSupabaseConfig: ({ supabaseUrl, supabasePublishableKey, publicAuthOrigin }) => {
     runtimeSupabaseUrl = supabaseUrl;
     runtimeSupabasePublishableKey = supabasePublishableKey;
+    runtimePublicAuthOrigin = String(publicAuthOrigin || '').trim().replace(/\/+$/, '');
   }
 });
 
@@ -238,6 +240,7 @@ const loadMessagingThreads = (...args) => usappSessionService.loadMessagingThrea
 const elements = {
   phoneShell: document.querySelector('.phone-shell'),
   topbar: document.querySelector('.topbar'),
+  topbarActions: document.querySelector('.topbar-actions'),
   viewRoot: document.getElementById('view-root'),
   commentSheetRoot: document.getElementById('comment-sheet-root'),
   notificationSheetRoot: document.getElementById('notification-sheet-root'),
@@ -4040,18 +4043,16 @@ function renderAuthCard({ standalone = false } = {}) {
   const isSignup = state.authMode === 'signup';
 
   return `
-    <div class="auth-card-top">
+    <div class="auth-card-top auth-mode-panel auth-mode-panel-${isSignup ? 'signup' : 'login'}">
       <div class="auth-card-topline">
         <div>
-          <p class="auth-eyebrow">${isSignup ? 'Create your account' : 'Welcome back'}</p>
-          <h3 class="auth-card-title">${isSignup ? 'Create your SocialEra account' : 'Log into your SocialEra account'}</h3>
+          <p class="auth-eyebrow">${isSignup ? 'Create account' : 'Welcome back'}</p>
+          <h3 class="auth-card-title">${isSignup ? 'Create account' : 'Log in'}</h3>
         </div>
-        <span class="mode-badge ${state.authReady && state.authAvailable ? '' : 'preview'}">${!state.authReady ? 'Connecting' : state.authAvailable ? 'Ready' : 'Unavailable'}</span>
       </div>
-      <p class="auth-card-subtitle">${isSignup ? 'Create one account for the app and website.' : 'Use the same account as the website.'}</p>
     </div>
 
-    <div class="auth-card-body">
+    <div class="auth-card-body auth-mode-panel auth-mode-panel-${isSignup ? 'signup' : 'login'}">
       <div class="auth-mode-switch" role="tablist" aria-label="Account mode">
         <button
           class="auth-mode-button ${!isSignup ? 'active' : ''}"
@@ -4073,7 +4074,7 @@ function renderAuthCard({ standalone = false } = {}) {
 
       <form class="auth-form" data-auth-form="${isSignup ? 'signup' : 'login'}">
         ${isSignup ? `
-          <div class="auth-field-grid">
+          <div class="auth-field-grid ${standalone ? 'single-column' : ''}">
             <div class="auth-field">
               <label for="${standalone ? 'auth-standalone-full-name' : 'auth-profile-full-name'}">Full name</label>
               <input class="text-field" id="${standalone ? 'auth-standalone-full-name' : 'auth-profile-full-name'}" type="text" name="fullName" maxlength="60" autocomplete="name" placeholder="Your full name" ${disabled ? 'disabled' : ''}>
@@ -4103,7 +4104,7 @@ function renderAuthCard({ standalone = false } = {}) {
         </div>
       </form>
 
-      <p class="auth-bottom">${state.authAvailable ? (standalone ? 'Guest Shop still works without signing in.' : 'Profile and messages unlock after sign-in.') : 'Account login is temporarily unavailable. Guest Shop still works.'}</p>
+      ${state.authAvailable ? '' : '<p class="auth-bottom">Account login is temporarily unavailable.</p>'}
       ${isSignup ? '' : '<p class="auth-bottom"><button class="auth-link-button" type="button" data-auth-reset-password="true">Forgot password?</button></p>'}
 
       ${renderAuthMessage()}
@@ -5964,6 +5965,36 @@ async function signUpAccount(formData) {
 }
 
 function buildWebsiteResetPasswordUrl() {
+  const runtimeOrigin = String(runtimePublicAuthOrigin || '').trim().replace(/\/+$/, '');
+
+  if (runtimeOrigin) {
+    return `${runtimeOrigin}/reset-password.html`;
+  }
+
+  const configuredOrigin = String(APP_CONFIG.publicAuthOrigin || '').trim().replace(/\/+$/, '');
+
+  if (configuredOrigin) {
+    return `${configuredOrigin}/reset-password.html`;
+  }
+
+  const backendOrigin = String(APP_CONFIG.backendOrigin || '').trim().replace(/\/+$/, '');
+
+  if (backendOrigin) {
+    try {
+      const parsedBackendOrigin = new URL(backendOrigin);
+      const hostname = String(parsedBackendOrigin.hostname || '').trim().toLowerCase();
+      const isLocalhost = ['localhost', '127.0.0.1', '::1'].includes(hostname);
+      const isPrivateIpv4 = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(hostname);
+      const isLocalDevelopmentHost = isLocalhost || isPrivateIpv4 || hostname.endsWith('.local');
+
+      if (isLocalDevelopmentHost) {
+        return `${backendOrigin}/reset-password.html`;
+      }
+    } catch (error) {
+      // no-op
+    }
+  }
+
   try {
     const origin = String(window.location.origin || '').trim().replace(/\/+$/, '');
 
@@ -6848,7 +6879,13 @@ function toggleMessageReactionLocally(threadId, messageId, emoji) {
 }
 
 function updateHeader() {
+  const hideAuthChrome = normalizeView(state.activeView) === 'auth';
   elements.profileShortcut.innerHTML = renderAvatarMedia(state.profile);
+  if (elements.topbarActions) {
+    elements.topbarActions.classList.toggle('hidden-for-auth', hideAuthChrome);
+  }
+  elements.refreshButton.hidden = hideAuthChrome;
+  elements.profileShortcut.hidden = hideAuthChrome;
   elements.refreshButton.classList.toggle('active', state.activeNotificationPanel);
   elements.refreshButton.setAttribute('aria-expanded', state.activeNotificationPanel ? 'true' : 'false');
   syncInstallButton();
@@ -7717,20 +7754,25 @@ function flattenCommentsForNotifications(comments) {
 
 function getMessageReadyStatus() {
   if (state.authUser) {
-    return 'Direct member chats are pulled from your live SocialEra account threads.';
+    return 'Your member chats are ready.';
   }
 
-  return 'Sign in to open your direct member chats in Usapp.';
+  return 'Sign in to use Usapp.';
 }
 
 function getMessageIdentityLine() {
   return state.authUser
-    ? `Signed in as ${state.profile.displayName}`
-    : 'Sign in to view your member chats';
+    ? escapeMessageIdentityLine(state.profile.displayName)
+    : 'Sign in to view chats';
 }
 
 function getMessageStatusCopy() {
-  return state.messageStatus || 'Message real SocialEra members without leaving the app.';
+  return state.messageStatus || 'Message members without leaving the app.';
+}
+
+function escapeMessageIdentityLine(displayName) {
+  const name = String(displayName || '').trim();
+  return name ? `Signed in: ${name}` : 'Signed in';
 }
 
 function setMessageStatus(message = '', type = 'info') {
@@ -7754,13 +7796,13 @@ function getUsappLoadErrorMessage(scope, error) {
 
   if (/failed to fetch|networkerror|network request failed|load failed/i.test(message)) {
     return normalizedScope === 'people'
-      ? 'Could not reach member people right now. Check your connection, then refresh Usapp.'
-      : 'Could not reach your member chats right now. Check your connection, then refresh Usapp.';
+      ? 'Could not load people. Check your connection and refresh.'
+      : 'Could not load chats. Check your connection and refresh.';
   }
 
   return normalizedScope === 'people'
-    ? 'Could not load member people right now.'
-    : 'Could not load your member chats right now.';
+    ? 'Could not load people right now.'
+    : 'Could not load chats right now.';
 }
 
 function updateUsappLoadStatus({ contactResult = null, threadResult = null } = {}) {
@@ -7782,7 +7824,7 @@ function updateUsappLoadStatus({ contactResult = null, threadResult = null } = {
   }
 
   if (state.authUser && !state.contacts.length && !state.threads.length) {
-    setMessageStatus('No member people or chats were returned for this account yet. Open Usapp on another signed-in member account, then refresh here.', 'info');
+    setMessageStatus('No chats or people yet. Open Usapp on another account, then refresh.', 'info');
     return;
   }
 

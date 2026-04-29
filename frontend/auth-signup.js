@@ -39,6 +39,34 @@
       .replace(/[^a-z0-9._-]/g, '');
   }
 
+  function getConfiguredPublicAuthOrigin() {
+    try {
+      return String(
+        window.SOCIALERA_SUPABASE_CONFIG
+        && window.SOCIALERA_SUPABASE_CONFIG.publicAuthOrigin
+        ? window.SOCIALERA_SUPABASE_CONFIG.publicAuthOrigin
+        : ''
+      ).trim().replace(/\/+$/, '');
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function buildAuthPageUrl(pathname) {
+    var cleanPathname = String(pathname || '').trim().replace(/^\/+/, '');
+    var configuredOrigin = getConfiguredPublicAuthOrigin();
+
+    if (configuredOrigin && cleanPathname) {
+      return configuredOrigin + '/' + cleanPathname;
+    }
+
+    try {
+      return new URL(cleanPathname, window.location.href).toString();
+    } catch (error) {
+      return window.location.origin.replace(/\/+$/, '') + '/' + cleanPathname;
+    }
+  }
+
   signupForm.addEventListener('submit', async function (event) {
     event.preventDefault();
     clearStatus();
@@ -80,6 +108,7 @@
         email: email,
         password: password,
         options: {
+          emailRedirectTo: buildAuthPageUrl('reset-password.html'),
           data: {
             full_name: fullName,
             username: username,

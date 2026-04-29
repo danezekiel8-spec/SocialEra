@@ -617,6 +617,10 @@ video {
   align-items: center;
 }
 
+.topbar-actions.hidden-for-auth {
+  display: none;
+}
+
 .chrome-button,
 .avatar-button,
 .install-cta,
@@ -5141,6 +5145,10 @@ video {
   gap: 0.82rem;
 }
 
+.auth-mode-panel {
+  animation: auth-mode-panel-in 220ms var(--motion-soft) both;
+}
+
 .auth-card-top {
   padding-bottom: 0.2rem;
 }
@@ -5230,6 +5238,10 @@ video {
   gap: 0.72rem;
 }
 
+.auth-field-grid.single-column {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .auth-field {
   display: grid;
   gap: 0.42rem;
@@ -5261,6 +5273,18 @@ video {
   font-size: 0.8rem;
   line-height: 1.5;
   border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+@keyframes auth-mode-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .auth-status.success {

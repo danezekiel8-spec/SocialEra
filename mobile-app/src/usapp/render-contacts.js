@@ -38,8 +38,8 @@ export function createUsappContactRenderService({
   }) {
     const peopleEmptyTitle = signedIn ? 'No people available' : 'Sign in to view people';
     const peopleEmptyCopy = signedIn
-      ? 'Open Usapp on your other signed-in member account, then refresh here.'
-      : 'Sign in with your SocialEra account to load member contacts.';
+      ? 'Open Usapp on another account, then refresh.'
+      : 'Sign in to load people.';
 
     if (!visibleContacts.length) {
       return renderEmptyCard(peopleEmptyTitle, peopleEmptyCopy);

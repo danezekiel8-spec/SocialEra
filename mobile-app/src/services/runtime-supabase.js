@@ -34,17 +34,20 @@ export function createRuntimeSupabaseConfigService({
     const payload = await response.json().catch(() => null);
     const supabaseUrl = String(payload && payload.supabaseUrl ? payload.supabaseUrl : '').trim();
     const supabasePublishableKey = String(payload && payload.supabasePublishableKey ? payload.supabasePublishableKey : '').trim();
+    const publicAuthOrigin = String(payload && payload.publicAuthOrigin ? payload.publicAuthOrigin : '').trim().replace(/\/+$/, '');
 
     if (typeof setRuntimeSupabaseConfig === 'function') {
       setRuntimeSupabaseConfig({
         supabaseUrl,
-        supabasePublishableKey
+        supabasePublishableKey,
+        publicAuthOrigin
       });
     }
 
     return {
       supabaseUrl,
       supabasePublishableKey,
+      publicAuthOrigin,
       supabaseConfigured: Boolean(payload && payload.supabaseConfigured && supabaseUrl && supabasePublishableKey),
       supabaseSource: String(payload && payload.supabaseSource ? payload.supabaseSource : '').trim()
     };

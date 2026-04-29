@@ -120,6 +120,7 @@ function createAdminSupportRoutes({
       supabaseUrl: supabaseConfig.supabaseUrl,
       supabasePublishableKey: supabaseConfig.supabasePublishableKey,
       supabaseProjectRef: supabaseConfig.supabaseProjectRef,
+      publicAuthOrigin: String(supabaseConfig.publicAuthOrigin || '').trim(),
       supabaseConfigured: Boolean(supabaseConfig.supabaseConfigured),
       supabaseSource: supabaseConfig.supabaseSource
     });

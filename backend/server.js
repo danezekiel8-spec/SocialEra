@@ -92,6 +92,7 @@ const ADMIN_SESSION_COOKIE_NAME = 'socialera_admin_session';
 const SUPPORT_SESSION_COOKIE_NAME = 'socialera_support_session';
 const ADMIN_SESSION_COOKIE_PATH = '/api';
 const SUPPORT_SESSION_COOKIE_PATH = '/api/support';
+const PUBLIC_AUTH_ORIGIN = String(process.env.SOCIALERA_PUBLIC_AUTH_ORIGIN || '').trim().replace(/\/+$/, '');
 const EXTRA_ALLOWED_CORS_ORIGINS = String(process.env.CORS_ALLOWED_ORIGINS || '')
   .split(',')
   .map((origin) => String(origin || '').trim().replace(/\/+$/, ''))
@@ -137,6 +138,7 @@ function getPublicSupabaseConfig() {
     supabaseUrl,
     supabasePublishableKey,
     supabaseProjectRef,
+    publicAuthOrigin: PUBLIC_AUTH_ORIGIN,
     supabaseConfigured: Boolean(supabaseUrl && supabasePublishableKey),
     supabaseSource: process.env.SUPABASE_URL || process.env.SUPABASE_PROJECT_URL || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY
       ? 'env'

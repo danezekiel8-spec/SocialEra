@@ -59,7 +59,7 @@ export function createUsappThreadRenderService({
     activeThreadId = ''
   } = {}) {
     if (!threads.length) {
-      return renderEmptyCard('No chats yet', 'Start a direct member conversation from your live SocialEra account.');
+      return renderEmptyCard('No chats yet', 'Start a conversation from your account.');
     }
 
     return threads.map((thread, index) => renderThreadRow(thread, {

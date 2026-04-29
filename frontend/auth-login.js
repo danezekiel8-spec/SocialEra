@@ -35,12 +35,36 @@
     return rawMessage;
   }
 
-  function getResetRedirectUrl() {
+  function getConfiguredPublicAuthOrigin() {
     try {
-      return new URL('reset-password.html', window.location.href).toString();
+      return String(
+        window.SOCIALERA_SUPABASE_CONFIG
+        && window.SOCIALERA_SUPABASE_CONFIG.publicAuthOrigin
+        ? window.SOCIALERA_SUPABASE_CONFIG.publicAuthOrigin
+        : ''
+      ).trim().replace(/\/+$/, '');
     } catch (error) {
-      return window.location.origin.replace(/\/+$/, '') + '/reset-password.html';
+      return '';
     }
+  }
+
+  function buildAuthPageUrl(pathname) {
+    var cleanPathname = String(pathname || '').trim().replace(/^\/+/, '');
+    var configuredOrigin = getConfiguredPublicAuthOrigin();
+
+    if (configuredOrigin && cleanPathname) {
+      return configuredOrigin + '/' + cleanPathname;
+    }
+
+    try {
+      return new URL(cleanPathname, window.location.href).toString();
+    } catch (error) {
+      return window.location.origin.replace(/\/+$/, '') + '/' + cleanPathname;
+    }
+  }
+
+  function getResetRedirectUrl() {
+    return buildAuthPageUrl('reset-password.html');
   }
 
   function markRecentLoginAttempt() {
