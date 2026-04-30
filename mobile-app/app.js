@@ -4336,17 +4336,13 @@ function renderAuthCard({ standalone = false } = {}) {
           <button class="ghost-button" type="button" data-open-view="${escapeHtml(backView)}">${escapeHtml(backLabel)}</button>
           ${standalone && !isSignup ? `
             <button
-              class="ghost-button icon-button"
+              class="ghost-button"
               type="button"
               data-auth-install-app="true"
               aria-label="Install app"
               title="Install app"
             >
-              <svg class="usapp-inline-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 4V15"></path>
-                <path d="M8 11L12 15L16 11"></path>
-                <path d="M5 19H19"></path>
-              </svg>
+              Install app
             </button>
           ` : ''}
         </div>
