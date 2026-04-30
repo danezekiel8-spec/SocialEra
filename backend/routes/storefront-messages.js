@@ -714,14 +714,16 @@ function createMessageRoutes({
         const latestMessage = Array.isArray(persistedThread && persistedThread.messages)
           ? persistedThread.messages[persistedThread.messages.length - 1] || null
           : null;
-        const peerActorId = String(
-          persistedThread
-          && persistedThread.contact
-          && persistedThread.contact.actorId
-          || ''
-        ).trim();
+        const eventActorIds = Array.from(new Set(
+          (Array.isArray(persistedThread && persistedThread.participantActorIds)
+            ? persistedThread.participantActorIds
+            : [actorId, persistedThread && persistedThread.contact && persistedThread.contact.actorId]
+          )
+            .map((value) => String(value || '').trim())
+            .filter(Boolean)
+        ));
 
-        emitActors([actorId, peerActorId].filter(Boolean), 'member-message-sent', {
+        emitActors(eventActorIds, 'member-message-sent', {
           actorId,
           threadId: String(persistedThread && persistedThread.id || threadId).trim(),
           updatedAt: String(
@@ -838,14 +840,16 @@ function createMessageRoutes({
           actorId,
           emoji
         });
-        const peerActorId = String(
-          persistedThread
-          && persistedThread.contact
-          && persistedThread.contact.actorId
-          || ''
-        ).trim();
+        const eventActorIds = Array.from(new Set(
+          (Array.isArray(persistedThread && persistedThread.participantActorIds)
+            ? persistedThread.participantActorIds
+            : [actorId, persistedThread && persistedThread.contact && persistedThread.contact.actorId]
+          )
+            .map((value) => String(value || '').trim())
+            .filter(Boolean)
+        ));
 
-        emitActors([actorId, peerActorId].filter(Boolean), 'member-message-reaction', {
+        emitActors(eventActorIds, 'member-message-reaction', {
           actorId,
           threadId: String(persistedThread && persistedThread.id || threadId).trim()
         });

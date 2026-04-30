@@ -302,6 +302,12 @@ function mapMemberThreadBundleToThread({
     id: String(conversation && conversation.id || '').trim(),
     nativeId: String(conversation && (conversation.native_id || conversation.id) || '').trim(),
     provider: 'member',
+    participantActorIds: Array.from(new Set(
+      (Array.isArray(participants) ? participants : [])
+        .map((participant) => userIdToActorId(participant && participant.user_id))
+        .map((actorId) => String(actorId || '').trim())
+        .filter(Boolean)
+    )),
     contact: memberProfileToContact(contactProfile),
     messages: (Array.isArray(messages) ? messages : [])
       .map((message) => {
