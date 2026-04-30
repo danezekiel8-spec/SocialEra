@@ -41,6 +41,7 @@ import { createUsappMessageStateService } from './src/usapp/message-state.js';
 import { createUsappIdentityService, createUsappNormalizationService } from './src/usapp/normalizers.js';
 import {
   renderRefreshIcon,
+  renderUsappBrandIcon,
   renderSettingsIcon,
   renderThreadSettingIcon,
   renderUsappAttachIcon,
@@ -275,6 +276,7 @@ let liveNotificationSeeded = false;
 let lastUnreadNotificationIds = new Set();
 let supabaseClient = null;
 let usappMessageGesture = null;
+let usappPullGesture = null;
 let voiceRecorder = null;
 let voiceRecorderStream = null;
 let voiceRecorderChunks = [];
@@ -289,6 +291,8 @@ const swipeState = {
   startY: 0
 };
 const USAPP_PRESENCE_ONLINE_WINDOW_MS = 5 * 60 * 1000;
+const USAPP_PULL_REFRESH_THRESHOLD_PX = 42;
+const USAPP_PULL_REFRESH_MAX_PX = 96;
 
 const usappPresenceRenderService = createUsappPresenceRenderService({
   escapeHtml,
@@ -560,7 +564,11 @@ function bindEvents() {
   document.addEventListener('pointerdown', handleUsappPointerDown);
   document.addEventListener('pointermove', handleUsappPointerMove, { passive: false });
   document.addEventListener('pointerup', handleUsappPointerUp);
-  document.addEventListener('pointercancel', resetUsappMessageGesture);
+  document.addEventListener('pointercancel', resetUsappGestures);
+  document.addEventListener('touchstart', handleUsappTouchStart, { passive: true });
+  document.addEventListener('touchmove', handleUsappTouchMove, { passive: false });
+  document.addEventListener('touchend', handleUsappTouchEnd, { passive: true });
+  document.addEventListener('touchcancel', resetUsappPullGesture, { passive: true });
   bindSwipeNavigation();
   elements.viewRoot.addEventListener('scroll', handleViewScroll, { passive: true });
   window.addEventListener('scroll', handleViewScroll, { passive: true });
@@ -1733,6 +1741,56 @@ function isUsappMessageGestureTarget(target) {
     && !target.closest('a, button, input, textarea, audio, .usapp-reaction-picker, .usapp-reaction-pill, .message-attachment');
 }
 
+function getUsappPullRefreshElements() {
+  const list = queryUsappElement('[data-usapp-thread-list]');
+  const indicator = queryUsappElement('[data-usapp-pull-indicator]');
+  const section = list ? list.closest('.usapp-section-threads') : null;
+
+  return {
+    indicator,
+    list,
+    section
+  };
+}
+
+function syncUsappPullRefreshUi({ offset = 0, stateName = 'idle' } = {}) {
+  const { indicator, list, section } = getUsappPullRefreshElements();
+
+  if (!indicator || !list || !section) {
+    return;
+  }
+
+  const nextOffset = Math.max(0, Math.min(Number(offset) || 0, USAPP_PULL_REFRESH_MAX_PX));
+  const visible = nextOffset > 0 || stateName === 'refreshing';
+  const nextHeight = stateName === 'refreshing'
+    ? Math.max(34, nextOffset || USAPP_PULL_REFRESH_THRESHOLD_PX - 8)
+    : nextOffset;
+  const label = stateName === 'refreshing'
+    ? 'Refreshing...'
+    : nextOffset >= USAPP_PULL_REFRESH_THRESHOLD_PX
+      ? 'Release to refresh'
+      : 'Pull to refresh';
+
+  indicator.classList.toggle('is-visible', visible);
+  indicator.classList.toggle('is-ready', stateName === 'ready');
+  indicator.classList.toggle('is-refreshing', stateName === 'refreshing');
+  indicator.style.height = visible ? `${nextHeight}px` : '0px';
+  indicator.textContent = label;
+
+  list.classList.toggle('is-pulling', visible);
+  list.classList.toggle('is-refreshing', stateName === 'refreshing');
+  list.style.transform = visible ? `translateY(${nextHeight}px)` : '';
+  section.classList.toggle('is-pulling', visible);
+}
+
+function resetUsappPullGesture() {
+  if (usappPullGesture && usappPullGesture.list) {
+    usappPullGesture.list.style.removeProperty('touch-action');
+  }
+  usappPullGesture = null;
+  syncUsappPullRefreshUi();
+}
+
 function resetUsappMessageGesture() {
   if (!usappMessageGesture) {
     return;
@@ -1748,6 +1806,111 @@ function resetUsappMessageGesture() {
   }
 
   usappMessageGesture = null;
+}
+
+function resetUsappGestures() {
+  resetUsappMessageGesture();
+  resetUsappPullGesture();
+}
+
+function shouldStartUsappPullRefresh(target) {
+  if (
+    state.activeView !== 'inbox'
+    || state.messagePanelMode !== 'inbox'
+    || state.messageSearchOpen
+    || messageRefreshPromise
+    || !(target instanceof Element)
+  ) {
+    return null;
+  }
+
+  const list = target.closest('[data-usapp-thread-list]');
+
+  if (!list || Number(list.scrollTop || 0) > 0) {
+    return null;
+  }
+
+  return list;
+}
+
+function handleUsappTouchStart(event) {
+  if (!event.touches || event.touches.length !== 1) {
+    return;
+  }
+
+  const touch = event.touches[0];
+  const list = shouldStartUsappPullRefresh(event.target);
+
+  if (!list) {
+    return;
+  }
+
+  usappPullGesture = {
+    list,
+    pointerId: 'touch',
+    startX: touch.clientX,
+    startY: touch.clientY,
+    pullOffset: 0
+  };
+  list.style.touchAction = 'none';
+  syncUsappPullRefreshUi();
+}
+
+function handleUsappTouchMove(event) {
+  if (!usappPullGesture || usappPullGesture.pointerId !== 'touch' || !event.touches || !event.touches.length) {
+    return;
+  }
+
+  const touch = event.touches[0];
+  const deltaX = touch.clientX - usappPullGesture.startX;
+  const deltaY = touch.clientY - usappPullGesture.startY;
+
+  if (deltaY <= 0 || Math.abs(deltaX) > Math.abs(deltaY) + 10) {
+    resetUsappPullGesture();
+    return;
+  }
+
+  if (!usappPullGesture.list || Number(usappPullGesture.list.scrollTop || 0) > 0) {
+    resetUsappPullGesture();
+    return;
+  }
+
+  const nextOffset = Math.max(0, Math.min(deltaY * 0.78, USAPP_PULL_REFRESH_MAX_PX));
+
+  if (nextOffset > 0) {
+    event.preventDefault();
+    usappPullGesture.pullOffset = nextOffset;
+    syncUsappPullRefreshUi({
+      offset: nextOffset,
+      stateName: nextOffset >= USAPP_PULL_REFRESH_THRESHOLD_PX ? 'ready' : 'pulling'
+    });
+  }
+}
+
+function handleUsappTouchEnd() {
+  if (!usappPullGesture || usappPullGesture.pointerId !== 'touch') {
+    return;
+  }
+
+  const shouldRefresh = usappPullGesture.pullOffset >= USAPP_PULL_REFRESH_THRESHOLD_PX;
+
+  if (shouldRefresh) {
+    syncUsappPullRefreshUi({
+      offset: usappPullGesture.pullOffset,
+      stateName: 'refreshing'
+    });
+    usappPullGesture = null;
+    refreshMessagingData({ includeContacts: true, renderNow: true })
+      .catch((error) => {
+        console.error('Usapp touch pull refresh failed:', error);
+      })
+      .finally(() => {
+        resetUsappPullGesture();
+      });
+    return;
+  }
+
+  resetUsappPullGesture();
 }
 
 function setMessageReplyTarget(messageId, { refresh = true } = {}) {
@@ -1995,6 +2158,26 @@ async function toggleVoiceRecording() {
 }
 
 function handleUsappPointerDown(event) {
+  if (event.pointerType !== 'touch') {
+    const list = shouldStartUsappPullRefresh(event.target);
+
+    if (list) {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+
+      list.style.touchAction = 'none';
+      usappPullGesture = {
+        list,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        pullOffset: 0
+      };
+      syncUsappPullRefreshUi();
+    }
+  }
+
   if (!isUsappMessageGestureTarget(event.target)) {
     return;
   }
@@ -2043,6 +2226,33 @@ function handleUsappPointerDown(event) {
 }
 
 function handleUsappPointerMove(event) {
+  if (usappPullGesture && event.pointerId === usappPullGesture.pointerId) {
+    const deltaX = event.clientX - usappPullGesture.startX;
+    const deltaY = event.clientY - usappPullGesture.startY;
+
+    if (deltaY <= 0 || Math.abs(deltaX) > Math.abs(deltaY) + 10) {
+      resetUsappPullGesture();
+      return;
+    }
+
+    if (!usappPullGesture.list || Number(usappPullGesture.list.scrollTop || 0) > 0) {
+      resetUsappPullGesture();
+      return;
+    }
+
+    const nextOffset = Math.max(0, Math.min(deltaY * 0.78, USAPP_PULL_REFRESH_MAX_PX));
+
+    if (nextOffset > 0) {
+      event.preventDefault();
+      usappPullGesture.pullOffset = nextOffset;
+      syncUsappPullRefreshUi({
+        offset: nextOffset,
+        stateName: nextOffset >= USAPP_PULL_REFRESH_THRESHOLD_PX ? 'ready' : 'pulling'
+      });
+      return;
+    }
+  }
+
   if (!usappMessageGesture || event.pointerId !== usappMessageGesture.pointerId) {
     return;
   }
@@ -2077,6 +2287,29 @@ function handleUsappPointerMove(event) {
 }
 
 function handleUsappPointerUp(event) {
+  if (usappPullGesture && event.pointerId === usappPullGesture.pointerId) {
+    const shouldRefresh = usappPullGesture.pullOffset >= USAPP_PULL_REFRESH_THRESHOLD_PX;
+
+    if (shouldRefresh) {
+      syncUsappPullRefreshUi({
+        offset: usappPullGesture.pullOffset,
+        stateName: 'refreshing'
+      });
+      usappPullGesture = null;
+      refreshMessagingData({ includeContacts: true, renderNow: true })
+        .catch((error) => {
+          console.error('Usapp pull refresh failed:', error);
+        })
+        .finally(() => {
+          resetUsappPullGesture();
+        });
+      return;
+    }
+
+    resetUsappPullGesture();
+    return;
+  }
+
   if (!usappMessageGesture || event.pointerId !== usappMessageGesture.pointerId) {
     return;
   }
@@ -2093,7 +2326,7 @@ function handleUsappPointerUp(event) {
 
 function handleVisibilityChange() {
   if (document.hidden) {
-    resetUsappMessageGesture();
+    resetUsappGestures();
     if (state.messageRecording) {
       stopVoiceRecording().catch(() => null);
     }
@@ -2266,7 +2499,7 @@ function renderHomeView() {
     ${renderSpotlightFolder(spotlightPosts)}
 
     <section class="post-list">
-      ${feedMarkup || renderEmptyCard('No feed cards yet', 'Once the social feed has posts, they will show up here first.')}
+      ${feedMarkup || renderEmptyCard('No feed cards yet', '')}
     </section>
     ${renderFeedContinuation('home', hasMore)}
   `;
@@ -2301,7 +2534,7 @@ function renderSpotlightFolder(posts) {
           <div class="spotlight-track">
             ${posts.length
               ? posts.map((post, index) => renderSpotlightCard(post, index)).join('')
-              : renderEmptyCard('No spotlight cards', 'Once the feed has posts, they will appear here.')}
+              : renderEmptyCard('No spotlight cards', '')}
           </div>
         </div>
       ` : ''}
@@ -3661,18 +3894,17 @@ function renderUsappPanelCard() {
 
   if (showingThread) {
     return `
-      <section class="card inbox-card usapp-chat-card usapp-chat-stage">
+      <section class="usapp-chat-card usapp-chat-stage usapp-page-surface">
         ${renderConversation(selectedThread)}
       </section>
     `;
   }
 
   return `
-    <section class="card inbox-card usapp-shell-card usapp-widget-card">
+    <section class="usapp-shell-card usapp-widget-card usapp-page-surface">
       <div class="usapp-widget-head">
         <div class="usapp-widget-title">
-          <strong>Usapp Chats</strong>
-          <span>${escapeHtml(getMessageIdentityLine())}</span>
+          <strong><span class="usapp-widget-brand">${renderUsappBrandIcon()}<span>Usapp Chats</span></span></strong>
         </div>
         <div class="usapp-widget-head-actions">
           <button
@@ -3683,9 +3915,6 @@ function renderUsappPanelCard() {
             aria-expanded="${state.messageSearchOpen ? 'true' : 'false'}"
           >
             ${renderUsappSearchIcon()}
-          </button>
-          <button class="usapp-icon-button" type="button" data-refresh-now="true" aria-label="Refresh Usapp Chats">
-            ${renderRefreshIcon()}
           </button>
         </div>
       </div>
@@ -3714,6 +3943,7 @@ function renderUsappPanelCard() {
         </div>
 
         <div class="usapp-section usapp-section-threads">
+          <div class="usapp-pull-indicator" data-usapp-pull-indicator="true" aria-hidden="true">Pull to refresh</div>
           <div class="thread-list usapp-thread-list" data-usapp-thread-list="true">
             ${renderUsappThreadListContent()}
           </div>
@@ -4745,7 +4975,6 @@ function renderConversation(thread) {
             <div class="usapp-chat-meta">
               <strong>${escapeHtml(thread.contact.displayName)}</strong>
               <div class="usapp-chat-meta-row">
-                <span class="usapp-role-pill role-${escapeHtml(getRoleSlug(thread.contact))}">${escapeHtml(getMessageRoleLabel(thread.contact))}</span>
                 <span class="usapp-chat-subtitle">${escapeHtml(getMessageChatModeLabel(thread.contact))}</span>
                 ${renderUsappPresenceBadge(thread.contact)}
               </div>
@@ -7760,19 +7989,8 @@ function getMessageReadyStatus() {
   return 'Sign in to use Usapp.';
 }
 
-function getMessageIdentityLine() {
-  return state.authUser
-    ? escapeMessageIdentityLine(state.profile.displayName)
-    : 'Sign in to view chats';
-}
-
 function getMessageStatusCopy() {
-  return state.messageStatus || 'Message members without leaving the app.';
-}
-
-function escapeMessageIdentityLine(displayName) {
-  const name = String(displayName || '').trim();
-  return name ? `Signed in: ${name}` : 'Signed in';
+  return state.messageStatus || '';
 }
 
 function setMessageStatus(message = '', type = 'info') {
@@ -7824,7 +8042,7 @@ function updateUsappLoadStatus({ contactResult = null, threadResult = null } = {
   }
 
   if (state.authUser && !state.contacts.length && !state.threads.length) {
-    setMessageStatus('No chats or people yet. Open Usapp on another account, then refresh.', 'info');
+    setMessageStatus('No chats or people yet.', 'info');
     return;
   }
 

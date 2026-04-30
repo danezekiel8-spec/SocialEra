@@ -1,8 +1,6 @@
 export function createUsappContactRenderService({
   escapeHtml,
   getContactProvider,
-  getMessageRoleLabel,
-  getRoleSlug,
   renderAvatarMedia,
   renderEmptyCard,
   renderUsappPresenceBadge
@@ -24,9 +22,10 @@ export function createUsappContactRenderService({
         style="--usapp-order:${motionOrder}"
       >
         <span class="usapp-contact-avatar">${renderAvatarMedia(contact)}</span>
-        <strong>${escapeHtml(contact.displayName)}</strong>
-        ${renderUsappPresenceBadge(contact, { compact: true })}
-        <span class="usapp-role-pill role-${escapeHtml(getRoleSlug(contact))}">${escapeHtml(getMessageRoleLabel(contact))}</span>
+        <span class="usapp-contact-copy">
+          <strong>${escapeHtml(contact.displayName)}</strong>
+          ${renderUsappPresenceBadge(contact, { compact: true })}
+        </span>
       </button>
     `;
   }
@@ -37,12 +36,9 @@ export function createUsappContactRenderService({
     signedIn
   }) {
     const peopleEmptyTitle = signedIn ? 'No people available' : 'Sign in to view people';
-    const peopleEmptyCopy = signedIn
-      ? 'Open Usapp on another account, then refresh.'
-      : 'Sign in to load people.';
 
     if (!visibleContacts.length) {
-      return renderEmptyCard(peopleEmptyTitle, peopleEmptyCopy);
+      return renderEmptyCard(peopleEmptyTitle, '');
     }
 
     return visibleContacts.map((contact, index) => renderMessageContactChip(contact, selectedThread, index)).join('');

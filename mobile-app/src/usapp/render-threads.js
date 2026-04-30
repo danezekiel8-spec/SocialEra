@@ -1,9 +1,7 @@
 export function createUsappThreadRenderService({
   escapeHtml,
   formatRelativeTime,
-  getMessageRoleLabel,
   getMessageThreadPreview,
-  getRoleSlug,
   getUsappThreadLiveClass,
   isThreadMuted,
   isThreadUnread,
@@ -32,7 +30,6 @@ export function createUsappThreadRenderService({
               <div class="thread-meta">
                 <div class="usapp-thread-identity">
                   <h3>${escapeHtml(thread.contact.displayName)}</h3>
-                  <span class="usapp-role-pill role-${escapeHtml(getRoleSlug(thread.contact))}">${escapeHtml(getMessageRoleLabel(thread.contact))}</span>
                   ${renderUsappPresenceBadge(thread.contact, { compact: true })}
                 </div>
                 <span class="thread-meta-side">
@@ -59,7 +56,7 @@ export function createUsappThreadRenderService({
     activeThreadId = ''
   } = {}) {
     if (!threads.length) {
-      return renderEmptyCard('No chats yet', 'Start a conversation from your account.');
+      return renderEmptyCard('No chats yet', '');
     }
 
     return threads.map((thread, index) => renderThreadRow(thread, {

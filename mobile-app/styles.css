@@ -5443,6 +5443,12 @@ video {
   stroke-linejoin: round;
 }
 
+.nav-button[data-nav-view="inbox"] .nav-icon {
+  width: 2rem;
+  height: 2rem;
+  color: #0ea765;
+}
+
 .nav-badge {
   position: absolute;
   top: 0.28rem;
@@ -5658,6 +5664,19 @@ video {
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.1;
+}
+
+.usapp-widget-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.usapp-brand-icon {
+  width: 2rem;
+  height: 2rem;
+  color: #0ea765;
+  flex: 0 0 auto;
 }
 
 .usapp-widget-title span {
@@ -5933,6 +5952,10 @@ video {
   opacity: 1;
   margin-bottom: 0.2rem;
   pointer-events: auto;
+}
+
+.usapp-search-wrap:not(.is-open) {
+  display: none;
 }
 
 .usapp-search {
@@ -6968,6 +6991,11 @@ video {
   padding-bottom: 0.2rem;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  transition: transform 180ms var(--motion-soft);
+}
+
+.usapp-thread-list.is-refreshing {
+  transition-duration: 220ms;
 }
 
 .usapp-sheet-panel.animate-in .usapp-widget-head,
@@ -7390,16 +7418,51 @@ video {
 
 .inbox-layout.usapp-stage-page .usapp-widget-card,
 .inbox-layout.usapp-stage-page .usapp-chat-stage {
-  border-radius: 1.34rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   min-height: 0;
   height: 100%;
+}
+
+.inbox-layout.usapp-stage-page .usapp-widget-card::before,
+.inbox-layout.usapp-stage-page .usapp-chat-stage::before {
+  display: none;
+}
+
+.inbox-layout.usapp-stage-page .usapp-widget-body {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.inbox-layout.usapp-stage-page .usapp-section-threads {
+  flex: 0 0 auto;
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.inbox-layout.usapp-stage-page .usapp-section-people {
+  margin-top: 0.4rem;
+}
+
+.inbox-layout.usapp-stage-page .usapp-thread-list {
+  padding-right: 0;
+  padding-bottom: 0;
 }
 
 .usapp-widget-head {
   flex-wrap: nowrap;
   align-items: center;
   gap: 0.72rem;
-  padding: 0.94rem 0.98rem 0.74rem;
+  padding: 0.64rem 0.98rem 0.74rem;
 }
 
 .usapp-widget-title strong {
@@ -7432,6 +7495,31 @@ video {
 .usapp-section-threads {
   padding: 0.4rem;
   border-radius: 1.04rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.usapp-pull-indicator {
+  height: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  color: var(--usapp-text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transition: height 180ms var(--motion-soft), opacity 180ms var(--motion-soft);
+}
+
+.usapp-pull-indicator.is-visible {
+  opacity: 1;
+}
+
+.usapp-pull-indicator.is-ready,
+.usapp-pull-indicator.is-refreshing {
+  color: var(--accent-dark);
 }
 
 .usapp-section-people {
@@ -7446,11 +7534,20 @@ video {
 }
 
 .usapp-contact-chip {
-  min-width: 5.05rem;
-  max-width: 5.45rem;
-  padding: 0.54rem 0.42rem;
-  gap: 0.34rem;
+  min-width: 6.9rem;
+  max-width: 7.25rem;
+  padding: 0.62rem 0.5rem;
+  gap: 0.42rem;
   border-radius: 0.96rem;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  text-align: center;
+}
+
+.usapp-contact-copy {
+  justify-items: center;
+  width: 100%;
+  gap: 0.18rem;
 }
 
 .usapp-contact-chip strong {
@@ -7458,8 +7555,16 @@ video {
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
+  line-height: 1.24;
+}
+
+.usapp-contact-chip .usapp-presence.compact {
+  max-width: 100%;
+  justify-content: center;
+  font-size: 0.66rem;
   line-height: 1.2;
+  white-space: normal;
 }
 
 .usapp-contact-avatar,
@@ -7785,11 +7890,11 @@ video {
 
   .inbox-layout.usapp-stage-page .usapp-widget-card,
   .inbox-layout.usapp-stage-page .usapp-chat-stage {
-    border-radius: 1.16rem;
+    border-radius: 0;
   }
 
   .usapp-widget-head {
-    padding: 0.76rem 0.76rem 0.58rem;
+    padding: 0.54rem 0.76rem 0.58rem;
     gap: 0.56rem;
   }
 
@@ -7817,9 +7922,9 @@ video {
   }
 
   .usapp-contact-chip {
-    min-width: 4.5rem;
-    max-width: 4.9rem;
-    padding: 0.42rem 0.32rem;
+    min-width: 6rem;
+    max-width: 6.35rem;
+    padding: 0.48rem 0.36rem;
   }
 
   .usapp-contact-avatar,

@@ -7,6 +7,18 @@ export function renderUsappSearchIcon() {
   `;
 }
 
+export function renderUsappBrandIcon() {
+  return `
+    <svg class="usapp-brand-icon" viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="8.4" r="6.6" fill="currentColor" stroke="none"></circle>
+      <path d="M5.9 12.9L5.4 17.1L8.5 13.9" fill="currentColor" stroke="none"></path>
+      <circle cx="7.6" cy="6.9" r="0.9" fill="#fff" stroke="none"></circle>
+      <circle cx="12.4" cy="6.9" r="0.9" fill="#fff" stroke="none"></circle>
+      <path d="M7.2 8.8V10.8C7.2 11.9 7.9 12.5 10 12.5C12.1 12.5 12.8 11.9 12.8 10.8V8.8" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+    </svg>
+  `;
+}
+
 export function renderUsappCloseIcon() {
   return `
     <svg class="usapp-inline-icon" viewBox="0 0 20 20" aria-hidden="true">

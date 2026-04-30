@@ -35,11 +35,11 @@ export function createUsappPresenceRenderService({
     return (Date.now() - time) <= onlineWindowMs;
   }
 
-  function getUsappPresenceLabel(contact) {
+  function getUsappPresenceLabel(contact, { compact = false } = {}) {
     const timestamp = getUsappPresenceTimestamp(contact);
 
     if (isUsappContactOnline(contact)) {
-      return 'Online now';
+      return compact ? 'Online' : 'Online now';
     }
 
     if (!timestamp) {
@@ -59,7 +59,7 @@ export function createUsappPresenceRenderService({
     return `
       <span class="usapp-presence ${online ? 'online' : 'idle'}${compact ? ' compact' : ''}">
         <span class="usapp-presence-dot" aria-hidden="true"></span>
-        <span>${escapeHtml(getUsappPresenceLabel(contact))}</span>
+        <span>${escapeHtml(getUsappPresenceLabel(contact, { compact }))}</span>
       </span>
     `;
   }
