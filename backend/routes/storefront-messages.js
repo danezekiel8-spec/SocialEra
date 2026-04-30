@@ -698,6 +698,7 @@ function createMessageRoutes({
       if (!thread && persistedExistingThread) {
         const persistedThread = await usappPersistence.appendMemberThreadMessage({
           threadId: persistedExistingThread.id,
+          existingThread: persistedExistingThread,
           actorId,
           authorName: actorProfile.displayName,
           displayName: actorProfile.displayName,
@@ -769,6 +770,7 @@ function createMessageRoutes({
           try {
             persistedThread = await usappPersistence.appendMemberThreadMessage({
               threadId: promotedThread.id,
+              existingThread: promotedThread,
               actorId,
               authorName: actorProfile.displayName,
               displayName: actorProfile.displayName,
@@ -831,6 +833,7 @@ function createMessageRoutes({
       if (!thread && persistedExistingThread) {
         const persistedThread = await usappPersistence.syncMemberMessageReaction({
           threadId: persistedExistingThread.id,
+          existingThread: persistedExistingThread,
           messageId,
           actorId,
           emoji
@@ -878,6 +881,7 @@ function createMessageRoutes({
           try {
             persistedThread = await usappPersistence.syncMemberMessageReaction({
               threadId: promotedThread.id,
+              existingThread: promotedThread,
               messageId: persistedMessageId,
               actorId,
               emoji

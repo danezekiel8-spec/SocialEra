@@ -846,6 +846,7 @@ function createUsappPersistenceAdapter(options = {}) {
 
   async function appendMemberThreadMessage({
     threadId,
+    existingThread,
     actorId,
     authorName,
     displayName,
@@ -866,7 +867,9 @@ function createUsappPersistenceAdapter(options = {}) {
       throw new Error('Thread ID and actor ID are required.');
     }
 
-    const thread = await getMemberThread(actorId, normalizedThreadId);
+    const thread = existingThread && String(existingThread.id || '').trim() === normalizedThreadId
+      ? existingThread
+      : await getMemberThread(actorId, normalizedThreadId);
 
     if (!thread) {
       throw new Error('Thread not found.');
@@ -923,11 +926,16 @@ function createUsappPersistenceAdapter(options = {}) {
       }
     );
 
-    return getMemberThread(actorId, normalizedThreadId);
+    return {
+      ...thread,
+      messages: thread.messages.concat([message]),
+      updatedAt: message.createdAt
+    };
   }
 
   async function syncMemberMessageReaction({
     threadId,
+    existingThread,
     messageId,
     actorId,
     emoji
@@ -941,7 +949,9 @@ function createUsappPersistenceAdapter(options = {}) {
       throw new Error('Thread ID, message ID, actor ID, and emoji are required.');
     }
 
-    const thread = await getMemberThread(actorId, normalizedThreadId);
+    const thread = existingThread && String(existingThread.id || '').trim() === normalizedThreadId
+      ? existingThread
+      : await getMemberThread(actorId, normalizedThreadId);
 
     if (!thread) {
       throw new Error('Thread not found.');
@@ -987,7 +997,19 @@ function createUsappPersistenceAdapter(options = {}) {
       }
     );
 
-    return getMemberThread(actorId, normalizedThreadId);
+    const nextMessages = Array.isArray(thread.messages)
+      ? thread.messages.map((message) => {
+          const currentMessageId = String(message && (message.nativeId || message.id) || '').trim();
+          return currentMessageId === normalizedMessageId
+            ? { ...message, reactions: mutableMessage.reactions }
+            : message;
+        })
+      : [];
+
+    return {
+      ...thread,
+      messages: nextMessages
+    };
   }
 
   async function listLocalThreads(ownerActorId) {
