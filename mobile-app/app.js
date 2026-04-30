@@ -590,15 +590,7 @@ function bindEvents() {
   });
 
   elements.installButton.addEventListener('click', async () => {
-    if (!state.installPrompt) {
-      showToast('Install becomes available once the browser allows it.');
-      return;
-    }
-
-    state.installPrompt.prompt();
-    await state.installPrompt.userChoice.catch(() => null);
-    state.installPrompt = null;
-    syncInstallButton();
+    await promptInstallApp();
   });
 
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -612,6 +604,19 @@ function bindEvents() {
     syncInstallButton();
     showToast('SocialEra App installed.');
   });
+}
+
+async function promptInstallApp() {
+  if (!state.installPrompt) {
+    showToast('Install becomes available once the browser allows it.');
+    return;
+  }
+
+  state.installPrompt.prompt();
+  await state.installPrompt.userChoice.catch(() => null);
+  state.installPrompt = null;
+  syncInstallButton();
+  render();
 }
 
 function handleViewScroll() {
@@ -1065,8 +1070,8 @@ async function refreshMessagingData({ includeContacts = false, renderNow = true 
           : []
       }))
     : [];
-  const previousSignature = getMessagingSignature();
-  const previousContactsSignature = getMessageContactsSignature();
+  const previousSignature = getMessagingSignature(state.threads);
+  const previousContactsSignature = getMessageContactsSignature(state.contacts);
   const previousMessageStatus = state.messageStatus;
   const previousMessageStatusType = state.messageStatusType;
 
@@ -1130,8 +1135,8 @@ async function refreshMessagingData({ includeContacts = false, renderNow = true 
       : { selectedThreadUpdated: false };
 
     if (renderNow) {
-    const nextSignature = getMessagingSignature();
-    const nextContactsSignature = getMessageContactsSignature();
+    const nextSignature = getMessagingSignature(state.threads);
+    const nextContactsSignature = getMessageContactsSignature(state.contacts);
     const threadsChanged = previousSignature !== nextSignature;
     const contactsChanged = previousContactsSignature !== nextContactsSignature;
     const statusChanged = previousMessageStatus !== state.messageStatus || previousMessageStatusType !== state.messageStatusType;
@@ -1263,10 +1268,10 @@ async function refreshLiveActivity({ includePosts = true, includeThreads = state
     return activityRefreshPromise;
   }
 
-  const previousNotificationSignature = getNotificationSignature();
-  const previousUnreadCount = getUnreadNotificationCount();
-  const previousThreadSignature = getMessagingSignature();
-  const previousPostSignature = getPostActivitySignature();
+  const previousNotificationSignature = getNotificationSignature(getNotificationItems());
+  const previousUnreadCount = getUnreadNotificationCount(getNotificationItems());
+  const previousThreadSignature = getMessagingSignature(state.threads);
+  const previousPostSignature = getPostActivitySignature(state.posts);
   const previousSelectedThreadId = state.selectedThreadId;
 
   activityRefreshPromise = (async () => {
@@ -1321,7 +1326,7 @@ async function refreshLiveActivity({ includePosts = true, includeThreads = state
     const nextNotificationItems = getNotificationItems();
     const nextNotificationSignature = getNotificationSignature(nextNotificationItems);
     const nextUnreadCount = nextNotificationItems.filter((item) => item.unread).length;
-    const threadsChanged = previousThreadSignature !== getMessagingSignature();
+    const threadsChanged = previousThreadSignature !== getMessagingSignature(state.threads);
     const notificationsChanged = previousNotificationSignature !== nextNotificationSignature
       || previousUnreadCount !== nextUnreadCount;
 
@@ -4329,6 +4334,21 @@ function renderAuthCard({ standalone = false } = {}) {
             ${state.authBusy ? (isSignup ? 'Creating account...' : 'Logging in...') : (isSignup ? 'Create account' : 'Log in')}
           </button>
           <button class="ghost-button" type="button" data-open-view="${escapeHtml(backView)}">${escapeHtml(backLabel)}</button>
+          ${standalone && !isSignup ? `
+            <button
+              class="ghost-button icon-button"
+              type="button"
+              data-auth-install-app="true"
+              aria-label="Install app"
+              title="Install app"
+            >
+              <svg class="usapp-inline-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 4V15"></path>
+                <path d="M8 11L12 15L16 11"></path>
+                <path d="M5 19H19"></path>
+              </svg>
+            </button>
+          ` : ''}
         </div>
       </form>
 
@@ -5318,6 +5338,12 @@ async function handleClick(event) {
   const authResetButton = event.target.closest('[data-auth-reset-password]');
   if (authResetButton) {
     await requestPasswordResetFromApp();
+    return;
+  }
+
+  const authInstallButton = event.target.closest('[data-auth-install-app]');
+  if (authInstallButton) {
+    await promptInstallApp();
     return;
   }
 
@@ -7122,7 +7148,7 @@ function updateNav() {
   const activeNavView = getActiveNavView();
   const bagCount = isSignedIn() ? getBagCount() : 0;
   const unreadThreadCount = isSignedIn() ? getUnreadThreadCount() : 0;
-  const unreadNotificationCount = isSignedIn() ? getUnreadNotificationCount() : 0;
+  const unreadNotificationCount = isSignedIn() ? getUnreadNotificationCount(getNotificationItems()) : 0;
 
   elements.navButtons.forEach((button) => {
     button.classList.toggle('active', button.dataset.navView === activeNavView);
