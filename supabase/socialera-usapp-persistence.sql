@@ -38,57 +38,6 @@ exception
 end;
 $$;
 
-create or replace function public.resolve_chat_actor_id(check_user_id uuid)
-returns text
-language sql
-stable
-set search_path = public
-as $$
-  select case
-    when check_user_id is null then null
-    else coalesce(
-      (
-        select nullif(trim(cp.actor_id), '')
-        from public.chat_profiles cp
-        where cp.user_id = check_user_id
-      ),
-      'user-' || check_user_id::text
-    )
-  end;
-$$;
-
-create or replace function public.resolve_chat_user_id_from_actor_id(check_actor_id text)
-returns uuid
-language plpgsql
-stable
-set search_path = public
-as $$
-declare
-  normalized_actor_id text := nullif(trim(check_actor_id), '');
-  resolved_user_id uuid;
-begin
-  if normalized_actor_id is null then
-    return null;
-  end if;
-
-  select cp.user_id
-  into resolved_user_id
-  from public.chat_profiles cp
-  where cp.actor_id = normalized_actor_id
-  limit 1;
-
-  if resolved_user_id is not null then
-    return resolved_user_id;
-  end if;
-
-  if normalized_actor_id like 'user-%' then
-    return public.try_parse_uuid(substring(normalized_actor_id from 6));
-  end if;
-
-  return public.try_parse_uuid(normalized_actor_id);
-end;
-$$;
-
 create or replace function public.is_message_participant(
   check_message_id uuid,
   check_user_id uuid default auth.uid()
@@ -190,6 +139,57 @@ create unique index if not exists chat_profiles_actor_id_idx
 
 create index if not exists chat_profiles_member_classification_idx
   on public.chat_profiles (member_classification, last_active_at desc);
+
+create or replace function public.resolve_chat_actor_id(check_user_id uuid)
+returns text
+language sql
+stable
+set search_path = public
+as $$
+  select case
+    when check_user_id is null then null
+    else coalesce(
+      (
+        select nullif(trim(cp.actor_id), '')
+        from public.chat_profiles cp
+        where cp.user_id = check_user_id
+      ),
+      'user-' || check_user_id::text
+    )
+  end;
+$$;
+
+create or replace function public.resolve_chat_user_id_from_actor_id(check_actor_id text)
+returns uuid
+language plpgsql
+stable
+set search_path = public
+as $$
+declare
+  normalized_actor_id text := nullif(trim(check_actor_id), '');
+  resolved_user_id uuid;
+begin
+  if normalized_actor_id is null then
+    return null;
+  end if;
+
+  select cp.user_id
+  into resolved_user_id
+  from public.chat_profiles cp
+  where cp.actor_id = normalized_actor_id
+  limit 1;
+
+  if resolved_user_id is not null then
+    return resolved_user_id;
+  end if;
+
+  if normalized_actor_id like 'user-%' then
+    return public.try_parse_uuid(substring(normalized_actor_id from 6));
+  end if;
+
+  return public.try_parse_uuid(normalized_actor_id);
+end;
+$$;
 
 create or replace function public.set_chat_profile_usapp_defaults()
 returns trigger
