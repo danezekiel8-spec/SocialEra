@@ -1524,9 +1524,7 @@ function syncUsappLiveStream() {
     return;
   }
 
-  const streamUrl = apiService.createApiUrl(`/messages/events?actorId=${encodeURIComponent(getMessageActorId())}`, {
-    directBackend: true
-  });
+  const streamUrl = apiService.createApiUrl(`/messages/events?actorId=${encodeURIComponent(getMessageActorId())}`);
 
   if (usappEventSource && usappEventSource.url === streamUrl) {
     return;
