@@ -5,6 +5,7 @@ function createMessageRoutes({
   loadSupabaseMemberDirectory,
   readSocialMessages,
   upsertMemberProfile,
+  usappPersistence,
   writeSocialMessages,
   normalizeMessageContact,
   serializeMemberThreadForActor,
@@ -29,8 +30,95 @@ function createMessageRoutes({
     next();
   });
 
+  function hasUsappPersistence() {
+    return Boolean(
+      usappPersistence
+      && typeof usappPersistence.isConfigured === 'function'
+      && usappPersistence.isConfigured()
+    );
+  }
+
   function normalizeLookupValue(value) {
     return String(value || '').trim().toLowerCase();
+  }
+
+  function isUserBackedActorId(actorId) {
+    return String(actorId || '').trim().startsWith('user-');
+  }
+
+  async function mirrorMemberProfileToPersistence(profile) {
+    if (!hasUsappPersistence() || !profile || !isUserBackedActorId(profile.actorId)) {
+      return null;
+    }
+
+    try {
+      return await usappPersistence.upsertMemberProfile(profile);
+    } catch (error) {
+      console.error('Supabase member profile mirror failed:', error);
+      return null;
+    }
+  }
+
+  function listJsonMemberThreadsForActor(data, actorId) {
+    return data.memberThreads
+      .filter((thread) => Array.isArray(thread.participantActorIds) && thread.participantActorIds.includes(actorId))
+      .map((thread) => serializeMemberThreadForActor(thread, actorId))
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  }
+
+  function mergeMemberThreads(preferredThreads, fallbackThreads) {
+    const threadsByPeerActorId = new Map();
+    const pushThread = (thread, preferred = false) => {
+      const peerActorId = String(thread && thread.contact && thread.contact.actorId || '').trim();
+      const mapKey = peerActorId || String(thread && (thread.nativeId || thread.id) || '').trim();
+
+      if (!mapKey) {
+        return;
+      }
+
+      if (!threadsByPeerActorId.has(mapKey) || preferred) {
+        threadsByPeerActorId.set(mapKey, thread);
+      }
+    };
+
+    (Array.isArray(fallbackThreads) ? fallbackThreads : []).forEach((thread) => pushThread(thread, false));
+    (Array.isArray(preferredThreads) ? preferredThreads : []).forEach((thread) => pushThread(thread, true));
+
+    return Array.from(threadsByPeerActorId.values())
+      .sort((a, b) => new Date(String(b && b.updatedAt || 0)).getTime() - new Date(String(a && a.updatedAt || 0)).getTime());
+  }
+
+  async function loadMergedMemberThreads(actorId, data) {
+    const jsonThreads = listJsonMemberThreadsForActor(data, actorId);
+
+    if (!hasUsappPersistence()) {
+      return jsonThreads;
+    }
+
+    try {
+      const persistedThreads = await usappPersistence.listMemberThreads(actorId);
+      return mergeMemberThreads(persistedThreads, jsonThreads);
+    } catch (error) {
+      console.error('Supabase member thread read failed:', error);
+      return jsonThreads;
+    }
+  }
+
+  async function ensurePersistentMemberThread(actorId, contactActorId) {
+    if (!hasUsappPersistence() || !isUserBackedActorId(actorId) || !isUserBackedActorId(contactActorId)) {
+      return null;
+    }
+
+    try {
+      const result = await usappPersistence.findOrCreateMemberThread({
+        actorId,
+        contactActorId
+      });
+      return result && result.thread ? result.thread : null;
+    } catch (error) {
+      console.error('Supabase member thread promotion failed:', error);
+      return null;
+    }
   }
 
   async function loadRemoteMemberContacts(actorId = '') {
@@ -219,7 +307,7 @@ function createMessageRoutes({
     }
   });
 
-  router.post('/messages/profiles/sync', (req, res) => {
+  router.post('/messages/profiles/sync', async (req, res) => {
     try {
       const actorId = String(req.body.actorId || '').trim();
 
@@ -236,6 +324,7 @@ function createMessageRoutes({
         avatar: req.body.avatar,
         photoUrl: req.body.photoUrl
       });
+      const persistedProfile = await mirrorMemberProfileToPersistence(profile);
 
       writeSocialMessages(data);
       if (!previousProfile || hasMeaningfulMemberProfileChange(previousProfile, profile)) {
@@ -245,14 +334,14 @@ function createMessageRoutes({
           { actorId }
         );
       }
-      return res.status(previousProfile ? 200 : 201).json({ profile });
+      return res.status(previousProfile ? 200 : 201).json({ profile: persistedProfile || profile });
     } catch (error) {
       console.error('Error syncing message profile:', error);
       return res.status(500).json({ error: 'Failed to sync message profile' });
     }
   });
 
-  router.get('/messages/state', (req, res) => {
+  router.get('/messages/state', async (req, res) => {
     try {
       const actorId = String(req.query.actorId || '').trim();
 
@@ -261,8 +350,17 @@ function createMessageRoutes({
       }
 
       const data = readSocialMessages();
-      const remoteState = getMessageStateForActor(data, actorId) || normalizeMessageState(actorId);
-      const profile = getMemberProfile(data, actorId);
+      let remoteState = getMessageStateForActor(data, actorId) || normalizeMessageState(actorId);
+      let profile = getMemberProfile(data, actorId);
+
+      if (hasUsappPersistence() && isUserBackedActorId(actorId)) {
+        try {
+          remoteState = await usappPersistence.getMemberState(actorId) || remoteState;
+          profile = await usappPersistence.getMemberProfile(actorId) || profile;
+        } catch (error) {
+          console.error('Supabase message state read failed:', error);
+        }
+      }
 
       return res.json({
         state: remoteState,
@@ -274,7 +372,7 @@ function createMessageRoutes({
     }
   });
 
-  router.post('/messages/state/sync', (req, res) => {
+  router.post('/messages/state/sync', async (req, res) => {
     try {
       const actorId = String(req.body.actorId || '').trim();
 
@@ -291,13 +389,19 @@ function createMessageRoutes({
       });
       const presenceProfile = touchMemberPresence(data, actorId);
       const nextState = syncResult && syncResult.state ? syncResult.state : normalizeMessageState(actorId);
+      let persistedState = null;
+
+      if (hasUsappPersistence() && isUserBackedActorId(actorId)) {
+        persistedState = await usappPersistence.upsertMemberState(actorId, nextState);
+        await mirrorMemberProfileToPersistence(presenceProfile);
+      }
 
       if ((syncResult && syncResult.changed) || presenceProfile) {
         writeSocialMessages(data);
         emitActors([actorId], 'thread-state-sync', { actorId });
       }
 
-      return res.status(201).json({ state: nextState });
+      return res.status(201).json({ state: persistedState || nextState });
     } catch (error) {
       console.error('Error syncing message state:', error);
       return res.status(500).json({ error: 'Failed to sync message state' });
@@ -360,7 +464,7 @@ function createMessageRoutes({
     try {
       const actorId = String(req.query.actorId || '').trim();
       const data = readSocialMessages();
-      const localContacts = data.members
+      const jsonContacts = data.members
         .filter((member) => member.actorId && member.actorId !== actorId)
         .map((member) => normalizeMessageContact(member, {
           role: 'member',
@@ -374,6 +478,26 @@ function createMessageRoutes({
                 : '')
               ).trim()
         }));
+      let localContacts = jsonContacts;
+      if (hasUsappPersistence() && isUserBackedActorId(actorId)) {
+        try {
+          const persistedProfiles = await usappPersistence.listMemberProfiles({ excludeActorId: actorId });
+          localContacts = persistedProfiles.map((member) => normalizeMessageContact(member, {
+            role: 'member',
+            intro: 'Start a direct message with this member.',
+            provider: 'member',
+            nativeUserId: String(
+              member && member.nativeUserId
+                ? member.nativeUserId
+                : (member && String(member.actorId || '').startsWith('user-')
+                  ? String(member.actorId || '').slice(5)
+                  : '')
+            ).trim()
+          }));
+        } catch (error) {
+          console.error('Supabase member profile listing failed:', error);
+        }
+      }
       const remoteContacts = await loadRemoteMemberContacts(actorId).catch((error) => {
         console.error('Supabase member directory could not be loaded:', error);
         return [];
@@ -412,7 +536,7 @@ function createMessageRoutes({
     }
   });
 
-  router.get('/messages/member-threads', (req, res) => {
+  router.get('/messages/member-threads', async (req, res) => {
     try {
       const actorId = String(req.query.actorId || '').trim();
 
@@ -421,10 +545,7 @@ function createMessageRoutes({
       }
 
       const data = readSocialMessages();
-      const threads = data.memberThreads
-        .filter((thread) => Array.isArray(thread.participantActorIds) && thread.participantActorIds.includes(actorId))
-        .map((thread) => serializeMemberThreadForActor(thread, actorId))
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      const threads = await loadMergedMemberThreads(actorId, data);
 
       return res.json({ threads });
     } catch (error) {
@@ -481,6 +602,9 @@ function createMessageRoutes({
         return res.status(404).json({ error: 'Member not found' });
       }
 
+      await mirrorMemberProfileToPersistence(actorProfile);
+      await mirrorMemberProfileToPersistence(contactProfile);
+
       let thread = data.memberThreads.find((entry) => (
         Array.isArray(entry.participantActorIds)
         && entry.participantActorIds.length === 2
@@ -512,9 +636,11 @@ function createMessageRoutes({
         threadId: thread.id
       });
 
+      const persistedThread = await ensurePersistentMemberThread(actorId, contactActorId);
+
       return res.status(created ? 201 : 200).json({
         created,
-        thread: serializeMemberThreadForActor(thread, actorId)
+        thread: persistedThread || serializeMemberThreadForActor(thread, actorId)
       });
     } catch (error) {
       console.error('Error creating member message thread:', error);
@@ -522,7 +648,7 @@ function createMessageRoutes({
     }
   });
 
-  router.post('/messages/member-threads/:threadId/messages', (req, res) => {
+  router.post('/messages/member-threads/:threadId/messages', async (req, res) => {
     try {
       const threadId = String(req.params.threadId || '').trim();
       const actorId = String(req.body.actorId || '').trim();
@@ -572,15 +698,47 @@ function createMessageRoutes({
       thread.messages.push(outgoingMessage);
       thread.updatedAt = outgoingMessage.createdAt;
       writeSocialMessages(data);
+      await mirrorMemberProfileToPersistence(actorProfile);
+
+      let persistedThread = null;
+      const peerActorId = Array.isArray(thread.participantActorIds)
+        ? thread.participantActorIds.find((entry) => String(entry || '').trim() !== actorId) || ''
+        : '';
+
+      if (peerActorId) {
+        const promotedThread = await ensurePersistentMemberThread(actorId, peerActorId);
+
+        if (promotedThread) {
+          try {
+            persistedThread = await usappPersistence.appendMemberThreadMessage({
+              threadId: promotedThread.id,
+              actorId,
+              authorName: actorProfile.displayName,
+              displayName: actorProfile.displayName,
+              userName: actorProfile.userName,
+              avatar: actorProfile.avatar,
+              photoUrl: actorProfile.photoUrl,
+              text: text.slice(0, 2000),
+              attachment,
+              replyToMessageId: req.body.replyToMessageId,
+              replyPreviewAuthor: req.body.replyPreviewAuthor,
+              replyPreviewText: req.body.replyPreviewText
+            });
+          } catch (error) {
+            console.error('Supabase member message append failed:', error);
+          }
+        }
+      }
+
       emitActors(thread.participantActorIds || [actorId], 'member-message-sent', {
         actorId,
-        threadId: thread.id,
-        updatedAt: thread.updatedAt,
+        threadId: String((persistedThread && persistedThread.id) || thread.id || '').trim(),
+        updatedAt: String((persistedThread && persistedThread.updatedAt) || thread.updatedAt || outgoingMessage.createdAt).trim(),
         message: outgoingMessage
       });
 
       return res.status(201).json({
-        thread: serializeMemberThreadForActor(thread, actorId)
+        thread: persistedThread || serializeMemberThreadForActor(thread, actorId)
       });
     } catch (error) {
       console.error('Error sending member message:', error);
@@ -588,7 +746,7 @@ function createMessageRoutes({
     }
   });
 
-  router.post('/messages/member-threads/:threadId/messages/:messageId/reactions', (req, res) => {
+  router.post('/messages/member-threads/:threadId/messages/:messageId/reactions', async (req, res) => {
     try {
       const threadId = String(req.params.threadId || '').trim();
       const messageId = String(req.params.messageId || '').trim();
@@ -620,13 +778,39 @@ function createMessageRoutes({
 
       toggleMessageReaction(message, actorId, emoji);
       writeSocialMessages(data);
+      let persistedThread = null;
+      const peerActorId = Array.isArray(thread.participantActorIds)
+        ? thread.participantActorIds.find((entry) => String(entry || '').trim() !== actorId) || ''
+        : '';
+
+      if (peerActorId) {
+        const promotedThread = await ensurePersistentMemberThread(actorId, peerActorId);
+
+        if (promotedThread) {
+          const persistedMessageId = String(
+            message && (message.nativeId || message.id) || messageId
+          ).trim();
+
+          try {
+            persistedThread = await usappPersistence.syncMemberMessageReaction({
+              threadId: promotedThread.id,
+              messageId: persistedMessageId,
+              actorId,
+              emoji
+            });
+          } catch (error) {
+            console.error('Supabase member message reaction sync failed:', error);
+          }
+        }
+      }
+
       emitActors(thread.participantActorIds || [actorId], 'member-message-reaction', {
         actorId,
-        threadId: thread.id
+        threadId: String((persistedThread && persistedThread.id) || thread.id || '').trim()
       });
 
       return res.json({
-        thread: serializeMemberThreadForActor(thread, actorId)
+        thread: persistedThread || serializeMemberThreadForActor(thread, actorId)
       });
     } catch (error) {
       console.error('Error reacting to member message:', error);

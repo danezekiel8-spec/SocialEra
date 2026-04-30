@@ -6,6 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { createJsonFileStore } = require('./lib/json-file-store');
 const { createProductDataSource } = require('./lib/product-data-source');
+const { createUsappPersistenceAdapter } = require('./lib/usapp-persistence-adapter');
 const {
   SOCIAL_IMAGE_POOL,
   normalizeSocialPost,
@@ -78,6 +79,7 @@ const APPEARANCE_SETTINGS_FILE = path.join(__dirname, 'appearance-settings.json'
 const FRONTEND_DIR = path.join(__dirname, '..', 'frontend');
 const DEFAULT_SUPABASE_URL = 'https://kfunqpatayfkscilhncx.supabase.co';
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_ByM_npvMJj4LM_WVntb_aw_qwFPgoMj';
+const usappPersistence = createUsappPersistenceAdapter();
 const SUPABASE_MEMBER_DIRECTORY_CACHE_MS = 30 * 1000;
 
 const ADMIN_USERNAME = String(process.env.ADMIN_USERNAME || '').trim();
@@ -996,6 +998,7 @@ app.use('/api', createMessageRoutes({
   loadSupabaseMemberDirectory,
   readSocialMessages,
   upsertMemberProfile,
+  usappPersistence,
   writeSocialMessages,
   normalizeMessageContact,
   serializeMemberThreadForActor,
