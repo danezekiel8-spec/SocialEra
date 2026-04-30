@@ -122,6 +122,10 @@ function buildDirectThreadNativeId(leftUserId, rightUserId) {
   return pair.length === 2 ? `member-thread-${pair[0]}-${pair[1]}` : '';
 }
 
+function isUuidLike(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
+}
+
 function isReplyMetaAttachment(attachment) {
   return Boolean(
     attachment
@@ -678,13 +682,20 @@ function createUsappPersistenceAdapter(options = {}) {
       return '';
     }
 
+    const queryParams = {
+      select: 'id,native_id',
+      kind: 'eq.direct',
+      limit: 1
+    };
+
+    if (isUuidLike(normalizedThreadId)) {
+      queryParams.or = `(id.eq.${normalizedThreadId},native_id.eq.${normalizedThreadId})`;
+    } else {
+      queryParams.native_id = `eq.${normalizedThreadId}`;
+    }
+
     const rows = await requestSupabase(
-      `${tables.memberThreads}${buildQuery({
-        select: 'id,native_id',
-        kind: 'eq.direct',
-        or: `(id.eq.${normalizedThreadId},native_id.eq.${normalizedThreadId})`,
-        limit: 1
-      })}`,
+      `${tables.memberThreads}${buildQuery(queryParams)}`,
       {
         method: 'GET',
         headers: buildHeaders(false)
