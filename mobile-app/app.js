@@ -731,14 +731,12 @@ async function refreshData({ quiet = false } = {}) {
   const fetchedPosts = postsResult.status === 'fulfilled' ? postsResult.value : null;
   const shouldPreserveExistingPosts = Array.isArray(state.posts) && state.posts.length && (!Array.isArray(fetchedPosts) || !fetchedPosts.length);
 
-  state.posts = mergePostCollections(
-    shouldPreserveExistingPosts
-      ? state.posts
-      : Array.isArray(fetchedPosts)
-        ? fetchedPosts
-        : [],
-    state.localPosts
-  );
+  state.posts = shouldPreserveExistingPosts
+    ? state.posts
+    : mergePostCollections(
+      Array.isArray(fetchedPosts) ? fetchedPosts : [],
+      []
+    );
   state.products = productsResult.status === 'fulfilled'
     ? normalizeProducts(productsResult.value)
     : buildFallbackProducts();
@@ -1299,10 +1297,9 @@ async function refreshLiveActivity({ includePosts = true, includeThreads = state
     results.forEach((result) => {
       if (result.key === 'posts' && !result.error) {
         const useExistingPosts = Array.isArray(state.posts) && state.posts.length && (!Array.isArray(result.posts) || !result.posts.length);
-        const nextPosts = mergePostCollections(
-          useExistingPosts ? state.posts : result.posts,
-          state.localPosts
-        );
+        const nextPosts = useExistingPosts
+          ? state.posts
+          : mergePostCollections(Array.isArray(result.posts) ? result.posts : [], []);
         const postsChanged = previousPostSignature !== getPostActivitySignature(nextPosts);
         state.posts = nextPosts;
 
@@ -7412,30 +7409,46 @@ async function publishUploadDraft() {
     createdAt: new Date().toISOString()
   };
 
-  let publishedPost = normalizePost(postPayload);
-
   try {
     const response = await apiService.fetchJson('/social/posts', {
       method: 'POST',
       body: JSON.stringify(postPayload)
     });
 
-    publishedPost = normalizePost({
+    const persistedPostId = String(response && response.id ? response.id : '').trim();
+
+    if (!persistedPostId) {
+      throw new Error('Publish did not return a saved post.');
+    }
+
+    const publishedPost = normalizePost({
       ...response,
       linkedProductIds: draft.linkedProductIds
     });
-  } catch (error) {
-    showToast('Post saved locally while live publishing is unavailable.');
-  }
+    const refreshedPosts = await loadSocialFeedPosts();
+    const confirmedPosts = mergePostCollections(Array.isArray(refreshedPosts) ? refreshedPosts : [], []);
+    const confirmedPost = confirmedPosts.find((post) => post.id === publishedPost.id);
 
-  state.localPosts = mergePostCollections([], [publishedPost, ...state.localPosts]);
-  state.posts = mergePostCollections(state.posts, state.localPosts);
-  state.uploadDraft = createUploadDraft();
-  state.uploadStep = UPLOAD_STEPS[0].id;
-  state.spotlightExpanded = false;
-  state.spotlightPreviewIndex = 0;
-  openPost(publishedPost.id, { fromView: 'upload' });
-  showToast('Post published to Home and Spotlight.');
+    if (!confirmedPost) {
+      throw new Error('Publish could not be confirmed.');
+    }
+
+    state.posts = confirmedPosts;
+    state.uploadDraft = createUploadDraft();
+    state.uploadStep = UPLOAD_STEPS[0].id;
+    state.spotlightExpanded = false;
+    state.spotlightPreviewIndex = 0;
+    openPost(confirmedPost.id, { fromView: 'upload' });
+    showToast('Post published to Home and Spotlight.');
+  } catch (error) {
+    console.error('Could not publish upload draft:', error);
+    const message = getRequestErrorMessage(error, 'We could not publish your post. Your draft is still here so you can try again.');
+    showToast(
+      message === 'Publish did not return a saved post.' || message === 'Publish could not be confirmed.'
+        ? 'We could not confirm that your post was saved. Your draft is still here so you can try again.'
+        : `Could not publish post. ${message}`
+    );
+  }
 }
 
 function syncUploadPreview() {
@@ -8744,6 +8757,7 @@ function mapSupabaseCommentRecord(comment) {
     authorName: String(comment && (comment.authorName || comment.author_name) ? comment.authorName || comment.author_name : 'SocialEra Member').trim() || 'SocialEra Member',
     userName: normalizeUserName(comment && (comment.userName || comment.user_name) ? comment.userName || comment.user_name : '@socialera.member'),
     avatar: getInitials(comment && (comment.avatar || comment.authorName || comment.author_name) ? comment.avatar || comment.authorName || comment.author_name : 'SE'),
+    photoUrl: String(comment && (comment.photoUrl || comment.photo_url) ? comment.photoUrl || comment.photo_url : '').trim(),
     text: String(comment && (comment.text || comment.body) ? comment.text || comment.body : '').trim(),
     likes: Number(comment && (comment.likes ?? comment.likesCount ?? comment.likes_count) ? comment.likes ?? comment.likesCount ?? comment.likes_count : 0),
     likeActorIds: Array.isArray(comment && (comment.likeActorIds || comment.like_actor_ids)) ? (comment.likeActorIds || comment.like_actor_ids).map(String) : [],
@@ -8764,12 +8778,17 @@ function mapSupabasePostRecord(post, comments) {
     userName: normalizeUserName(post && (post.userName || post.user_name) ? post.userName || post.user_name : '@socialera.member'),
     displayName: String(post && (post.displayName || post.display_name) ? post.displayName || post.display_name : 'SocialEra Member').trim() || 'SocialEra Member',
     avatar: getInitials(post && (post.avatar || post.displayName || post.display_name) ? post.avatar || post.displayName || post.display_name : 'SE'),
+    photoUrl: String(post && (post.photoUrl || post.photo_url) ? post.photoUrl || post.photo_url : '').trim(),
     mediaType: String(post && (post.mediaType || post.media_type) ? post.mediaType || post.media_type : 'image').trim() || 'image',
     mediaUrl: String(post && (post.mediaUrl || post.media_url) ? post.mediaUrl || post.media_url : '').trim(),
     captionTitle: String(post && (post.captionTitle || post.caption_title) ? post.captionTitle || post.caption_title : '').trim(),
     captionText: String(post && (post.captionText || post.caption_text) ? post.captionText || post.caption_text : '').trim(),
     tags: Array.isArray(post && post.tags) ? post.tags.map((tag) => String(tag || '').trim()).filter(Boolean) : [],
     linkedProductIds: Array.isArray(post && (post.linkedProductIds || post.linked_product_ids)) ? (post.linkedProductIds || post.linked_product_ids).map(String) : [],
+    promoteEnabled: Boolean(post && (post.promoteEnabled || post.promote_enabled)),
+    promotedTitle: String(post && (post.promotedTitle || post.promoted_title) ? post.promotedTitle || post.promoted_title : '').trim(),
+    promotedPrice: String(post && (post.promotedPrice || post.promoted_price) ? post.promotedPrice || post.promoted_price : '').trim(),
+    promotedText: String(post && (post.promotedText || post.promoted_text) ? post.promotedText || post.promoted_text : '').trim(),
     likes: Number(post && (post.likes ?? post.likesCount ?? post.likes_count) ? post.likes ?? post.likesCount ?? post.likes_count : 0),
     commentsCount: Number(post && (post.commentsCount ?? post.comments ?? post.comments_count) ? post.commentsCount ?? post.comments ?? post.comments_count : countCommentTree(commentsData)),
     saves: Number(post && (post.saves ?? post.savesCount ?? post.saves_count) ? post.saves ?? post.savesCount ?? post.saves_count : 0),

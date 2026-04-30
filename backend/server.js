@@ -6,6 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { createJsonFileStore } = require('./lib/json-file-store');
 const { createProductDataSource } = require('./lib/product-data-source');
+const { createSocialPostPersistenceAdapter } = require('./lib/social-post-persistence-adapter');
 const { createUsappPersistenceAdapter } = require('./lib/usapp-persistence-adapter');
 const {
   SOCIAL_IMAGE_POOL,
@@ -108,6 +109,7 @@ let socialPostsStore = null;
 let socialMessagesStore = null;
 let appearanceSettingsStore = null;
 let productDataSource = null;
+let socialPostPersistence = null;
 const messageEvents = new EventEmitter();
 messageEvents.setMaxListeners(0);
 let cachedSupabaseMemberDirectory = {
@@ -367,6 +369,14 @@ function getProductDataSource() {
   }
 
   return productDataSource;
+}
+
+function getSocialPostPersistence() {
+  if (!socialPostPersistence) {
+    socialPostPersistence = createSocialPostPersistenceAdapter();
+  }
+
+  return socialPostPersistence;
 }
 
 function getSupportWorkspaceStore() {
@@ -980,6 +990,7 @@ app.use('/api', createProductRoutes({
 app.use('/api', createSocialRoutes({
   readSocialPosts,
   writeSocialPosts,
+  socialPostPersistence: getSocialPostPersistence(),
   normalizeSocialPost,
   SOCIAL_IMAGE_POOL,
   findCommentById,
