@@ -671,6 +671,29 @@ function createUsappPersistenceAdapter(options = {}) {
     return loadMemberThreadRows(actorId);
   }
 
+  async function resolveMemberConversationId(threadId) {
+    const normalizedThreadId = String(threadId || '').trim();
+
+    if (!normalizedThreadId) {
+      return '';
+    }
+
+    const rows = await requestSupabase(
+      `${tables.memberThreads}${buildQuery({
+        select: 'id,native_id',
+        kind: 'eq.direct',
+        or: `(id.eq.${normalizedThreadId},native_id.eq.${normalizedThreadId})`,
+        limit: 1
+      })}`,
+      {
+        method: 'GET',
+        headers: buildHeaders(false)
+      }
+    );
+
+    return String(rows && rows[0] && rows[0].id || '').trim();
+  }
+
   async function getMemberThread(actorId, threadId) {
     const normalizedThreadId = String(threadId || '').trim();
 
@@ -678,8 +701,18 @@ function createUsappPersistenceAdapter(options = {}) {
       return null;
     }
 
-    const threads = await loadMemberThreadRows(actorId, [normalizedThreadId]);
-    return threads.find((thread) => thread.nativeId === normalizedThreadId || thread.id === normalizedThreadId) || null;
+    const resolvedThreadId = await resolveMemberConversationId(normalizedThreadId);
+
+    if (!resolvedThreadId) {
+      return null;
+    }
+
+    const threads = await loadMemberThreadRows(actorId, [resolvedThreadId]);
+    return threads.find((thread) => (
+      thread.id === resolvedThreadId
+      || thread.id === normalizedThreadId
+      || thread.nativeId === normalizedThreadId
+    )) || threads[0] || null;
   }
 
   async function findOrCreateMemberThread({ actorId, contactActorId }) {
@@ -867,11 +900,20 @@ function createUsappPersistenceAdapter(options = {}) {
       throw new Error('Thread ID and actor ID are required.');
     }
 
-    const thread = existingThread && String(existingThread.id || '').trim() === normalizedThreadId
+    const thread = existingThread && (
+      String(existingThread.id || '').trim() === normalizedThreadId
+      || String(existingThread.nativeId || '').trim() === normalizedThreadId
+    )
       ? existingThread
       : await getMemberThread(actorId, normalizedThreadId);
 
     if (!thread) {
+      throw new Error('Thread not found.');
+    }
+
+    const resolvedThreadId = String(thread.id || '').trim();
+
+    if (!resolvedThreadId) {
       throw new Error('Thread not found.');
     }
 
@@ -916,7 +958,7 @@ function createUsappPersistenceAdapter(options = {}) {
         }),
         body: JSON.stringify([{
           id: message.id,
-          conversation_id: normalizedThreadId,
+          conversation_id: resolvedThreadId,
           sender_id: actorUserId,
           body: message.text,
           attachments: storedAttachments,
@@ -949,7 +991,10 @@ function createUsappPersistenceAdapter(options = {}) {
       throw new Error('Thread ID, message ID, actor ID, and emoji are required.');
     }
 
-    const thread = existingThread && String(existingThread.id || '').trim() === normalizedThreadId
+    const thread = existingThread && (
+      String(existingThread.id || '').trim() === normalizedThreadId
+      || String(existingThread.nativeId || '').trim() === normalizedThreadId
+    )
       ? existingThread
       : await getMemberThread(actorId, normalizedThreadId);
 
@@ -957,11 +1002,17 @@ function createUsappPersistenceAdapter(options = {}) {
       throw new Error('Thread not found.');
     }
 
+    const resolvedThreadId = String(thread.id || '').trim();
+
+    if (!resolvedThreadId) {
+      throw new Error('Thread not found.');
+    }
+
     const rows = await requestSupabase(
       `${tables.memberMessages}${buildQuery({
         select: 'id,conversation_id,reactions',
         id: `eq.${normalizedMessageId}`,
-        conversation_id: `eq.${normalizedThreadId}`,
+        conversation_id: `eq.${resolvedThreadId}`,
         limit: 1
       })}`,
       {
