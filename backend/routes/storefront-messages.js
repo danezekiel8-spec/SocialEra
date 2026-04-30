@@ -121,6 +121,19 @@ function createMessageRoutes({
     }
   }
 
+  async function loadPersistedMemberThread(threadId, actorId) {
+    if (!hasUsappPersistence() || !isUserBackedActorId(actorId)) {
+      return null;
+    }
+
+    try {
+      return await usappPersistence.getMemberThread(actorId, threadId);
+    } catch (error) {
+      console.error('Supabase persisted member thread lookup failed:', error);
+      return null;
+    }
+  }
+
   async function loadRemoteMemberContacts(actorId = '') {
     if (typeof loadSupabaseMemberDirectory !== 'function') {
       return [];
@@ -665,8 +678,11 @@ function createMessageRoutes({
         && Array.isArray(entry.participantActorIds)
         && entry.participantActorIds.includes(actorId)
       ));
+      const persistedExistingThread = thread
+        ? null
+        : await loadPersistedMemberThread(threadId, actorId);
 
-      if (!thread) {
+      if (!thread && !persistedExistingThread) {
         return res.status(404).json({ error: 'Thread not found' });
       }
 
@@ -677,6 +693,48 @@ function createMessageRoutes({
         avatar: req.body.avatar,
         photoUrl: req.body.photoUrl
       });
+      await mirrorMemberProfileToPersistence(actorProfile);
+
+      if (!thread && persistedExistingThread) {
+        const persistedThread = await usappPersistence.appendMemberThreadMessage({
+          threadId: persistedExistingThread.id,
+          actorId,
+          authorName: actorProfile.displayName,
+          displayName: actorProfile.displayName,
+          userName: actorProfile.userName,
+          avatar: actorProfile.avatar,
+          photoUrl: actorProfile.photoUrl,
+          text: text.slice(0, 2000),
+          attachment,
+          replyToMessageId: req.body.replyToMessageId,
+          replyPreviewAuthor: req.body.replyPreviewAuthor,
+          replyPreviewText: req.body.replyPreviewText
+        });
+        const latestMessage = Array.isArray(persistedThread && persistedThread.messages)
+          ? persistedThread.messages[persistedThread.messages.length - 1] || null
+          : null;
+        const peerActorId = String(
+          persistedThread
+          && persistedThread.contact
+          && persistedThread.contact.actorId
+          || ''
+        ).trim();
+
+        emitActors([actorId, peerActorId].filter(Boolean), 'member-message-sent', {
+          actorId,
+          threadId: String(persistedThread && persistedThread.id || threadId).trim(),
+          updatedAt: String(
+            persistedThread && persistedThread.updatedAt
+            || latestMessage && latestMessage.createdAt
+            || new Date().toISOString()
+          ).trim(),
+          message: latestMessage
+        });
+
+        return res.status(201).json({
+          thread: persistedThread
+        });
+      }
 
       thread.participants = thread.participants.map((participant) => (
         participant.actorId === actorId ? actorProfile : normalizeMemberProfile(participant)
@@ -698,7 +756,6 @@ function createMessageRoutes({
       thread.messages.push(outgoingMessage);
       thread.updatedAt = outgoingMessage.createdAt;
       writeSocialMessages(data);
-      await mirrorMemberProfileToPersistence(actorProfile);
 
       let persistedThread = null;
       const peerActorId = Array.isArray(thread.participantActorIds)
@@ -763,9 +820,36 @@ function createMessageRoutes({
         && Array.isArray(entry.participantActorIds)
         && entry.participantActorIds.includes(actorId)
       ));
+      const persistedExistingThread = thread
+        ? null
+        : await loadPersistedMemberThread(threadId, actorId);
 
-      if (!thread) {
+      if (!thread && !persistedExistingThread) {
         return res.status(404).json({ error: 'Thread not found' });
+      }
+
+      if (!thread && persistedExistingThread) {
+        const persistedThread = await usappPersistence.syncMemberMessageReaction({
+          threadId: persistedExistingThread.id,
+          messageId,
+          actorId,
+          emoji
+        });
+        const peerActorId = String(
+          persistedThread
+          && persistedThread.contact
+          && persistedThread.contact.actorId
+          || ''
+        ).trim();
+
+        emitActors([actorId, peerActorId].filter(Boolean), 'member-message-reaction', {
+          actorId,
+          threadId: String(persistedThread && persistedThread.id || threadId).trim()
+        });
+
+        return res.json({
+          thread: persistedThread
+        });
       }
 
       const message = Array.isArray(thread.messages)
