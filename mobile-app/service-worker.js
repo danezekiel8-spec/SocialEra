@@ -1,4 +1,4 @@
-const CACHE_NAME = 'socialera-mobile-v2';
+const CACHE_NAME = 'socialera-mobile-v3';
 const SHELL_FILES = [
   '/',
   '/index.html',
@@ -12,6 +12,14 @@ const HOSTNAME = String(self.location.hostname || '').trim().toLowerCase();
 const IS_LOCALHOST = ['localhost', '127.0.0.1', '::1'].includes(HOSTNAME);
 const IS_PRIVATE_IPV4 = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(HOSTNAME);
 const IS_LOCAL_DEVELOPMENT = IS_LOCALHOST || IS_PRIVATE_IPV4 || HOSTNAME.endsWith('.local');
+const NETWORK_FIRST_PATHS = new Set([
+  '/',
+  '/index.html',
+  '/styles.css',
+  '/app.js',
+  '/config.js',
+  '/manifest.webmanifest'
+]);
 
 self.addEventListener('install', (event) => {
   if (IS_LOCAL_DEVELOPMENT) {
@@ -36,11 +44,15 @@ self.addEventListener('activate', (event) => {
   }
 
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(
-      keys
-        .filter((key) => key !== CACHE_NAME)
-        .map((key) => caches.delete(key))
-    ))
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      );
+      await self.clients.claim();
+    })()
   );
 });
 
@@ -56,6 +68,22 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
   if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) {
+    return;
+  }
+
+  const cacheKey = url.pathname;
+  const useNetworkFirst = event.request.mode === 'navigate' || NETWORK_FIRST_PATHS.has(cacheKey);
+
+  if (useNetworkFirst) {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        if (response && response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('/index.html')))
+    );
     return;
   }
 
