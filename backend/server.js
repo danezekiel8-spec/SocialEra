@@ -150,6 +150,59 @@ function getPublicSupabaseConfig() {
   };
 }
 
+
+function getSupabaseStorageConfig() {
+  const supabaseUrl = String(
+    process.env.SUPABASE_URL
+    || process.env.SUPABASE_PROJECT_URL
+    || DEFAULT_SUPABASE_URL
+    || ''
+  ).trim().replace(/\/+$/, '');
+  const serviceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+
+  return {
+    supabaseUrl,
+    serviceRoleKey,
+    configured: Boolean(supabaseUrl && serviceRoleKey)
+  };
+}
+
+function sanitizeUploadFileName(value) {
+  const fallback = `upload-${Date.now()}`;
+  const rawName = String(value || fallback).trim() || fallback;
+  return rawName
+    .replace(/[^a-zA-Z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .slice(0, 120) || fallback;
+}
+
+function getUploadExtension(fileName, mimeType) {
+  const fromName = String(fileName || '').split('.').pop();
+
+  if (fromName && fromName !== fileName && /^[a-zA-Z0-9]{1,12}$/.test(fromName)) {
+    return fromName.toLowerCase();
+  }
+
+  const normalizedMime = String(mimeType || '').toLowerCase();
+
+  if (normalizedMime.includes('png')) return 'png';
+  if (normalizedMime.includes('webp')) return 'webp';
+  if (normalizedMime.includes('gif')) return 'gif';
+  if (normalizedMime.includes('jpeg') || normalizedMime.includes('jpg')) return 'jpg';
+  if (normalizedMime.includes('mp4')) return 'mp4';
+  if (normalizedMime.includes('quicktime')) return 'mov';
+  if (normalizedMime.includes('webm')) return 'webm';
+
+  return 'bin';
+}
+
+function encodeStoragePath(storagePath) {
+  return String(storagePath || '')
+    .split('/')
+    .map((part) => encodeURIComponent(part))
+    .join('/');
+}
+
 function normalizeSupabaseDirectoryMember(user) {
   if (!user || typeof user !== 'object') {
     return null;
@@ -333,6 +386,68 @@ export default window.supabase;
   res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
   res.send(payload);
+});
+
+
+app.post('/api/uploads/post-media', express.raw({
+  type: '*/*',
+  limit: '100mb'
+}), async (req, res) => {
+  try {
+    const { supabaseUrl, serviceRoleKey, configured } = getSupabaseStorageConfig();
+
+    if (!configured) {
+      return res.status(500).json({
+        error: 'Supabase Storage upload is not configured. Add SUPABASE_SERVICE_ROLE_KEY to backend/.env.'
+      });
+    }
+
+    const fileBuffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from([]);
+
+    if (!fileBuffer.length) {
+      return res.status(400).json({ error: 'No upload file received.' });
+    }
+
+    const originalName = sanitizeUploadFileName(req.headers['x-file-name'] || 'post-media');
+    const mimeType = String(req.headers['content-type'] || 'application/octet-stream').trim() || 'application/octet-stream';
+    const extension = getUploadExtension(originalName, mimeType);
+    const actorId = sanitizeUploadFileName(req.headers['x-actor-id'] || 'guest');
+    const storagePath = `posts/${actorId}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+    const encodedPath = encodeStoragePath(storagePath);
+    const uploadUrl = `${supabaseUrl}/storage/v1/object/post-media/${encodedPath}`;
+
+    const uploadResponse = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        'Content-Type': mimeType,
+        'x-upsert': 'false'
+      },
+      body: fileBuffer
+    });
+
+    if (!uploadResponse.ok) {
+      const rawText = await uploadResponse.text().catch(() => '');
+      const message = parseRequestErrorText(rawText) || `Supabase Storage upload failed (${uploadResponse.status})`;
+      console.error('Supabase Storage upload failed:', message);
+      return res.status(uploadResponse.status).json({ error: message });
+    }
+
+    const publicUrl = `${supabaseUrl}/storage/v1/object/public/post-media/${encodedPath}`;
+
+    return res.json({
+      url: publicUrl,
+      publicUrl,
+      path: storagePath,
+      bucket: 'post-media'
+    });
+  } catch (error) {
+    console.error('Backend upload route failed:', error);
+    return res.status(500).json({
+      error: String(error && error.message ? error.message : 'Upload failed')
+    });
+  }
 });
 
 app.use(express.static(FRONTEND_DIR));

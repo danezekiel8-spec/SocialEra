@@ -3516,20 +3516,20 @@ function renderUploadView() {
           <div class="upload-modal-copy">
             <p class="section-label">Composer</p>
             <h2>Post to the SocialEra feed</h2>
-            <p>Share a look, thought, or product angle and let the feed update live for everyone else.</p>
+            
           </div>
         </div>
 
         <form class="upload-form upload-modal-form" data-upload-form="true">
           <section class="upload-modal-field full">
-            <label for="upload-media-input">Upload image or video</label>
+            <label for="upload-media-input">Upload photo or video</label>
             <div class="upload-modal-upload">
               <input id="upload-media-input" class="upload-file-input" type="file" accept="image/*,video/*" data-upload-file="true">
               <div class="upload-modal-upload-shell">
                 <label class="upload-modal-upload-trigger" for="upload-media-input">
                   <span class="upload-modal-upload-copy">
-                    <strong>Choose media for your post</strong>
-                    <span>Drop in a photo or video to make the post feel alive in the feed.</span>
+                    
+                   
                   </span>
                   <span class="upload-modal-upload-badge">Browse</span>
                 </label>
@@ -3564,7 +3564,7 @@ function renderUploadView() {
               type="text"
               name="title"
               maxlength="90"
-              placeholder="What should this post be called?"
+             
               value="${escapeHtml(draft.title)}"
               data-upload-field="title"
             >
@@ -3580,7 +3580,7 @@ function renderUploadView() {
               class="textarea"
               name="text"
               maxlength="340"
-              placeholder="Write something worth stopping the scroll for."
+              
               data-upload-field="text"
             >${escapeHtml(draft.text)}</textarea>
           </section>
@@ -3871,6 +3871,7 @@ function getUploadMediaHelperText() {
 
 function clearUploadMedia({ renderNow = true } = {}) {
   state.uploadDraft.mediaUrl = '';
+  state.uploadDraft.mediaFile = null;
   state.uploadDraft.mediaUrlInput = '';
   state.uploadDraft.mediaName = '';
   state.uploadDraft.mediaSource = 'none';
@@ -5782,6 +5783,40 @@ async function handleClick(event) {
   }
 }
 
+async function uploadToSupabaseStorage(file) {
+  if (!file) {
+    return '';
+  }
+
+  const uploadUrl = apiService.createApiUrl('/uploads/post-media');
+  const contentType = String(file.type || 'application/octet-stream').replace(/[^\x20-\x7E]/g, '') || 'application/octet-stream';
+
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': contentType
+    },
+    body: file
+  });
+
+  if (!response.ok) {
+    const rawText = await response.text().catch(() => '');
+    let message = rawText || `Upload failed (${response.status})`;
+
+    try {
+      const parsed = JSON.parse(rawText);
+      message = String(parsed.error || parsed.message || message);
+    } catch (error) {
+      // Keep the raw text when the backend sends plain text or HTML.
+    }
+
+    throw new Error(message);
+  }
+
+  const data = await response.json().catch(() => null);
+  return data && (data.url || data.publicUrl) ? String(data.url || data.publicUrl) : '';
+}
+
 async function handleSubmit(event) {
   const commentForm = event.target.closest('[data-comment-form]');
   if (commentForm) {
@@ -6050,6 +6085,7 @@ async function handleChange(event) {
   try {
     const mediaUrl = await readFileAsDataUrl(file);
     state.uploadDraft.mediaUrl = mediaUrl;
+    state.uploadDraft.mediaFile = file;
     state.uploadDraft.mediaUrlInput = '';
     state.uploadDraft.mediaName = file.name || 'Local upload';
     state.uploadDraft.mediaSource = 'file';
@@ -7384,34 +7420,42 @@ async function publishUploadDraft() {
     return;
   }
 
-  const postPayload = {
-    id: `post-${Date.now()}`,
-    actorId: state.actorId,
-    userId: state.authUser && state.authUser.id ? String(state.authUser.id) : '',
-    channel: draft.channel || DEFAULT_UPLOAD_CHANNELS[0],
-    userName: state.profile.userName,
-    displayName: state.profile.displayName,
-    avatar: state.profile.avatar,
-    photoUrl: state.profile.photoUrl,
-    mediaType: draft.mediaType,
-    mediaUrl: draft.mediaUrl,
-    captionTitle: draft.title || 'New SocialEra post',
-    captionText: draft.text || 'Shared from the SocialEra app upload flow.',
-    tags: getUploadTags(draft),
-    linkedProductIds: draft.linkedProductIds,
-    promoteEnabled: Boolean(draft.promoteEnabled),
-    promotedTitle: draft.promotedTitle || '',
-    promotedPrice: draft.promotedPrice || '',
-    promotedText: draft.promotedText || '',
-    likes: 0,
-    commentsCount: 0,
-    saves: 0,
-    createdAt: new Date().toISOString()
-  };
+  let uploadedMediaUrl = '';
 
   try {
+    if (draft.mediaFile) {
+      showToast('Uploading media...');
+      uploadedMediaUrl = await uploadToSupabaseStorage(draft.mediaFile);
+    }
+
+    const postPayload = {
+      id: `post-${Date.now()}`,
+      actorId: state.actorId,
+      userId: state.authUser && state.authUser.id ? String(state.authUser.id) : '',
+      channel: draft.channel || DEFAULT_UPLOAD_CHANNELS[0],
+      userName: state.profile.userName,
+      displayName: state.profile.displayName,
+      avatar: state.profile.avatar,
+      photoUrl: state.profile.photoUrl,
+      mediaType: draft.mediaType,
+      mediaUrl: uploadedMediaUrl || draft.mediaUrl,
+      captionTitle: draft.title || 'New SocialEra post',
+      captionText: draft.text || 'Shared from the SocialEra app upload flow.',
+      tags: getUploadTags(draft),
+      linkedProductIds: draft.linkedProductIds,
+      promoteEnabled: Boolean(draft.promoteEnabled),
+      promotedTitle: draft.promotedTitle || '',
+      promotedPrice: draft.promotedPrice || '',
+      promotedText: draft.promotedText || '',
+      likes: 0,
+      commentsCount: 0,
+      saves: 0,
+      createdAt: new Date().toISOString()
+    };
+
     const response = await apiService.fetchJson('/social/posts', {
       method: 'POST',
+      omitAuth: true,
       body: JSON.stringify(postPayload)
     });
 

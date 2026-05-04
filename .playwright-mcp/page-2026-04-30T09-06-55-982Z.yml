@@ -1,0 +1,9 @@
+- generic [ref=e6]:
+  - generic [ref=e8]:
+    - img [ref=e10]
+    - heading "Usapp" [level=1] [ref=e14]
+  - generic [ref=e15]:
+    - button "Primary" [ref=e16]
+    - button "Icon" [ref=e17]
+    - button "Wordmark" [ref=e18]
+  - generic [ref=e19]: Click to switch between logo variations

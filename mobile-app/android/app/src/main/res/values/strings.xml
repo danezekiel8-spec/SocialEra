@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">SocialEra</string>
+    <string name="title_activity_main">SocialEra</string>
+    <string name="package_name">com.socialera.app</string>
+    <string name="custom_url_scheme">com.socialera.app</string>
+</resources>

@@ -1,0 +1,41 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - banner [ref=e4]:
+      - link "SocialEra Home" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "SocialEra logo" [ref=e7]
+        - heading "S o c i a l E r a" [level=1] [ref=e9]:
+          - generic [ref=e10]: S
+          - generic [ref=e11]: o
+          - generic [ref=e12]: c
+          - generic [ref=e13]: i
+          - generic [ref=e14]: a
+          - generic [ref=e15]: l
+          - generic [ref=e16]: E
+          - generic [ref=e17]: r
+          - generic [ref=e18]: a
+    - main [ref=e19]:
+      - generic [ref=e23]:
+        - generic [ref=e26]:
+          - paragraph [ref=e27]: Welcome back
+          - heading "Log in" [level=3] [ref=e28]
+        - generic [ref=e29]:
+          - tablist "Account mode" [ref=e30]:
+            - button "Log in" [pressed] [ref=e31] [cursor=pointer]
+            - button "Create account" [ref=e32] [cursor=pointer]
+          - generic [ref=e33]:
+            - generic [ref=e34]:
+              - generic [ref=e35]: Email address
+              - textbox "Email address" [ref=e36]:
+                - /placeholder: you@example.com
+            - generic [ref=e37]:
+              - generic [ref=e38]: Password
+              - textbox "Password" [ref=e39]:
+                - /placeholder: Enter your password
+              - generic [ref=e40]: Use your website password.
+            - generic [ref=e41]:
+              - button "Log in" [ref=e42] [cursor=pointer]
+              - button "Browse shop" [ref=e43] [cursor=pointer]
+          - paragraph [ref=e44]:
+            - button "Forgot password?" [ref=e45] [cursor=pointer]
+  - status [ref=e46]

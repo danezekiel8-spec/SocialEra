@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>SocialEra App</title>
+  <link rel="icon" href="/app-icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/styles.css?v=usapp-revamp-20260430a">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <div class="app-stage">
+    <div class="phone-shell">
+      <header class="topbar">
+        <div class="brand-row">
+          <a class="brand-lockup" href="/" aria-label="SocialEra Home">
+            <img class="brand-logo logo-mark-image" src="/assets/SocialEra-Logo.png" alt="SocialEra logo">
+            <div class="topbar-copy logo-text-wrap">
+              <h1 class="logo-word">
+                <span>S</span><span>o</span><span>c</span><span>i</span><span>a</span><span>l</span><span>E</span><span>r</span><span>a</span>
+              </h1>
+            </div>
+          </a>
+
+          <div class="topbar-actions">
+            <button id="refresh-button" class="chrome-button icon-button" type="button" aria-label="Notifications">
+              <span class="live-indicator-badge" id="notification-badge" aria-hidden="true"></span>
+              <svg class="header-icon" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M8 16a2 2 0 0 0 2-2H6a2 2 0 0 0 2 2"></path>
+                <path d="M8.995 1.099a1 1 0 1 0-1.99 0A5 5 0 0 0 3 6c0 1.098-.5 6-2 7h14c-1.5-1-2-5.902-2-7 0-2.42-1.72-4.44-4.005-4.901"></path>
+              </svg>
+            </button>
+            <button id="profile-shortcut" class="avatar-button" type="button" aria-label="Open profile">SE</button>
+          </div>
+        </div>
+      </header>
+
+      <main id="view-root" class="view-root" aria-live="polite"></main>
+      <div id="comment-sheet-root"></div>
+      <div id="notification-sheet-root"></div>
+      <button id="install-button" class="install-cta hidden" type="button">Install app</button>
+
+      <div class="dock-layer">
+        <nav class="bottom-nav" aria-label="Primary sections">
+          <button class="nav-button icon-only" type="button" data-nav-view="home" aria-label="Home">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3.5 10.5L12 3.5l8.5 7"></path>
+              <path d="M6.5 9.5V20.5H17.5V9.5"></path>
+            </svg>
+            <span class="sr-only">Home</span>
+          </button>
+          <button class="nav-button icon-only" type="button" data-nav-view="shop" aria-label="Shop">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7.5 8.5V7.5a4.5 4.5 0 0 1 9 0v1"></path>
+              <path d="M5.5 8.5H18.5L17.5 20.5H6.5Z"></path>
+            </svg>
+            <span class="sr-only">Shop</span>
+          </button>
+          <button class="nav-button icon-only" type="button" data-nav-view="videos" aria-label="Videos">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3.5" y="6" width="17" height="12" rx="2.5"></rect>
+              <path d="M10 9.5L15 12L10 14.5Z"></path>
+            </svg>
+            <span class="sr-only">Videos</span>
+          </button>
+          <button class="nav-button icon-only" type="button" data-nav-view="upload" aria-label="Composer">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5V19"></path>
+              <path d="M5 12H19"></path>
+            </svg>
+            <span class="sr-only">Composer</span>
+          </button>
+          <button class="nav-button icon-only" type="button" data-nav-view="search" aria-label="Search">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5"></circle>
+              <path d="M16 16L21 21"></path>
+            </svg>
+            <span class="sr-only">Search</span>
+          </button>
+          <button class="nav-button icon-only" type="button" data-nav-view="inbox" aria-label="Usapp Chats">
+            <span class="nav-badge" id="messages-badge" data-badge-for="inbox" aria-hidden="true"></span>
+            <svg class="nav-icon" viewBox="0 0 20 20" aria-hidden="true">
+              <circle cx="10" cy="8.4" r="6.6" fill="currentColor" stroke="none"></circle>
+              <path d="M5.9 12.9L5.4 17.1L8.5 13.9" fill="currentColor" stroke="none"></path>
+              <circle cx="7.6" cy="6.9" r="0.9" fill="#fff" stroke="none"></circle>
+              <circle cx="12.4" cy="6.9" r="0.9" fill="#fff" stroke="none"></circle>
+              <path d="M7.2 8.8V10.8C7.2 11.9 7.9 12.5 10 12.5C12.1 12.5 12.8 11.9 12.8 10.8V8.8" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <span class="sr-only">Usapp Chats</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="/config.js" defer></script>
+  <script type="module" src="/app.js?v=usapp-live-sync-20260430b"></script>
+</body>
+</html>
