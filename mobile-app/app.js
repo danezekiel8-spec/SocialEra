@@ -4539,6 +4539,8 @@ function renderCommentSheet() {
   const activeReply = state.activeReplyCommentId
     ? findCommentByIdLocal(getPostComments(post), state.activeReplyCommentId)
     : null;
+  const comments = getPostComments(post);
+  const commentCount = getPostCommentCount(post);
 
   elements.commentSheetRoot.innerHTML = `
     <div class="comment-sheet-overlay">
@@ -4548,17 +4550,16 @@ function renderCommentSheet() {
         <div class="comment-sheet-handle" aria-hidden="true"></div>
 
         <div class="comment-sheet-head">
-          <div>
+          <div class="comment-sheet-title-wrap">
             <p class="section-label">Comments</p>
-            <h3 id="comment-sheet-title">${escapeHtml(post.captionTitle)}</h3>
-            <p>${escapeHtml(post.captionText || 'See the conversation around this post.')}</p>
+            <h3 id="comment-sheet-title">${escapeHtml(formatCompactNumber(commentCount))} ${commentCount === 1 ? 'comment' : 'comments'}</h3>
           </div>
           <button class="chrome-button icon-button comment-sheet-close" type="button" data-close-comments="true" aria-label="Close comments">
             ${renderUsappCloseIcon()}
           </button>
         </div>
 
-        <div class="comment-sheet-post card">
+        <div class="comment-sheet-post comment-sheet-post-compact">
           <div class="comment-sheet-post-copy">
             <div class="comment-sheet-post-meta">
               ${renderAvatarShell(post)}
@@ -4567,33 +4568,37 @@ function renderCommentSheet() {
                 <span>${escapeHtml(post.userName)} · ${escapeHtml(formatRelativeTime(post.createdAt))}</span>
               </div>
             </div>
-            <div class="comment-sheet-stat-row">
-              <span class="comment-sheet-stat">Likes ${escapeHtml(formatCompactNumber(post.likes))}</span>
-              <span class="comment-sheet-stat">Comments ${escapeHtml(formatCompactNumber(getPostCommentCount(post)))}</span>
-              <span class="comment-sheet-stat">Saves ${escapeHtml(formatCompactNumber(post.saves))}</span>
-            </div>
+            <p>${escapeHtml(post.captionText || post.captionTitle || 'See the conversation around this post.')}</p>
           </div>
-          <div class="comment-sheet-media">
+          <div class="comment-sheet-media" aria-hidden="true">
             ${renderMedia(post, 'comment-sheet')}
           </div>
         </div>
 
-        <div class="comment-sheet-list">
-          ${renderCommentThreadList(post)}
+        <div class="comment-sheet-list ${comments.length ? '' : 'is-empty'}">
+          ${comments.length ? renderCommentThreadList(post) : renderEmptyCard('No comments yet', 'Start the conversation on this post.')}
         </div>
 
         <form class="comment-sheet-form" data-comment-form="${escapeHtml(post.id)}">
-          ${activeReply ? `<p class="comment-sheet-replying">Replying to <strong>${escapeHtml(activeReply.authorName || 'SocialEra Member')}</strong></p>` : ''}
-          <textarea
-            class="textarea"
-            data-comment-input="true"
-            placeholder="${escapeHtml(activeReply ? `Reply to ${activeReply.authorName || 'SocialEra Member'}` : 'Add a comment to this post')}"
-          >${escapeHtml(state.commentDraftText)}</textarea>
-          <div class="comment-sheet-actions">
-            <button class="ghost-button" type="button" data-clear-comment-reply="true" ${activeReply ? '' : 'disabled'}>Cancel reply</button>
-            <button class="primary-button" type="submit">Comment</button>
+          ${activeReply ? `
+            <div class="comment-sheet-replying">
+              <span>Replying to <strong>${escapeHtml(activeReply.authorName || 'SocialEra Member')}</strong></span>
+              <button type="button" data-clear-comment-reply="true">Cancel</button>
+            </div>
+          ` : ''}
+          <div class="comment-sheet-composer">
+            ${renderAvatarShell(state.profile, 'comment-sheet-composer-avatar avatar')}
+            <textarea
+              class="textarea comment-sheet-input"
+              data-comment-input="true"
+              rows="1"
+              placeholder="${escapeHtml(activeReply ? `Reply to ${activeReply.authorName || 'SocialEra Member'}...` : 'Add a comment...')}"
+            >${escapeHtml(state.commentDraftText)}</textarea>
+            <button class="comment-sheet-send" type="submit" aria-label="Post comment">Comment</button>
           </div>
         </form>
+
+        ${renderCommentLikesPanel(post)}
       </section>
     </div>
   `;
@@ -4669,31 +4674,97 @@ function renderCommentThreadList(post) {
     return renderEmptyCard('No comments yet', 'Start the conversation on this post.');
   }
 
-  return comments.map((comment) => renderCommentThread(post.id, comment)).join('');
+  return comments.map((comment) => renderCommentThreadGroup(post.id, comment)).join('');
 }
 
-function renderCommentThread(postId, comment, depth = 0) {
-  const liked = Array.isArray(comment.likeActorIds) && comment.likeActorIds.includes(state.actorId);
-  const replies = Array.isArray(comment.replies) ? comment.replies : [];
+function renderCommentThreadGroup(postId, comment) {
+  return `
+    <div class="comment-thread-group">
+      ${renderCommentThreadEntry(postId, comment, {
+        visualLevel: 0,
+        replyToAuthorName: ''
+      })}
+      ${renderCommentRepliesFlat(postId, comment, comment.authorName || 'SocialEra Member')}
+    </div>
+  `;
+}
+
+function collectCommentReplyEntries(comment, parentAuthorName = '') {
+  const replies = Array.isArray(comment && comment.replies) ? comment.replies : [];
+
+  return replies.flatMap((reply) => {
+    const replyAuthorName = reply && reply.authorName ? reply.authorName : parentAuthorName || 'SocialEra Member';
+
+    return [
+      {
+        comment: reply,
+        replyToAuthorName: parentAuthorName || 'SocialEra Member'
+      },
+      ...collectCommentReplyEntries(reply, replyAuthorName)
+    ];
+  });
+}
+
+function renderCommentRepliesFlat(postId, comment, parentAuthorName = '') {
+  const replies = collectCommentReplyEntries(comment, parentAuthorName);
+
+  if (!replies.length) {
+    return '';
+  }
+
+  const expandedIds = getExpandedCommentReplyIds();
+  const commentId = String(comment && comment.id || '').trim();
+  const isExpanded = commentId ? expandedIds.has(commentId) : false;
+  const visibleReplies = isExpanded ? replies : replies.slice(0, 2);
+  const hiddenReplyCount = Math.max(0, replies.length - visibleReplies.length);
 
   return `
-    <article class="comment-thread ${depth ? 'is-reply' : ''}" style="--comment-depth:${Math.min(depth, 3)};">
+    <div class="comment-thread-replies" data-comment-replies="true">
+      ${visibleReplies.map((entry) => renderCommentThreadEntry(postId, entry.comment, {
+        visualLevel: 1,
+        replyToAuthorName: entry.replyToAuthorName
+      })).join('')}
+      ${replies.length > 2 ? `
+        <button
+          class="comment-thread-toggle-replies"
+          type="button"
+          data-toggle-comment-replies="${escapeHtml(commentId)}"
+          aria-expanded="${isExpanded ? 'true' : 'false'}"
+        >
+          ${isExpanded ? 'Hide replies' : `View ${escapeHtml(formatCompactNumber(hiddenReplyCount))} more ${hiddenReplyCount === 1 ? 'reply' : 'replies'}`}
+        </button>
+      ` : ''}
+    </div>
+  `;
+}
+
+
+function renderCommentHeartIcon() {
+  return `
+    <svg class="comment-thread-heart-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M12 20.35s-6.72-4.37-9.33-8.22C0.48 8.9 2.05 5.1 5.65 4.42c2.05-.38 3.82.52 5.02 2.02L12 8.1l1.33-1.66c1.2-1.5 2.97-2.4 5.02-2.02 3.6.68 5.17 4.48 2.98 7.71C18.72 15.98 12 20.35 12 20.35Z"></path>
+    </svg>
+  `;
+}
+
+function renderCommentThreadEntry(postId, comment, { visualLevel = 0, replyToAuthorName = '' } = {}) {
+  const liked = Array.isArray(comment.likeActorIds) && comment.likeActorIds.includes(state.actorId);
+  const likeCount = Number(comment.likes || 0);
+  const replyContext = visualLevel > 0 && replyToAuthorName
+    ? `<span class="comment-thread-reply-context">Replying to <strong>${escapeHtml(replyToAuthorName)}</strong></span>`
+    : '';
+
+  return `
+    <article class="comment-thread ${visualLevel ? 'is-reply' : ''}" data-comment-depth="${visualLevel ? 'reply' : 'root'}">
       ${renderAvatarShell(comment, 'comment-thread-avatar')}
       <div class="comment-thread-body">
         <div class="comment-thread-meta">
           <strong>${escapeHtml(comment.authorName || 'SocialEra Member')}</strong>
           <span>${escapeHtml(formatRelativeTime(comment.createdAt))}</span>
         </div>
+        ${replyContext}
         <p>${escapeHtml(comment.text || '')}</p>
-        <div class="comment-thread-actions">
-          <button
-            class="comment-thread-action ${liked ? 'active' : ''}"
-            type="button"
-            data-toggle-comment-like="${escapeHtml(comment.id)}"
-            data-post-id="${escapeHtml(postId)}"
-          >
-            Like ${escapeHtml(formatCompactNumber(comment.likes || 0))}
-          </button>
+        <div class="comment-thread-actions" aria-label="Comment actions">
           <button
             class="comment-thread-action"
             type="button"
@@ -4702,12 +4773,29 @@ function renderCommentThread(postId, comment, depth = 0) {
           >
             Reply
           </button>
+          ${likeCount ? `
+            <button
+              class="comment-thread-action comment-thread-view-likes"
+              type="button"
+              data-view-comment-likes="${escapeHtml(comment.id)}"
+              data-post-id="${escapeHtml(postId)}"
+            >
+              View likes
+            </button>
+          ` : ''}
         </div>
-        ${replies.length ? `
-          <div class="comment-thread-replies">
-            ${replies.map((reply) => renderCommentThread(postId, reply, depth + 1)).join('')}
-          </div>
-        ` : ''}
+      </div>
+      <div class="comment-thread-side" aria-label="Comment like">
+        <button
+          class="comment-thread-heart ${liked ? 'active' : ''}"
+          type="button"
+          data-toggle-comment-like="${escapeHtml(comment.id)}"
+          data-post-id="${escapeHtml(postId)}"
+          aria-label="${liked ? 'Unlike comment' : 'Like comment'}"
+          aria-pressed="${liked ? 'true' : 'false'}"
+        >
+          ${renderCommentHeartIcon()}
+        </button>
       </div>
     </article>
   `;
@@ -5322,6 +5410,42 @@ async function handleClick(event) {
   const commentLikeTarget = event.target.closest('[data-toggle-comment-like]');
   if (commentLikeTarget) {
     await toggleCommentReaction(commentLikeTarget.dataset.postId, commentLikeTarget.dataset.toggleCommentLike);
+    return;
+  }
+
+  const commentLikesTarget = event.target.closest('[data-view-comment-likes]');
+  if (commentLikesTarget) {
+    state.commentLikesPanel = {
+      postId: String(commentLikesTarget.dataset.postId || '').trim(),
+      commentId: String(commentLikesTarget.dataset.viewCommentLikes || '').trim()
+    };
+    renderCommentSheet();
+    return;
+  }
+
+  const closeCommentLikesTarget = event.target.closest('[data-close-comment-likes]');
+  if (closeCommentLikesTarget) {
+    state.commentLikesPanel = null;
+    renderCommentSheet();
+    return;
+  }
+
+  const toggleCommentRepliesTarget = event.target.closest('[data-toggle-comment-replies]');
+  if (toggleCommentRepliesTarget) {
+    const commentId = String(toggleCommentRepliesTarget.dataset.toggleCommentReplies || '').trim();
+
+    if (commentId) {
+      const expandedIds = getExpandedCommentReplyIds();
+
+      if (expandedIds.has(commentId)) {
+        expandedIds.delete(commentId);
+      } else {
+        expandedIds.add(commentId);
+      }
+
+      state.expandedCommentReplyIds = expandedIds;
+      renderCommentSheet();
+    }
     return;
   }
 
@@ -6613,6 +6737,19 @@ async function submitComment(postId) {
     return;
   }
 
+  const now = Date.now();
+  const lastCommentSubmitAt = Number(state.lastCommentSubmitAt || 0);
+
+  if (lastCommentSubmitAt && now - lastCommentSubmitAt < 1400) {
+    showToast('Give it a second before posting again.');
+    focusCommentComposer();
+    return;
+  }
+
+  state.lastCommentSubmitAt = now;
+
+  const previousComments = normalizeComments(getPostComments(post));
+  const previousReplyId = state.activeReplyCommentId || '';
   const commentPayload = {
     id: getUuid(),
     actorId: state.actorId,
@@ -6622,29 +6759,35 @@ async function submitComment(postId) {
     avatar: state.profile.avatar,
     photoUrl: state.profile.photoUrl,
     text,
-    parentCommentId: state.activeReplyCommentId || '',
+    parentCommentId: previousReplyId,
     createdAt: new Date().toISOString()
   };
+
+  applyLocalCommentInsert(postId, commentPayload);
+  state.commentDraftText = '';
+  state.activeReplyCommentId = '';
+  refreshPostSurfaces(postId, { includeSpotlight: state.activeView === 'home' });
+  focusCommentComposer();
 
   try {
     const response = await apiService.fetchJson(`/social/posts/${encodeURIComponent(postId)}/comments`, {
       method: 'POST',
+      omitAuth: true,
       body: JSON.stringify(commentPayload)
     });
 
     applyCommentResponse(postId, response);
-    state.commentDraftText = '';
-    state.activeReplyCommentId = '';
     refreshPostSurfaces(postId, { includeSpotlight: state.activeView === 'home' });
-    focusCommentComposer();
-    showToast('Comment added.');
   } catch (error) {
-    applyLocalCommentInsert(postId, commentPayload);
-    state.commentDraftText = '';
-    state.activeReplyCommentId = '';
+    state.lastCommentSubmitAt = 0;
+    restoreLocalComments(postId, previousComments);
+    state.commentDraftText = text;
+    state.activeReplyCommentId = previousReplyId;
     refreshPostSurfaces(postId, { includeSpotlight: state.activeView === 'home' });
+    console.error('Could not create Supabase comment:', error);
+    const message = getRequestErrorMessage(error) || 'Could not add comment.';
+    showToast(message);
     focusCommentComposer();
-    showToast('Comment added locally in preview mode.');
   }
 }
 
@@ -6653,9 +6796,16 @@ async function toggleCommentReaction(postId, commentId) {
     return;
   }
 
+  const changedLocally = toggleCommentReactionLocally(postId, commentId);
+
+  if (changedLocally) {
+    refreshPostSurfaces(postId, { includeSpotlight: false });
+  }
+
   try {
     const response = await apiService.fetchJson(`/social/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}/reactions`, {
       method: 'POST',
+      omitAuth: true,
       body: JSON.stringify({
         actorId: state.actorId,
         authorName: state.profile.displayName,
@@ -6669,14 +6819,14 @@ async function toggleCommentReaction(postId, commentId) {
     refreshPostSurfaces(postId, { includeSpotlight: false });
     return;
   } catch (error) {
-    if (toggleCommentReactionLocally(postId, commentId)) {
+    if (changedLocally) {
+      toggleCommentReactionLocally(postId, commentId);
       refreshPostSurfaces(postId, { includeSpotlight: false });
-      showToast('Comment like saved locally.');
-      return;
     }
-  }
 
-  showToast('Could not update the comment right now.');
+    console.error('Could not sync comment reaction:', error);
+    showToast(getRequestErrorMessage(error) || 'Could not update the comment right now.');
+  }
 }
 
 async function togglePostMetric(postId, metric) {
@@ -6696,6 +6846,7 @@ async function togglePostMetric(postId, metric) {
   try {
     const response = await apiService.fetchJson(`/social/posts/${encodeURIComponent(postId)}/reactions`, {
       method: 'POST',
+      omitAuth: true,
       body: JSON.stringify({
         metric,
         actorId: state.actorId,
@@ -8934,6 +9085,16 @@ function applyLocalCommentInsert(postId, payload) {
   });
 }
 
+function restoreLocalComments(postId, comments) {
+  const restoredComments = normalizeComments(comments);
+
+  updatePostInstances(postId, (post) => {
+    post.commentsData = restoredComments;
+    post.commentPreview = flattenRecentCommentsLocal(restoredComments, 3);
+    post.commentsCount = countCommentTree(restoredComments);
+  });
+}
+
 function toggleCommentReactionLocally(postId, commentId) {
   let updated = false;
 
@@ -8976,6 +9137,73 @@ function toggleCommentReactionLocally(postId, commentId) {
   });
 
   return updated;
+}
+
+function getExpandedCommentReplyIds() {
+  if (!(state.expandedCommentReplyIds instanceof Set)) {
+    state.expandedCommentReplyIds = new Set(Array.isArray(state.expandedCommentReplyIds) ? state.expandedCommentReplyIds.map(String) : []);
+  }
+
+  return state.expandedCommentReplyIds;
+}
+
+function getCommentLikeActors(comment) {
+  const actors = Array.isArray(comment && comment.likeActors)
+    ? comment.likeActors.map(normalizeCommentActor).filter(Boolean)
+    : [];
+
+  if (actors.length) {
+    return actors;
+  }
+
+  const actorIds = Array.isArray(comment && comment.likeActorIds) ? comment.likeActorIds.map(String).filter(Boolean) : [];
+
+  return actorIds.map((actorId) => ({
+    actorId,
+    authorName: actorId === state.actorId ? state.profile.displayName : 'SocialEra Member',
+    userName: actorId === state.actorId ? state.profile.userName : '@socialera',
+    avatar: actorId === state.actorId ? state.profile.avatar : 'SE',
+    photoUrl: actorId === state.actorId ? state.profile.photoUrl : ''
+  }));
+}
+
+function renderCommentLikesPanel(post) {
+  const panel = state.commentLikesPanel;
+
+  if (!panel || !panel.commentId || !post || String(panel.postId || '') !== String(post.id || '')) {
+    return '';
+  }
+
+  const comment = findCommentByIdLocal(getPostComments(post), panel.commentId);
+  const actors = getCommentLikeActors(comment);
+
+  return `
+    <div class="comment-likes-panel" role="dialog" aria-modal="true" aria-label="Comment likes">
+      <button class="comment-likes-backdrop" type="button" data-close-comment-likes="true" aria-label="Close comment likes"></button>
+      <div class="comment-likes-card">
+        <div class="comment-likes-head">
+          <div>
+            <p class="section-label">Liked by</p>
+            <h4>${escapeHtml(formatCompactNumber(actors.length))} ${actors.length === 1 ? 'person' : 'people'}</h4>
+          </div>
+          <button class="chrome-button icon-button comment-likes-close" type="button" data-close-comment-likes="true" aria-label="Close liked by list">
+            ${renderUsappCloseIcon()}
+          </button>
+        </div>
+        <div class="comment-likes-list">
+          ${actors.length ? actors.map((actor) => `
+            <div class="comment-liker-row">
+              ${renderAvatarShell(actor, 'comment-liker-avatar')}
+              <div class="comment-liker-copy">
+                <strong>${escapeHtml(actor.authorName || 'SocialEra Member')}</strong>
+                <span>${escapeHtml(actor.userName || '@socialera')}</span>
+              </div>
+            </div>
+          `).join('') : '<p class="helper-text">No likes yet.</p>'}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function findCommentByIdLocal(comments, commentId) {
