@@ -423,6 +423,49 @@ function createSocialPostPersistenceAdapter(options = {}) {
     return hydratePosts(Array.isArray(response) ? response : []);
   }
 
+  async function listMessageContactSeeds({ limit = 250 } = {}) {
+    const key = supabaseServiceRoleKey || supabasePublishableKey;
+    const response = await requestSupabase(
+      `${tables.posts}${buildQuery({
+        select: [
+          'id',
+          'actor_id',
+          'user_id',
+          'display_name',
+          'user_name',
+          'avatar',
+          'photo_url',
+          'media_url',
+          'promoted_title',
+          'caption_title',
+          'created_at'
+        ].join(','),
+        order: 'created_at.desc',
+        limit: Math.max(1, Math.min(Number(limit) || 250, 1000))
+      })}`,
+      {
+        method: 'GET',
+        headers: buildHeaders(key, false)
+      }
+    );
+
+    return (Array.isArray(response) ? response : [])
+      .map((row) => ({
+        id: String(row && row.id || '').trim(),
+        actorId: String(row && (row.actor_id || row.actorId) || '').trim(),
+        userId: String(row && (row.user_id || row.userId) || '').trim(),
+        displayName: String(row && (row.display_name || row.displayName) || '').trim(),
+        userName: String(row && (row.user_name || row.userName) || '').trim(),
+        avatar: String(row && row.avatar || '').trim().slice(0, 2).toUpperCase(),
+        photoUrl: sanitizePhotoUrl(row && (row.photo_url || row.photoUrl)),
+        mediaUrl: String(row && (row.media_url || row.mediaUrl) || '').trim(),
+        promotedTitle: String(row && (row.promoted_title || row.promotedTitle) || '').trim(),
+        captionTitle: String(row && (row.caption_title || row.captionTitle) || '').trim(),
+        createdAt: String(row && (row.created_at || row.createdAt) || '').trim()
+      }))
+      .filter((row) => row.id && (row.actorId || row.userId || row.userName || row.displayName));
+  }
+
   async function getPostById(postId) {
     const normalizedPostId = String(postId || '').trim();
 
@@ -750,6 +793,7 @@ function createSocialPostPersistenceAdapter(options = {}) {
     hasWriteAccess,
     getSourceStatus,
     listPosts,
+    listMessageContactSeeds,
     getPostById,
     createPost,
     listHydratedComments,

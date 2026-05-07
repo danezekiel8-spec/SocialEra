@@ -448,63 +448,126 @@ function toggleMessageReaction(message, actorId, emoji) {
   message.reactions = message.reactions.filter((reaction) => Array.isArray(reaction.actorIds) && reaction.actorIds.length);
 }
 
-function createMessageContactHelpers({ readSocialMessages, readSocialPosts }) {
-  function buildMessageContacts() {
+function createMessageContactHelpers({
+  readSocialMessages,
+  listSocialContactSeeds,
+  listMemberProfiles
+}) {
+  async function loadMemberProfiles() {
+    const messageData = readSocialMessages();
+    const localMembers = Array.isArray(messageData.members) ? messageData.members : [];
+
+    if (typeof listMemberProfiles !== 'function') {
+      return localMembers;
+    }
+
+    try {
+      const persistedMembers = await listMemberProfiles();
+      const mergedMembers = [];
+      const seen = new Set();
+
+      [...persistedMembers, ...localMembers].forEach((member) => {
+        const normalized = normalizeMemberProfile(member);
+        const keys = [
+          normalized.actorId,
+          normalized.nativeUserId,
+          String(normalized.userName || '').trim().toLowerCase(),
+          String(normalized.displayName || '').trim().toLowerCase()
+        ].filter(Boolean);
+        const primaryKey = keys[0] || '';
+
+        if (!primaryKey || seen.has(primaryKey)) {
+          return;
+        }
+
+        seen.add(primaryKey);
+        keys.forEach((key) => seen.add(key));
+        mergedMembers.push(normalized);
+      });
+
+      return mergedMembers;
+    } catch (error) {
+      return localMembers;
+    }
+  }
+
+  async function buildMessageContacts() {
     const supportContact = getSupportMessageContact();
     const contacts = [supportContact];
     const seen = new Set([supportContact.actorId, supportContact.userName.toLowerCase()]);
-    const messageData = readSocialMessages();
-    const memberProfiles = Array.isArray(messageData.members) ? messageData.members : [];
-    const posts = readSocialPosts()
-      .slice()
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const memberProfiles = await loadMemberProfiles();
+    const posts = typeof listSocialContactSeeds === 'function'
+      ? await listSocialContactSeeds()
+      : [];
 
     posts.forEach((post) => {
       const userName = String(post.userName || '').trim();
       const displayName = String(post.displayName || '').trim();
-      const key = (userName || displayName).toLowerCase();
+      const actorId = String(post.actorId || '').trim();
+      const userId = String(post.userId || '').trim();
+      const normalizedUserName = userName.toLowerCase();
+      const normalizedDisplayName = displayName.toLowerCase();
+      const key = actorId || userId || normalizedUserName || normalizedDisplayName;
 
       if (!key || seen.has(key)) {
         return;
       }
 
       const linkedMember = memberProfiles.find((member) => (
-        String(member.userName || '').trim().toLowerCase() === String(userName || '').trim().toLowerCase()
-        || String(member.displayName || '').trim().toLowerCase() === String(displayName || '').trim().toLowerCase()
+        (actorId && String(member.actorId || '').trim() === actorId)
+        || (userId && String(member.nativeUserId || '').trim() === userId)
+        || (normalizedUserName && String(member.userName || '').trim().toLowerCase() === normalizedUserName)
+        || (normalizedDisplayName && String(member.displayName || '').trim().toLowerCase() === normalizedDisplayName)
       )) || null;
-      const linkedNativeUserId = linkedMember && String(linkedMember.actorId || '').startsWith('user-')
-        ? String(linkedMember.actorId || '').slice(5)
-        : '';
+      const linkedNativeUserId = linkedMember
+        ? String(linkedMember.nativeUserId || '').trim()
+        : userId;
       const contact = normalizeMessageContact({
-        actorId: linkedMember ? linkedMember.actorId : `creator-${slugify(userName || displayName)}`,
+        actorId: linkedMember
+          ? linkedMember.actorId
+          : (actorId || `creator-${slugify(userName || displayName)}`),
         nativeUserId: linkedNativeUserId,
         displayName: displayName || (linkedMember ? linkedMember.displayName : 'SocialEra Creator'),
         userName: userName || (linkedMember ? linkedMember.userName : `@${slugify(displayName || 'socialera.creator')}`),
         avatar: String(post.avatar || '').trim() || (linkedMember ? linkedMember.avatar : getDisplayInitials(displayName || userName)),
-        photoUrl: linkedMember ? linkedMember.photoUrl : '',
-        role: 'creator',
+        photoUrl: linkedMember ? linkedMember.photoUrl : String(post.photoUrl || '').trim(),
+        role: linkedMember ? 'member' : 'creator',
         intro: 'Usually replies about the featured look, product details, and the creator drop tied to the post.',
         topic: String(post.promotedTitle || post.captionTitle || 'the latest SocialEra look').trim(),
         mediaUrl: String(post.mediaUrl || '').trim(),
         sourcePostId: String(post.id || '').trim(),
-        provider: linkedMember ? 'member' : 'local'
+        provider: linkedMember ? 'member' : 'local',
+        updatedAt: String(post.createdAt || '').trim() || new Date().toISOString(),
+        lastActiveAt: linkedMember
+          ? String(linkedMember.lastActiveAt || linkedMember.updatedAt || '').trim()
+          : (String(post.createdAt || '').trim() || new Date().toISOString())
       });
 
       seen.add(key);
       seen.add(contact.actorId);
+      if (contact.nativeUserId) {
+        seen.add(contact.nativeUserId);
+      }
+      if (contact.userName) {
+        seen.add(String(contact.userName).trim().toLowerCase());
+      }
+      if (contact.displayName) {
+        seen.add(String(contact.displayName).trim().toLowerCase());
+      }
       contacts.push(contact);
     });
 
     return contacts.slice(0, 18);
   }
 
-  function resolveMessageContact(contactId, fallbackContact) {
+  async function resolveMessageContact(contactId, fallbackContact) {
     const normalizedContactId = String(contactId || '').trim().toLowerCase();
-    const contacts = buildMessageContacts();
+    const contacts = await buildMessageContacts();
 
     const matched = contacts.find((contact) => (
       [
         contact.actorId,
+        contact.nativeUserId,
         contact.userName,
         contact.displayName,
         contact.sourcePostId

@@ -672,7 +672,22 @@ function emitMessageEvent(payload = {}) {
 }
 const { buildMessageContacts, resolveMessageContact } = createMessageContactHelpers({
   readSocialMessages,
-  readSocialPosts
+  listSocialContactSeeds: async () => {
+    const persistence = getSocialPostPersistence();
+
+    if (!persistence || typeof persistence.listMessageContactSeeds !== 'function') {
+      return [];
+    }
+
+    return persistence.listMessageContactSeeds({ limit: 250 });
+  },
+  listMemberProfiles: async () => {
+    if (!usappPersistence || typeof usappPersistence.listMemberProfiles !== 'function' || !usappPersistence.isConfigured()) {
+      return [];
+    }
+
+    return usappPersistence.listMemberProfiles({ limit: 250 });
+  }
 });
 
 function createToken() {

@@ -309,10 +309,10 @@ function createMessageRoutes({
     });
   }
 
-  router.get('/messages/contacts', (req, res) => {
+  router.get('/messages/contacts', async (req, res) => {
     try {
       return res.json({
-        contacts: buildMessageContacts()
+        contacts: await buildMessageContacts()
       });
     } catch (error) {
       console.error('Error reading message contacts:', error);
@@ -940,7 +940,7 @@ function createMessageRoutes({
     }
   });
 
-  router.post('/messages/threads', (req, res) => {
+  router.post('/messages/threads', async (req, res) => {
     try {
       const actorId = String(req.body.actorId || '').trim();
       const contactId = String(req.body.contactId || '').trim();
@@ -950,7 +950,7 @@ function createMessageRoutes({
       }
 
       const data = readSocialMessages();
-      const contact = resolveMessageContact(contactId, req.body.contact);
+      const contact = await resolveMessageContact(contactId, req.body.contact);
 
       if (!contact) {
         return res.status(404).json({ error: 'Contact not found' });
