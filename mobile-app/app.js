@@ -3506,6 +3506,8 @@ function renderUploadView() {
   const captionCount = draft.text.trim().length;
   const promoCount = String(draft.promotedText || '').trim().length;
   const fileLabel = draft.mediaName || (hasMedia && draft.mediaSource === 'url' ? 'Media added via URL.' : 'No file selected yet.');
+  const composerKind = getUploadDraftKindLabel(draft);
+  const publishLabel = canPublish ? 'Ready to publish' : 'Draft in progress';
 
   return `
     <section class="upload-modal-stage">
@@ -3514,175 +3516,228 @@ function renderUploadView() {
           <div class="upload-modal-copy">
             <p class="section-label">Composer</p>
             <h2>Post to the SocialEra feed</h2>
-            
+            <p>Shape the media, story, and shop match in one place. The preview updates live while you build the post.</p>
+          </div>
+          <div class="upload-modal-summary" aria-label="Composer summary">
+            <div class="upload-modal-summary-pill">
+              <span>Format</span>
+              <strong>${escapeHtml(composerKind)}</strong>
+            </div>
+            <div class="upload-modal-summary-pill">
+              <span>Products</span>
+              <strong>${escapeHtml(String(selectionCount))}</strong>
+            </div>
+            <div class="upload-modal-summary-pill">
+              <span>Status</span>
+              <strong>${escapeHtml(publishLabel)}</strong>
+            </div>
           </div>
         </div>
 
         <form class="upload-form upload-modal-form" data-upload-form="true">
-          <section class="upload-modal-field full">
-            <label for="upload-media-input">Upload photo or video</label>
-            <div class="upload-modal-upload">
-              <input id="upload-media-input" class="upload-file-input" type="file" accept="image/*,video/*" data-upload-file="true">
-              <div class="upload-modal-upload-shell">
-                <label class="upload-modal-upload-trigger" for="upload-media-input">
-                  <span class="upload-modal-upload-copy">
-                    
-                   
-                  </span>
-                  <span class="upload-modal-upload-badge">Browse</span>
-                </label>
-                <div id="upload-file-name" class="upload-modal-file-name" data-upload-media-note>${escapeHtml(fileLabel)}</div>
-                <div class="upload-modal-preview-shell ${hasMedia ? 'has-media' : ''}" data-upload-inline-media>
-                  ${renderUploadModalPreviewMedia(previewPost, hasMedia)}
+          <section class="upload-modal-section upload-modal-section-media full">
+            <div class="upload-modal-section-head">
+              <div>
+                <p class="section-label">Media</p>
+                <h3>Lead with a strong image or clip</h3>
+              </div>
+            </div>
+            <section class="upload-modal-field full">
+              <label for="upload-media-input">Upload photo or video</label>
+              <div class="upload-modal-upload">
+                <input id="upload-media-input" class="upload-file-input" type="file" accept="image/*,video/*" data-upload-file="true">
+                <div class="upload-modal-upload-shell">
+                  <label class="upload-modal-upload-trigger" for="upload-media-input">
+                    <span class="upload-modal-upload-copy">
+                      <strong>${escapeHtml(hasMedia ? 'Replace selected media' : 'Choose a photo or video')}</strong>
+                      <span>${escapeHtml(hasMedia ? 'Swap the current file without losing the rest of the draft.' : 'Start with a visual so the post lands strongly in Home and Spotlight.')}</span>
+                    </span>
+                    <span class="upload-modal-upload-badge">Browse</span>
+                  </label>
+                  <div id="upload-file-name" class="upload-modal-file-name" data-upload-media-note>${escapeHtml(fileLabel)}</div>
+                  <div class="upload-modal-preview-shell ${hasMedia ? 'has-media' : ''}" data-upload-inline-media>
+                    ${renderUploadModalPreviewMedia(previewPost, hasMedia)}
+                  </div>
+                  <div class="upload-modal-media-footer">
+                    <div class="upload-type-toggle chip-row">
+                      ${['image', 'video'].map((mediaType) => `
+                        <button
+                          class="chip ${draft.mediaType === mediaType ? 'active' : ''}"
+                          type="button"
+                          data-upload-media-type="${escapeHtml(mediaType)}"
+                        >
+                          ${escapeHtml(mediaType === 'image' ? 'Photo' : 'Video')}
+                        </button>
+                      `).join('')}
+                    </div>
+                    <button class="ghost-button upload-inline-clear" type="button" data-clear-upload-media="true">Clear</button>
+                  </div>
                 </div>
-                <div class="upload-type-toggle chip-row">
-                  ${['image', 'video'].map((mediaType) => `
+              </div>
+            </section>
+          </section>
+
+          <section class="upload-modal-section upload-modal-section-copy full">
+            <div class="upload-modal-section-head">
+              <div>
+                <p class="section-label">Story</p>
+                <h3>Define the post in a few clean lines</h3>
+              </div>
+            </div>
+            <section class="upload-modal-field full">
+              <div class="upload-modal-field-head">
+                <label for="upload-title-input">Post title</label>
+                <span class="upload-modal-counter" data-upload-title-count>${titleCount}/90</span>
+              </div>
+              <input
+                id="upload-title-input"
+                class="text-field"
+                type="text"
+                name="title"
+                maxlength="90"
+                placeholder="Night out layers with a sharper edge"
+                value="${escapeHtml(draft.title)}"
+                data-upload-field="title"
+              >
+            </section>
+
+            <section class="upload-modal-field full">
+              <div class="upload-modal-field-head">
+                <label for="upload-caption-input">Caption</label>
+                <span class="upload-modal-counter" data-upload-caption-count>${captionCount}/340</span>
+              </div>
+              <textarea
+                id="upload-caption-input"
+                class="textarea"
+                name="text"
+                maxlength="340"
+                placeholder="Write the story behind the post, the look, or the drop."
+                data-upload-field="text"
+              >${escapeHtml(draft.text)}</textarea>
+            </section>
+          </section>
+
+          <section class="upload-modal-section upload-modal-section-promo full">
+            <div class="upload-modal-section-head">
+              <div>
+                <p class="section-label">Promotion</p>
+                <h3>Attach a product or offer only if it sharpens the post</h3>
+              </div>
+            </div>
+            <section class="upload-modal-field full">
+              <label class="upload-modal-checkbox">
+                <input type="checkbox" data-upload-promote-toggle="true" ${draft.promoteEnabled ? 'checked' : ''}>
+                <span>Promote a product or offer with this post</span>
+              </label>
+            </section>
+
+            <section class="upload-modal-field ${draft.promoteEnabled ? '' : 'hidden'}" data-upload-promote-field="title">
+              <label for="upload-promoted-title">Promoted item</label>
+              <input
+                id="upload-promoted-title"
+                class="text-field"
+                type="text"
+                name="promotedTitle"
+                maxlength="70"
+                placeholder="SocialEra Watch Drop"
+                value="${escapeHtml(draft.promotedTitle)}"
+                data-upload-field="promotedTitle"
+              >
+            </section>
+
+            <section class="upload-modal-field ${draft.promoteEnabled ? '' : 'hidden'}" data-upload-promote-field="price">
+              <label for="upload-promoted-price">Price</label>
+              <input
+                id="upload-promoted-price"
+                class="text-field"
+                type="text"
+                name="promotedPrice"
+                maxlength="24"
+                placeholder="$129.00"
+                value="${escapeHtml(draft.promotedPrice)}"
+                data-upload-field="promotedPrice"
+              >
+            </section>
+
+            <section class="upload-modal-field full ${draft.promoteEnabled ? '' : 'hidden'}" data-upload-promote-field="text">
+              <div class="upload-modal-field-head">
+                <label for="upload-promoted-text">Promo note</label>
+                <span class="upload-modal-counter" data-upload-promoted-count>${promoCount}/180</span>
+              </div>
+              <textarea
+                id="upload-promoted-text"
+                class="textarea"
+                name="promotedText"
+                maxlength="180"
+                placeholder="Short promo copy that should appear in the match layer."
+                data-upload-field="promotedText"
+              >${escapeHtml(draft.promotedText)}</textarea>
+            </section>
+          </section>
+
+          <section class="upload-modal-section upload-modal-section-meta full">
+            <div class="upload-modal-section-head">
+              <div>
+                <p class="section-label">Placement</p>
+                <h3>Guide discovery without cluttering the post</h3>
+              </div>
+            </div>
+            <section class="upload-modal-field full">
+              <div class="upload-modal-field-head">
+                <label for="upload-tags-input">Tags</label>
+                <span class="upload-modal-counter" data-upload-tags-count>${typedTags.length} ${typedTags.length === 1 ? 'tag' : 'tags'}</span>
+              </div>
+              <input
+                id="upload-tags-input"
+                class="text-field"
+                type="text"
+                name="tagText"
+                maxlength="120"
+                placeholder="watch, bag, accessories"
+                value="${escapeHtml(draft.tagText)}"
+                data-upload-field="tagText"
+              >
+              <div class="upload-modal-helper">Use a few short internal tags so SocialEra can place the post better in the feed.</div>
+            </section>
+
+            <section class="upload-modal-field full">
+              <div class="upload-modal-field-head">
+                <label>Shop Match</label>
+                <span class="upload-modal-counter" data-upload-selection-count>${selectionCount} ${selectionCount === 1 ? 'item selected' : 'items selected'}</span>
+              </div>
+              <div class="upload-product-grid">
+                ${pickerProducts.length ? pickerProducts.map(renderUploadProductOption).join('') : renderEmptyCard('No products yet', 'Products from the shared catalog will show here for tagging.')}
+              </div>
+              ${selectedProducts.length ? `
+                <div class="upload-selected-products">
+                  ${selectedProducts.map((product) => `
                     <button
-                      class="chip ${draft.mediaType === mediaType ? 'active' : ''}"
+                      class="upload-selected-product"
                       type="button"
-                      data-upload-media-type="${escapeHtml(mediaType)}"
+                      data-upload-product="${escapeHtml(String(product.id))}"
+                      aria-label="Remove ${escapeHtml(product.name)} from this post"
                     >
-                      ${escapeHtml(mediaType === 'image' ? 'Photo' : 'Video')}
+                      <span>${escapeHtml(product.name)}</span>
+                      <strong>Remove</strong>
                     </button>
                   `).join('')}
-                  <button class="ghost-button upload-inline-clear" type="button" data-clear-upload-media="true">Clear</button>
                 </div>
+              ` : ''}
+            </section>
+          </section>
+
+          <section class="upload-modal-footer full">
+            <div class="upload-modal-status-card">
+              <p class="section-label">Publish check</p>
+              <div class="upload-modal-status ${canPublish ? 'success' : 'error'}" data-upload-review-copy>
+                ${escapeHtml(getUploadPublishMessage(draft))}
               </div>
             </div>
-          </section>
-
-          <section class="upload-modal-field full">
-            <div class="upload-modal-field-head">
-              <label for="upload-title-input">Post title</label>
-              <span class="upload-modal-counter" data-upload-title-count>${titleCount}/90</span>
+            <div class="upload-modal-actions">
+              <button class="ghost-button" type="button" data-reset-upload="true">Reset</button>
+              <button class="primary-button" type="submit" ${canPublish ? '' : 'disabled'}>Publish Post</button>
             </div>
-            <input
-              id="upload-title-input"
-              class="text-field"
-              type="text"
-              name="title"
-              maxlength="90"
-             
-              value="${escapeHtml(draft.title)}"
-              data-upload-field="title"
-            >
           </section>
-
-          <section class="upload-modal-field full">
-            <div class="upload-modal-field-head">
-              <label for="upload-caption-input">Caption</label>
-              <span class="upload-modal-counter" data-upload-caption-count>${captionCount}/340</span>
-            </div>
-            <textarea
-              id="upload-caption-input"
-              class="textarea"
-              name="text"
-              maxlength="340"
-              
-              data-upload-field="text"
-            >${escapeHtml(draft.text)}</textarea>
-          </section>
-
-          <section class="upload-modal-field full">
-            <label class="upload-modal-checkbox">
-              <input type="checkbox" data-upload-promote-toggle="true" ${draft.promoteEnabled ? 'checked' : ''}>
-              <span>Promote a product or offer with this post</span>
-            </label>
-          </section>
-
-          <section class="upload-modal-field ${draft.promoteEnabled ? '' : 'hidden'}" data-upload-promote-field="title">
-            <label for="upload-promoted-title">Promoted item</label>
-            <input
-              id="upload-promoted-title"
-              class="text-field"
-              type="text"
-              name="promotedTitle"
-              maxlength="70"
-              placeholder="SocialEra Watch Drop"
-              value="${escapeHtml(draft.promotedTitle)}"
-              data-upload-field="promotedTitle"
-            >
-          </section>
-
-          <section class="upload-modal-field ${draft.promoteEnabled ? '' : 'hidden'}" data-upload-promote-field="price">
-            <label for="upload-promoted-price">Price</label>
-            <input
-              id="upload-promoted-price"
-              class="text-field"
-              type="text"
-              name="promotedPrice"
-              maxlength="24"
-              placeholder="$129.00"
-              value="${escapeHtml(draft.promotedPrice)}"
-              data-upload-field="promotedPrice"
-            >
-          </section>
-
-          <section class="upload-modal-field full ${draft.promoteEnabled ? '' : 'hidden'}" data-upload-promote-field="text">
-            <div class="upload-modal-field-head">
-              <label for="upload-promoted-text">Promo note</label>
-              <span class="upload-modal-counter" data-upload-promoted-count>${promoCount}/180</span>
-            </div>
-            <textarea
-              id="upload-promoted-text"
-              class="textarea"
-              name="promotedText"
-              maxlength="180"
-              placeholder="Short promo copy that should appear in the match layer."
-              data-upload-field="promotedText"
-            >${escapeHtml(draft.promotedText)}</textarea>
-          </section>
-
-          <section class="upload-modal-field full">
-            <div class="upload-modal-field-head">
-              <label for="upload-tags-input">Tags</label>
-              <span class="upload-modal-counter" data-upload-tags-count>${typedTags.length} ${typedTags.length === 1 ? 'tag' : 'tags'}</span>
-            </div>
-            <input
-              id="upload-tags-input"
-              class="text-field"
-              type="text"
-              name="tagText"
-              maxlength="120"
-              placeholder="watch, bag, accessories"
-              value="${escapeHtml(draft.tagText)}"
-              data-upload-field="tagText"
-            >
-            <div class="upload-modal-helper">Use a few short tags so SocialEra can place the post better in the feed.</div>
-          </section>
-
-          <section class="upload-modal-field full">
-            <div class="upload-modal-field-head">
-              <label>Shop Match</label>
-              <span class="upload-modal-counter" data-upload-selection-count>${selectionCount} ${selectionCount === 1 ? 'item selected' : 'items selected'}</span>
-            </div>
-            <div class="upload-product-grid">
-              ${pickerProducts.length ? pickerProducts.map(renderUploadProductOption).join('') : renderEmptyCard('No products yet', 'Products from the shared catalog will show here for tagging.')}
-            </div>
-            ${selectedProducts.length ? `
-              <div class="upload-selected-products">
-                ${selectedProducts.map((product) => `
-                  <button
-                    class="upload-selected-product"
-                    type="button"
-                    data-upload-product="${escapeHtml(String(product.id))}"
-                    aria-label="Remove ${escapeHtml(product.name)} from this post"
-                  >
-                    <span>${escapeHtml(product.name)}</span>
-                    <strong>Remove</strong>
-                  </button>
-                `).join('')}
-              </div>
-            ` : ''}
-          </section>
-
-          <div class="upload-modal-actions">
-            <button class="ghost-button" type="button" data-reset-upload="true">Reset</button>
-            <button class="primary-button" type="submit" ${canPublish ? '' : 'disabled'}>Publish Post</button>
-          </div>
-          <div class="upload-modal-status ${canPublish ? 'success' : 'error'}" data-upload-review-copy>
-            ${escapeHtml(getUploadPublishMessage(draft))}
-          </div>
         </form>
       </section>
 
