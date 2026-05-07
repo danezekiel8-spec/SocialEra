@@ -4860,6 +4860,8 @@ function renderCommentThreadEntry(postId, comment, { visualLevel = 0, replyToAut
   const liked = Array.isArray(comment.likeActorIds) && comment.likeActorIds.includes(state.actorId);
   const likeCount = Number(comment.likes || 0);
   const commentMediaUrl = resolveMediaUrl(comment.mediaUrl);
+  const canDelete = canDeleteComment(comment);
+  const isDeleting = String(state.deletingCommentId || '') === String(comment.id || '').trim();
   const replyContext = visualLevel > 0 && replyToAuthorName
     ? `<span class="comment-thread-reply-context">Replying to <strong>${escapeHtml(replyToAuthorName)}</strong></span>`
     : '';
@@ -4896,6 +4898,17 @@ function renderCommentThreadEntry(postId, comment, { visualLevel = 0, replyToAut
               data-post-id="${escapeHtml(postId)}"
             >
               Likes ${escapeHtml(formatCompactNumber(likeCount))}
+            </button>
+          ` : ''}
+          ${canDelete ? `
+            <button
+              class="comment-thread-action comment-thread-delete${isDeleting ? ' is-pending' : ''}"
+              type="button"
+              data-delete-comment="${escapeHtml(comment.id)}"
+              data-post-id="${escapeHtml(postId)}"
+              ${isDeleting ? 'disabled' : ''}
+            >
+              ${isDeleting ? 'Deleting...' : 'Delete'}
             </button>
           ` : ''}
         </div>
@@ -5585,6 +5598,12 @@ async function handleClick(event) {
   const clearCommentMediaTarget = event.target.closest('[data-clear-comment-media]');
   if (clearCommentMediaTarget) {
     clearCommentMedia();
+    return;
+  }
+
+  const deleteCommentTarget = event.target.closest('[data-delete-comment]');
+  if (deleteCommentTarget) {
+    await deleteComment(deleteCommentTarget.dataset.postId, deleteCommentTarget.dataset.deleteComment);
     return;
   }
 
@@ -7160,6 +7179,83 @@ async function toggleCommentReaction(postId, commentId) {
 
     console.error('Could not sync comment reaction:', error);
     showToast(getRequestErrorMessage(error) || 'Could not update the comment right now.');
+  }
+}
+
+async function deleteComment(postId, commentId) {
+  const post = findPostById(postId);
+
+  if (!post || !commentId) {
+    showToast('Comment unavailable.');
+    return;
+  }
+
+  const comment = findCommentByIdLocal(getPostComments(post), commentId);
+
+  if (!comment) {
+    showToast('Comment unavailable.');
+    return;
+  }
+
+  if (!canDeleteComment(comment)) {
+    showToast('Only the comment author can delete this comment.');
+    return;
+  }
+
+  const deleteIds = collectLocalCommentIds(comment);
+  const hasReplies = deleteIds.length > 1;
+  const confirmed = window.confirm(
+    hasReplies
+      ? 'Delete this comment and all of its replies?'
+      : 'Delete this comment?'
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  state.deletingCommentId = commentId;
+  refreshCommentSheetForPost(postId, {
+    updateList: true,
+    updateForm: false,
+    updateLikes: false,
+    updateCount: false
+  });
+
+  try {
+    const response = await apiService.fetchJson(`/social/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`, {
+      method: 'DELETE',
+      omitAuth: true,
+      body: JSON.stringify({
+        actorId: state.actorId,
+        userId: state.authUser && state.authUser.id ? String(state.authUser.id) : ''
+      })
+    });
+
+    state.deletingCommentId = '';
+    applyCommentResponse(postId, response);
+    clearDeletedCommentState(Array.isArray(response.deletedIds) ? response.deletedIds : deleteIds);
+    refreshPostSurfaces(postId, {
+      includeSpotlight: state.activeView === 'home',
+      includeCommentSheet: false
+    });
+    refreshCommentSheetForPost(postId, {
+      updateList: true,
+      updateForm: true,
+      updateLikes: true,
+      updateCount: true
+    });
+    showToast(hasReplies ? 'Comment thread deleted.' : 'Comment deleted.');
+  } catch (error) {
+    state.deletingCommentId = '';
+    refreshCommentSheetForPost(postId, {
+      updateList: true,
+      updateForm: false,
+      updateLikes: false,
+      updateCount: false
+    });
+    console.error('Could not delete comment:', error);
+    showToast(getRequestErrorMessage(error) || 'Could not delete the comment right now.');
   }
 }
 
@@ -9480,6 +9576,56 @@ function getExpandedCommentReplyIds() {
   }
 
   return state.expandedCommentReplyIds;
+}
+
+function canDeleteComment(comment) {
+  if (!comment || typeof comment !== 'object') {
+    return false;
+  }
+
+  const commentActorId = String(comment.actorId || '').trim();
+  const commentUserId = String(comment.userId || '').trim();
+  const activeUserId = state.authUser && state.authUser.id ? String(state.authUser.id).trim() : '';
+
+  return Boolean(
+    (commentActorId && commentActorId === state.actorId)
+    || (commentUserId && activeUserId && commentUserId === activeUserId)
+  );
+}
+
+function collectLocalCommentIds(comment) {
+  if (!comment || !comment.id) {
+    return [];
+  }
+
+  return [
+    String(comment.id).trim(),
+    ...(Array.isArray(comment.replies) ? comment.replies.flatMap((reply) => collectLocalCommentIds(reply)) : [])
+  ].filter(Boolean);
+}
+
+function clearDeletedCommentState(commentIds) {
+  const deletedIds = new Set(
+    (Array.isArray(commentIds) ? commentIds : [])
+      .map((id) => String(id || '').trim())
+      .filter(Boolean)
+  );
+
+  if (!deletedIds.size) {
+    return;
+  }
+
+  if (deletedIds.has(String(state.activeReplyCommentId || '').trim())) {
+    state.activeReplyCommentId = '';
+  }
+
+  if (state.commentLikesPanel && deletedIds.has(String(state.commentLikesPanel.commentId || '').trim())) {
+    state.commentLikesPanel = null;
+  }
+
+  const expandedIds = getExpandedCommentReplyIds();
+  deletedIds.forEach((id) => expandedIds.delete(id));
+  state.expandedCommentReplyIds = expandedIds;
 }
 
 function getCommentLikeActors(comment) {

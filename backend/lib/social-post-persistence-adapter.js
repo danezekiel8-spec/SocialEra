@@ -124,6 +124,17 @@ function findCommentById(comments, commentId) {
   return null;
 }
 
+function collectCommentIds(comment) {
+  if (!comment || !comment.id) {
+    return [];
+  }
+
+  return [
+    String(comment.id).trim(),
+    ...(Array.isArray(comment.replies) ? comment.replies.flatMap((reply) => collectCommentIds(reply)) : [])
+  ].filter(Boolean);
+}
+
 function normalizeCommentRow(row) {
   const authorName = String(row && (row.author_name || row.authorName) || 'SocialEra Member').trim() || 'SocialEra Member';
 
@@ -586,6 +597,73 @@ function createSocialPostPersistenceAdapter(options = {}) {
     };
   }
 
+  async function deleteComment(postId, commentId, actorInput = {}) {
+    const post = await getPostById(postId);
+
+    if (!post) {
+      return { post: null, comment: null, deletedIds: [] };
+    }
+
+    const comment = findCommentById(post.comments, commentId);
+
+    if (!comment) {
+      return { post, comment: null, deletedIds: [] };
+    }
+
+    const actorId = String(actorInput.actorId || '').trim();
+    const userId = String(actorInput.userId || '').trim();
+
+    if (!actorId && !userId) {
+      const error = new Error('Actor ID or user ID is required.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const ownsComment = (
+      (actorId && String(comment.actorId || '').trim() === actorId)
+      || (userId && String(comment.userId || '').trim() === userId)
+    );
+
+    if (!ownsComment) {
+      const error = new Error('Only the comment author can delete this comment.');
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const deleteIds = Array.from(new Set(collectCommentIds(comment)));
+
+    if (!deleteIds.length) {
+      return { post, comment, deletedIds: [] };
+    }
+
+    const params = deleteIds.length === 1
+      ? { id: `eq.${deleteIds[0]}` }
+      : (() => {
+          const nextParams = {};
+          setInFilter(nextParams, 'id', deleteIds);
+          return nextParams;
+        })();
+
+    await requestSupabase(
+      `${tables.comments}${buildQuery(params)}`,
+      {
+        method: 'DELETE',
+        headers: buildHeaders(supabaseServiceRoleKey, false, {
+          Prefer: 'return=minimal'
+        })
+      },
+      { requireWriteAccess: true }
+    );
+
+    const hydratedPost = await getPostById(post.id);
+
+    return {
+      post: hydratedPost,
+      comment,
+      deletedIds: deleteIds
+    };
+  }
+
   async function togglePostReaction(postId, metric, actorInput = {}) {
     const post = await getPostById(postId);
 
@@ -798,6 +876,7 @@ function createSocialPostPersistenceAdapter(options = {}) {
     createPost,
     listHydratedComments,
     createComment,
+    deleteComment,
     togglePostReaction,
     toggleCommentReaction
   };

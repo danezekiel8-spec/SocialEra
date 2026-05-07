@@ -1641,6 +1641,15 @@ video {
   color: color-mix(in srgb, var(--accent-dark) 88%, var(--muted) 12%);
 }
 
+.comment-thread-delete {
+  color: color-mix(in srgb, #b13f3f 84%, var(--muted) 16%);
+}
+
+.comment-thread-delete:disabled,
+.comment-thread-delete.is-pending {
+  opacity: 0.6;
+}
+
 .comment-likes-panel {
   position: absolute;
   inset: 0;

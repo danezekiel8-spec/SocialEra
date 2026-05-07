@@ -13,6 +13,7 @@ function createSocialRoutes({
       'createPost',
       'togglePostReaction',
       'createComment',
+      'deleteComment',
       'toggleCommentReaction'
     ];
 
@@ -246,6 +247,48 @@ function createSocialRoutes({
       console.error('Error updating comment reaction:', error);
       return res.status(Number(error && error.statusCode) || 500).json({
         error: 'Failed to update comment reaction',
+        details: String(error && error.message ? error.message : '')
+      });
+    }
+  });
+
+  router.delete('/social/posts/:postId/comments/:commentId', async (req, res) => {
+    try {
+      ensureSocialPostPersistence();
+
+      const postId = String(req.params.postId || '').trim();
+      const commentId = String(req.params.commentId || '').trim();
+      const actorId = String(req.body && req.body.actorId || '').trim();
+      const userId = String(req.body && req.body.userId || '').trim();
+
+      if (!postId || !commentId || (!actorId && !userId)) {
+        return res.status(400).json({ error: 'Post, comment, and actor or user identity are required' });
+      }
+
+      const result = await socialPostPersistence.deleteComment(postId, commentId, {
+        actorId,
+        userId
+      });
+
+      if (!result || !result.post) {
+        return res.status(404).json({ error: 'Post not found' });
+      }
+      if (!result.comment) {
+        return res.status(404).json({ error: 'Comment not found' });
+      }
+
+      return res.json({
+        postId,
+        commentId,
+        deletedIds: Array.isArray(result.deletedIds) ? result.deletedIds : [commentId],
+        commentsCount: result.post.commentsCount,
+        commentPreview: flattenRecentComments(result.post.comments, 3),
+        comments: result.post.comments
+      });
+    } catch (error) {
+      console.error('Error deleting social comment:', error);
+      return res.status(Number(error && error.statusCode) || 500).json({
+        error: 'Failed to delete comment',
         details: String(error && error.message ? error.message : '')
       });
     }

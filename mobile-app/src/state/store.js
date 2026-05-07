@@ -83,6 +83,7 @@ export function createInitialState({
     selectedPostId: '',
     activeCommentPostId: '',
     activeReplyCommentId: '',
+    deletingCommentId: '',
     activeNotificationPanel: false,
     usappOpen: false,
     usappAnimateIn: false,
