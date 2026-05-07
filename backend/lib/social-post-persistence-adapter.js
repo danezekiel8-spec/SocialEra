@@ -55,6 +55,20 @@ function normalizeActorIds(value) {
   ));
 }
 
+function sanitizePhotoUrl(value) {
+  const normalized = String(value || '').trim();
+
+  if (!normalized) {
+    return '';
+  }
+
+  if (/^data:image\/[a-z0-9.+-]+;base64,/i.test(normalized)) {
+    return '';
+  }
+
+  return normalized;
+}
+
 function normalizeActorEntries(value, {
   defaultAuthorName = 'SocialEra Member',
   defaultUserName = '@socialera',
@@ -66,7 +80,7 @@ function normalizeActorEntries(value, {
       authorName: String(actor && actor.authorName || defaultAuthorName).trim() || defaultAuthorName,
       userName: String(actor && actor.userName || defaultUserName).trim() || defaultUserName,
       avatar: String(actor && actor.avatar || defaultAvatar).trim().slice(0, 2).toUpperCase() || defaultAvatar,
-      photoUrl: String(actor && actor.photoUrl || '').trim(),
+      photoUrl: sanitizePhotoUrl(actor && actor.photoUrl),
       reactedAt: String(actor && (actor.reactedAt || actor.createdAt) || '').trim()
     }))
     .filter((actor) => actor.actorId);
@@ -122,7 +136,7 @@ function normalizeCommentRow(row) {
     authorName,
     userName: String(row && (row.user_name || row.userName) || '@socialera').trim() || '@socialera',
     avatar: String(row && row.avatar || 'SE').trim().slice(0, 2).toUpperCase() || 'SE',
-    photoUrl: String(row && (row.photo_url || row.photoUrl) || '').trim(),
+    photoUrl: sanitizePhotoUrl(row && (row.photo_url || row.photoUrl)),
     mediaUrl: String(row && (row.media_url || row.mediaUrl) || '').trim(),
     text: String(row && (row.body || row.text) || '').trim(),
     createdAt: String(row && (row.created_at || row.createdAt) || new Date().toISOString()).trim(),
@@ -182,7 +196,7 @@ function mapPostRowToSocialPost(row, hydratedComments) {
     userName: String(row && (row.user_name || row.userName) || '@socialera').trim() || '@socialera',
     displayName,
     avatar: String(row && row.avatar || 'SE').trim().slice(0, 2).toUpperCase() || 'SE',
-    photoUrl: String(row && (row.photo_url || row.photoUrl) || '').trim(),
+    photoUrl: sanitizePhotoUrl(row && (row.photo_url || row.photoUrl)),
     mediaType: String(row && (row.media_type || row.mediaType) || 'image').trim().toLowerCase() === 'video' ? 'video' : 'image',
     mediaUrl: String(row && (row.media_url || row.mediaUrl) || '').trim(),
     captionTitle: String(row && (row.caption_title || row.captionTitle) || '').trim(),
@@ -225,7 +239,7 @@ function mapCreatePostPayload(postInput = {}) {
     display_name: displayName,
     user_name: String(postInput.userName || '@socialera.member').trim() || '@socialera.member',
     avatar: String(postInput.avatar || displayName.slice(0, 2) || 'SE').trim().slice(0, 2).toUpperCase() || 'SE',
-    photo_url: String(postInput.photoUrl || '').trim(),
+    photo_url: sanitizePhotoUrl(postInput.photoUrl),
     channel: String(postInput.channel || 'all').trim() || 'all',
     media_type: mediaType,
     media_url: String(postInput.mediaUrl || '').trim(),
@@ -490,7 +504,7 @@ function createSocialPostPersistenceAdapter(options = {}) {
       author_name: String(commentInput.authorName || 'SocialEra Member').trim() || 'SocialEra Member',
       user_name: String(commentInput.userName || '@socialera').trim() || '@socialera',
       avatar: String(commentInput.avatar || 'SE').trim().slice(0, 2).toUpperCase() || 'SE',
-      photo_url: String(commentInput.photoUrl || '').trim(),
+      photo_url: sanitizePhotoUrl(commentInput.photoUrl),
       media_url: String(commentInput.mediaUrl || '').trim(),
       body: String(commentInput.text || '').trim(),
       created_at: String(commentInput.createdAt || '').trim() || undefined
