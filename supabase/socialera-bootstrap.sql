@@ -4,6 +4,7 @@
 -- Supabase's SQL editor does not support file include commands like \i.
 -- Apply these files in this order:
 -- 1. /Users/dansangil/Desktop/Lovada/supabase/socialera-core.sql
--- 2. /Users/dansangil/Desktop/Lovada/supabase/socialera-messaging.sql
+-- 2. /Users/dansangil/Desktop/Lovada/supabase/socialera-durable-social-posts.sql
+-- 3. /Users/dansangil/Desktop/Lovada/supabase/socialera-messaging.sql
 --
--- After both run successfully, refresh the site and test signed-in member messaging.
+-- After all three run successfully, refresh the site and test signed-in member messaging.

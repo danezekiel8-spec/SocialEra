@@ -4532,17 +4532,24 @@ function renderCommentSheet() {
   const post = getActiveCommentPost();
 
   if (!post) {
+    elements.commentSheetRoot.dataset.commentPostId = '';
     elements.commentSheetRoot.innerHTML = '';
     return;
   }
 
-  const activeReply = state.activeReplyCommentId
-    ? findCommentByIdLocal(getPostComments(post), state.activeReplyCommentId)
-    : null;
-  const comments = getPostComments(post);
-  const commentCount = getPostCommentCount(post);
+  const activePostId = String(post.id || '');
+  const mountedPostId = String(elements.commentSheetRoot.dataset.commentPostId || '');
 
-  elements.commentSheetRoot.innerHTML = `
+  if (mountedPostId !== activePostId || !elements.commentSheetRoot.querySelector('.comment-sheet-panel')) {
+    elements.commentSheetRoot.dataset.commentPostId = activePostId;
+    elements.commentSheetRoot.innerHTML = renderCommentSheetShell(post);
+  }
+
+  renderCommentSheetState(post);
+}
+
+function renderCommentSheetShell(post) {
+  return `
     <div class="comment-sheet-overlay">
       <button class="comment-sheet-backdrop" type="button" data-close-comments="true" aria-label="Close comments"></button>
 
@@ -4552,7 +4559,7 @@ function renderCommentSheet() {
         <div class="comment-sheet-head">
           <div class="comment-sheet-title-wrap">
             <p class="section-label">Comments</p>
-            <h3 id="comment-sheet-title">${escapeHtml(formatCompactNumber(commentCount))} ${commentCount === 1 ? 'comment' : 'comments'}</h3>
+            <h3 id="comment-sheet-title" data-comment-count-label></h3>
           </div>
           <button class="chrome-button icon-button comment-sheet-close" type="button" data-close-comments="true" aria-label="Close comments">
             ${renderUsappCloseIcon()}
@@ -4575,31 +4582,133 @@ function renderCommentSheet() {
           </div>
         </div>
 
-        <div class="comment-sheet-list ${comments.length ? '' : 'is-empty'}">
-          ${comments.length ? renderCommentThreadList(post) : renderEmptyCard('No comments yet', 'Start the conversation on this post.')}
-        </div>
-
-        <form class="comment-sheet-form" data-comment-form="${escapeHtml(post.id)}">
-          ${activeReply ? `
-            <div class="comment-sheet-replying">
-              <span>Replying to <strong>${escapeHtml(activeReply.authorName || 'SocialEra Member')}</strong></span>
-              <button type="button" data-clear-comment-reply="true">Cancel</button>
-            </div>
-          ` : ''}
-          <div class="comment-sheet-composer">
-            ${renderAvatarShell(state.profile, 'comment-sheet-composer-avatar avatar')}
-            <textarea
-              class="textarea comment-sheet-input"
-              data-comment-input="true"
-              rows="1"
-              placeholder="${escapeHtml(activeReply ? `Reply to ${activeReply.authorName || 'SocialEra Member'}...` : 'Add a comment...')}"
-            >${escapeHtml(state.commentDraftText)}</textarea>
-            <button class="comment-sheet-send" type="submit" aria-label="Post comment">Comment</button>
-          </div>
-        </form>
-
-        ${renderCommentLikesPanel(post)}
+        <div class="comment-sheet-list" data-comment-list></div>
+        <div data-comment-form-root></div>
+        <div data-comment-likes-panel-root></div>
       </section>
+    </div>
+  `;
+}
+
+function renderCommentSheetState(post, {
+  updateList = true,
+  updateForm = true,
+  updateLikes = true,
+  updateCount = true,
+  preserveScroll = true
+} = {}) {
+  if (!elements.commentSheetRoot || !post || String(state.activeCommentPostId || '') !== String(post.id || '')) {
+    return;
+  }
+
+  if (updateCount) {
+    const countLabel = elements.commentSheetRoot.querySelector('[data-comment-count-label]');
+
+    if (countLabel) {
+      const commentCount = getPostCommentCount(post);
+      countLabel.textContent = `${formatCompactNumber(commentCount)} ${commentCount === 1 ? 'comment' : 'comments'}`;
+    }
+  }
+
+  if (updateList) {
+    const listRoot = elements.commentSheetRoot.querySelector('[data-comment-list]');
+
+    if (listRoot) {
+      const currentScrollTop = preserveScroll ? listRoot.scrollTop : 0;
+      const comments = getPostComments(post);
+
+      listRoot.classList.toggle('is-empty', !comments.length);
+      listRoot.innerHTML = comments.length
+        ? renderCommentThreadList(post)
+        : renderEmptyCard('No comments yet', 'Start the conversation on this post.');
+
+      if (preserveScroll) {
+        listRoot.scrollTop = currentScrollTop;
+      }
+    }
+  }
+
+  if (updateForm) {
+    const formRoot = elements.commentSheetRoot.querySelector('[data-comment-form-root]');
+
+    if (formRoot) {
+      formRoot.innerHTML = renderCommentSheetForm(post);
+    }
+  }
+
+  if (updateLikes) {
+    const likesRoot = elements.commentSheetRoot.querySelector('[data-comment-likes-panel-root]');
+
+    if (likesRoot) {
+      likesRoot.innerHTML = renderCommentLikesPanel(post);
+    }
+  }
+}
+
+function renderCommentSheetForm(post) {
+  const activeReply = state.activeReplyCommentId
+    ? findCommentByIdLocal(getPostComments(post), state.activeReplyCommentId)
+    : null;
+  const hasCommentMedia = Boolean(String(state.commentDraftMediaUrl || '').trim());
+
+  return `
+    <form class="comment-sheet-form" data-comment-form="${escapeHtml(post.id)}">
+      ${activeReply ? `
+        <div class="comment-sheet-replying">
+          <span>Replying to <strong>${escapeHtml(activeReply.authorName || 'SocialEra Member')}</strong></span>
+          <button type="button" data-clear-comment-reply="true">Cancel</button>
+        </div>
+      ` : ''}
+      ${hasCommentMedia ? renderCommentDraftMediaPreview() : ''}
+      <div class="comment-sheet-composer">
+        ${renderAvatarShell(state.profile, 'comment-sheet-composer-avatar avatar')}
+        <textarea
+          class="textarea comment-sheet-input"
+          data-comment-input="true"
+          rows="1"
+          placeholder="${escapeHtml(activeReply ? `Reply to ${activeReply.authorName || 'SocialEra Member'}...` : 'Add a comment or photo...')}"
+        >${escapeHtml(state.commentDraftText)}</textarea>
+        <div class="comment-sheet-composer-actions">
+          <label class="comment-sheet-media-trigger" aria-label="Add photo">
+            <input
+              class="comment-sheet-media-input"
+              type="file"
+              accept="image/*"
+              data-comment-media-input="true"
+            >
+            ${renderCommentPhotoIcon()}
+          </label>
+          <button class="comment-sheet-send" type="submit" aria-label="Post comment">Comment</button>
+        </div>
+      </div>
+    </form>
+  `;
+}
+
+function renderCommentPhotoIcon() {
+  return `
+    <svg class="comment-sheet-media-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M6 5.5h2.1l1-1.35c.2-.27.51-.43.85-.43h4.08c.34 0 .65.16.85.43l1 1.35H18A2.5 2.5 0 0 1 20.5 8v8A2.5 2.5 0 0 1 18 18.5H6A2.5 2.5 0 0 1 3.5 16V8A2.5 2.5 0 0 1 6 5.5Zm6 2.5a4.25 4.25 0 1 0 0 8.5a4.25 4.25 0 0 0 0-8.5Zm0 1.5a2.75 2.75 0 1 1 0 5.5a2.75 2.75 0 0 1 0-5.5Z"></path>
+    </svg>
+  `;
+}
+
+function renderCommentDraftMediaPreview() {
+  const mediaUrl = resolveMediaUrl(state.commentDraftMediaUrl);
+
+  if (!mediaUrl) {
+    return '';
+  }
+
+  return `
+    <div class="comment-sheet-media-preview">
+      <div class="comment-sheet-media-preview-frame">
+        <img src="${escapeHtml(mediaUrl)}" alt="${escapeHtml(state.commentDraftMediaName || 'Comment photo preview')}" loading="lazy" decoding="async">
+      </div>
+      <div class="comment-sheet-media-preview-copy">
+        <strong>${escapeHtml(state.commentDraftMediaName || 'Photo attached')}</strong>
+        <button type="button" data-clear-comment-media="true">Remove</button>
+      </div>
     </div>
   `;
 }
@@ -4679,7 +4788,7 @@ function renderCommentThreadList(post) {
 
 function renderCommentThreadGroup(postId, comment) {
   return `
-    <div class="comment-thread-group">
+    <div class="comment-thread-group" data-comment-thread-group="${escapeHtml(comment.id)}">
       ${renderCommentThreadEntry(postId, comment, {
         visualLevel: 0,
         replyToAuthorName: ''
@@ -4750,6 +4859,7 @@ function renderCommentHeartIcon() {
 function renderCommentThreadEntry(postId, comment, { visualLevel = 0, replyToAuthorName = '' } = {}) {
   const liked = Array.isArray(comment.likeActorIds) && comment.likeActorIds.includes(state.actorId);
   const likeCount = Number(comment.likes || 0);
+  const commentMediaUrl = resolveMediaUrl(comment.mediaUrl);
   const replyContext = visualLevel > 0 && replyToAuthorName
     ? `<span class="comment-thread-reply-context">Replying to <strong>${escapeHtml(replyToAuthorName)}</strong></span>`
     : '';
@@ -4763,7 +4873,12 @@ function renderCommentThreadEntry(postId, comment, { visualLevel = 0, replyToAut
           <span>${escapeHtml(formatRelativeTime(comment.createdAt))}</span>
         </div>
         ${replyContext}
-        <p>${escapeHtml(comment.text || '')}</p>
+        ${comment.text ? `<p>${escapeHtml(comment.text || '')}</p>` : ''}
+        ${commentMediaUrl ? `
+          <a class="comment-thread-photo" href="${escapeHtml(commentMediaUrl)}" target="_blank" rel="noreferrer" aria-label="Open comment photo">
+            <img src="${escapeHtml(commentMediaUrl)}" alt="${escapeHtml(comment.authorName || 'Comment photo')}" loading="lazy" decoding="async">
+          </a>
+        ` : ''}
         <div class="comment-thread-actions" aria-label="Comment actions">
           <button
             class="comment-thread-action"
@@ -4780,7 +4895,7 @@ function renderCommentThreadEntry(postId, comment, { visualLevel = 0, replyToAut
               data-view-comment-likes="${escapeHtml(comment.id)}"
               data-post-id="${escapeHtml(postId)}"
             >
-              View likes
+              Likes ${escapeHtml(formatCompactNumber(likeCount))}
             </button>
           ` : ''}
         </div>
@@ -5321,10 +5436,29 @@ function refreshPostSurfaces(postId, {
   }
 
   if (includeCommentSheet && state.activeCommentPostId === postId) {
-    renderCommentSheet();
+    renderCommentSheetState(post, {
+      updateList: true,
+      updateForm: false,
+      updateLikes: true,
+      updateCount: true
+    });
   }
 
   syncViewportVideoPlayback();
+}
+
+function refreshCommentSheetForPost(postId, options = {}) {
+  if (!postId || String(state.activeCommentPostId || '') !== String(postId || '')) {
+    return;
+  }
+
+  const post = findPostById(postId);
+
+  if (!post) {
+    return;
+  }
+
+  renderCommentSheetState(post, options);
 }
 
 function isViewportManagedVideo(type = 'feed') {
@@ -5419,14 +5553,38 @@ async function handleClick(event) {
       postId: String(commentLikesTarget.dataset.postId || '').trim(),
       commentId: String(commentLikesTarget.dataset.viewCommentLikes || '').trim()
     };
-    renderCommentSheet();
+    const activePost = getActiveCommentPost();
+
+    if (activePost) {
+      renderCommentSheetState(activePost, {
+        updateList: false,
+        updateForm: false,
+        updateLikes: true,
+        updateCount: false
+      });
+    }
     return;
   }
 
   const closeCommentLikesTarget = event.target.closest('[data-close-comment-likes]');
   if (closeCommentLikesTarget) {
     state.commentLikesPanel = null;
-    renderCommentSheet();
+    const activePost = getActiveCommentPost();
+
+    if (activePost) {
+      renderCommentSheetState(activePost, {
+        updateList: false,
+        updateForm: false,
+        updateLikes: true,
+        updateCount: false
+      });
+    }
+    return;
+  }
+
+  const clearCommentMediaTarget = event.target.closest('[data-clear-comment-media]');
+  if (clearCommentMediaTarget) {
+    clearCommentMedia();
     return;
   }
 
@@ -5444,7 +5602,22 @@ async function handleClick(event) {
       }
 
       state.expandedCommentReplyIds = expandedIds;
-      renderCommentSheet();
+      const activePost = getActiveCommentPost();
+      const comment = activePost ? findCommentByIdLocal(getPostComments(activePost), commentId) : null;
+      const group = elements.commentSheetRoot
+        ? elements.commentSheetRoot.querySelector(`[data-comment-thread-group="${escapeSelectorValue(commentId)}"] [data-comment-replies="true"]`)
+        : null;
+
+      if (activePost && comment && group) {
+        group.outerHTML = renderCommentRepliesFlat(activePost.id, comment, comment.authorName || 'SocialEra Member');
+      } else if (activePost) {
+        renderCommentSheetState(activePost, {
+          updateList: true,
+          updateForm: false,
+          updateLikes: false,
+          updateCount: false
+        });
+      }
     }
     return;
   }
@@ -6013,6 +6186,53 @@ function handleInput(event) {
   const commentField = event.target.closest('[data-comment-input]');
   if (commentField) {
     state.commentDraftText = String(commentField.value || '');
+    return;
+  }
+
+  const commentMediaField = event.target.closest('[data-comment-media-input]');
+  if (commentMediaField) {
+    const [file] = Array.from(commentMediaField.files || []);
+
+    if (!file) {
+      return;
+    }
+
+    if (!String(file.type || '').toLowerCase().startsWith('image/')) {
+      showToast('Comments support photo uploads only.');
+      commentMediaField.value = '';
+      return;
+    }
+
+    if (Number(file.size || 0) > 10 * 1024 * 1024) {
+      showToast('Keep comment photos under 10MB.');
+      commentMediaField.value = '';
+      return;
+    }
+
+    readFileAsDataUrl(file)
+      .then((mediaUrl) => {
+        state.commentDraftMediaUrl = mediaUrl;
+        state.commentDraftMediaFile = file;
+        state.commentDraftMediaName = file.name || 'Comment photo';
+
+        const post = getActiveCommentPost();
+
+        if (post) {
+          renderCommentSheetState(post, {
+            updateList: false,
+            updateForm: true,
+            updateLikes: false,
+            updateCount: false
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('Could not read comment photo:', error);
+        showToast('Could not read that photo.');
+      })
+      .finally(() => {
+        commentMediaField.value = '';
+      });
     return;
   }
 
@@ -6592,6 +6812,9 @@ function openCommentSheet(postId) {
   state.activeCommentPostId = post.id;
   state.activeReplyCommentId = '';
   state.commentDraftText = '';
+  state.commentDraftMediaUrl = '';
+  state.commentDraftMediaFile = null;
+  state.commentDraftMediaName = '';
   renderCommentSheet();
   if (previousPostId && previousPostId !== post.id) {
     refreshPostSurfaces(previousPostId, { includeSpotlight: false, includeCommentSheet: false });
@@ -6606,6 +6829,9 @@ function closeCommentSheet({ renderNow = true } = {}) {
   state.activeCommentPostId = '';
   state.activeReplyCommentId = '';
   state.commentDraftText = '';
+  state.commentDraftMediaUrl = '';
+  state.commentDraftMediaFile = null;
+  state.commentDraftMediaName = '';
 
   if (renderNow) {
     renderCommentSheet();
@@ -6684,7 +6910,35 @@ function openNotificationPost(postId, openComments = false) {
 
 function clearCommentReply() {
   state.activeReplyCommentId = '';
-  renderCommentSheet();
+  const post = getActiveCommentPost();
+
+  if (post) {
+    renderCommentSheetState(post, {
+      updateList: false,
+      updateForm: true,
+      updateLikes: false,
+      updateCount: false
+    });
+  }
+  focusCommentComposer();
+}
+
+function clearCommentMedia() {
+  state.commentDraftMediaUrl = '';
+  state.commentDraftMediaFile = null;
+  state.commentDraftMediaName = '';
+
+  const post = getActiveCommentPost();
+
+  if (post) {
+    renderCommentSheetState(post, {
+      updateList: false,
+      updateForm: true,
+      updateLikes: false,
+      updateCount: false
+    });
+  }
+
   focusCommentComposer();
 }
 
@@ -6699,7 +6953,16 @@ function startCommentReply(commentId, authorName) {
     state.commentDraftText = '';
   }
 
-  renderCommentSheet();
+  const post = getActiveCommentPost();
+
+  if (post) {
+    renderCommentSheetState(post, {
+      updateList: false,
+      updateForm: true,
+      updateLikes: false,
+      updateCount: false
+    });
+  }
   focusCommentComposer(authorName);
 }
 
@@ -6731,9 +6994,10 @@ async function submitComment(postId) {
   }
 
   const text = String(state.commentDraftText || '').trim();
+  const hasCommentMedia = Boolean(state.commentDraftMediaFile || String(state.commentDraftMediaUrl || '').trim());
 
-  if (!text) {
-    showToast('Write a comment first.');
+  if (!text && !hasCommentMedia) {
+    showToast('Write a comment or add a photo first.');
     return;
   }
 
@@ -6750,6 +7014,24 @@ async function submitComment(postId) {
 
   const previousComments = normalizeComments(getPostComments(post));
   const previousReplyId = state.activeReplyCommentId || '';
+  const previousDraftText = state.commentDraftText;
+  const previousDraftMediaUrl = state.commentDraftMediaUrl;
+  const previousDraftMediaFile = state.commentDraftMediaFile;
+  const previousDraftMediaName = state.commentDraftMediaName;
+  let uploadedCommentMediaUrl = String(state.commentDraftMediaUrl || '').trim();
+
+  try {
+    if (state.commentDraftMediaFile) {
+      showToast('Uploading photo...');
+      uploadedCommentMediaUrl = await uploadToSupabaseStorage(state.commentDraftMediaFile);
+    }
+  } catch (error) {
+    state.lastCommentSubmitAt = 0;
+    console.error('Could not upload comment photo:', error);
+    showToast(getRequestErrorMessage(error) || 'Could not upload the comment photo.');
+    return;
+  }
+
   const commentPayload = {
     id: getUuid(),
     actorId: state.actorId,
@@ -6758,6 +7040,7 @@ async function submitComment(postId) {
     userName: state.profile.userName,
     avatar: state.profile.avatar,
     photoUrl: state.profile.photoUrl,
+    mediaUrl: uploadedCommentMediaUrl,
     text,
     parentCommentId: previousReplyId,
     createdAt: new Date().toISOString()
@@ -6766,7 +7049,19 @@ async function submitComment(postId) {
   applyLocalCommentInsert(postId, commentPayload);
   state.commentDraftText = '';
   state.activeReplyCommentId = '';
-  refreshPostSurfaces(postId, { includeSpotlight: state.activeView === 'home' });
+  state.commentDraftMediaUrl = '';
+  state.commentDraftMediaFile = null;
+  state.commentDraftMediaName = '';
+  refreshPostSurfaces(postId, {
+    includeSpotlight: state.activeView === 'home',
+    includeCommentSheet: false
+  });
+  refreshCommentSheetForPost(postId, {
+    updateList: true,
+    updateForm: true,
+    updateLikes: true,
+    updateCount: true
+  });
   focusCommentComposer();
 
   try {
@@ -6777,13 +7072,34 @@ async function submitComment(postId) {
     });
 
     applyCommentResponse(postId, response);
-    refreshPostSurfaces(postId, { includeSpotlight: state.activeView === 'home' });
+    refreshPostSurfaces(postId, {
+      includeSpotlight: state.activeView === 'home',
+      includeCommentSheet: false
+    });
+    refreshCommentSheetForPost(postId, {
+      updateList: true,
+      updateForm: false,
+      updateLikes: true,
+      updateCount: true
+    });
   } catch (error) {
     state.lastCommentSubmitAt = 0;
     restoreLocalComments(postId, previousComments);
-    state.commentDraftText = text;
+    state.commentDraftText = previousDraftText;
     state.activeReplyCommentId = previousReplyId;
-    refreshPostSurfaces(postId, { includeSpotlight: state.activeView === 'home' });
+    state.commentDraftMediaUrl = previousDraftMediaUrl;
+    state.commentDraftMediaFile = previousDraftMediaFile;
+    state.commentDraftMediaName = previousDraftMediaName;
+    refreshPostSurfaces(postId, {
+      includeSpotlight: state.activeView === 'home',
+      includeCommentSheet: false
+    });
+    refreshCommentSheetForPost(postId, {
+      updateList: true,
+      updateForm: true,
+      updateLikes: true,
+      updateCount: true
+    });
     console.error('Could not create Supabase comment:', error);
     const message = getRequestErrorMessage(error) || 'Could not add comment.';
     showToast(message);
@@ -6799,7 +7115,13 @@ async function toggleCommentReaction(postId, commentId) {
   const changedLocally = toggleCommentReactionLocally(postId, commentId);
 
   if (changedLocally) {
-    refreshPostSurfaces(postId, { includeSpotlight: false });
+    refreshPostSurfaces(postId, { includeSpotlight: false, includeCommentSheet: false });
+    refreshCommentSheetForPost(postId, {
+      updateList: true,
+      updateForm: false,
+      updateLikes: true,
+      updateCount: false
+    });
   }
 
   try {
@@ -6816,12 +7138,24 @@ async function toggleCommentReaction(postId, commentId) {
     });
 
     applyCommentResponse(postId, response);
-    refreshPostSurfaces(postId, { includeSpotlight: false });
+    refreshPostSurfaces(postId, { includeSpotlight: false, includeCommentSheet: false });
+    refreshCommentSheetForPost(postId, {
+      updateList: true,
+      updateForm: false,
+      updateLikes: true,
+      updateCount: false
+    });
     return;
   } catch (error) {
     if (changedLocally) {
       toggleCommentReactionLocally(postId, commentId);
-      refreshPostSurfaces(postId, { includeSpotlight: false });
+      refreshPostSurfaces(postId, { includeSpotlight: false, includeCommentSheet: false });
+      refreshCommentSheetForPost(postId, {
+        updateList: true,
+        updateForm: false,
+        updateLikes: true,
+        updateCount: false
+      });
     }
 
     console.error('Could not sync comment reaction:', error);
@@ -8953,6 +9287,7 @@ function mapSupabaseCommentRecord(comment) {
     userName: normalizeUserName(comment && (comment.userName || comment.user_name) ? comment.userName || comment.user_name : '@socialera.member'),
     avatar: getInitials(comment && (comment.avatar || comment.authorName || comment.author_name) ? comment.avatar || comment.authorName || comment.author_name : 'SE'),
     photoUrl: String(comment && (comment.photoUrl || comment.photo_url) ? comment.photoUrl || comment.photo_url : '').trim(),
+    mediaUrl: String(comment && (comment.mediaUrl || comment.media_url) ? comment.mediaUrl || comment.media_url : '').trim(),
     text: String(comment && (comment.text || comment.body) ? comment.text || comment.body : '').trim(),
     likes: Number(comment && (comment.likes ?? comment.likesCount ?? comment.likes_count) ? comment.likes ?? comment.likesCount ?? comment.likes_count : 0),
     likeActorIds: Array.isArray(comment && (comment.likeActorIds || comment.like_actor_ids)) ? (comment.likeActorIds || comment.like_actor_ids).map(String) : [],
@@ -9345,6 +9680,7 @@ function normalizeComment(comment) {
     userName: authoredUserName || normalizeUserName(comment.userName || '@socialera.member'),
     avatar: getInitials((authoredDisplayName || '') || comment.avatar || comment.authorName || 'SE'),
     photoUrl: authoredPhotoUrl || String(comment.photoUrl || comment.photo_url || '').trim(),
+    mediaUrl: String(comment.mediaUrl || comment.media_url || '').trim(),
     text: String(comment.text || '').trim(),
     createdAt: comment.createdAt || new Date().toISOString(),
     likes: Number(comment.likes || 0),
@@ -11106,4 +11442,14 @@ function getUuid() {
   }
 
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function escapeSelectorValue(value) {
+  const stringValue = String(value || '');
+
+  if (typeof CSS !== 'undefined' && CSS && typeof CSS.escape === 'function') {
+    return CSS.escape(stringValue);
+  }
+
+  return stringValue.replace(/["\\]/g, '\\$&');
 }

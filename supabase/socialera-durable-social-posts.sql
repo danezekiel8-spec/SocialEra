@@ -20,15 +20,21 @@ alter table if exists public.social_posts
   alter column photo_url set not null;
 
 alter table if exists public.social_post_comments
-  add column if not exists photo_url text;
+  add column if not exists photo_url text,
+  add column if not exists media_url text;
 
 update public.social_post_comments
-set photo_url = coalesce(photo_url, '')
-where photo_url is null;
+set
+  photo_url = coalesce(photo_url, ''),
+  media_url = coalesce(media_url, '')
+where photo_url is null
+   or media_url is null;
 
 alter table if exists public.social_post_comments
   alter column photo_url set default '',
-  alter column photo_url set not null;
+  alter column photo_url set not null,
+  alter column media_url set default '',
+  alter column media_url set not null;
 
 create or replace function public.sync_social_post_comments_count()
 returns trigger

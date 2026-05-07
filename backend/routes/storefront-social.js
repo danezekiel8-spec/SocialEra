@@ -168,10 +168,11 @@ function createSocialRoutes({
 
       const postId = String(req.params.id || '').trim();
       const text = String(req.body.text || '').trim();
+      const mediaUrl = String(req.body.mediaUrl || '').trim();
       const parentCommentId = String(req.body.parentCommentId || '').trim();
 
-      if (!postId || !text) {
-        return res.status(400).json({ error: 'Post ID and comment text are required' });
+      if (!postId || (!text && !mediaUrl)) {
+        return res.status(400).json({ error: 'Post ID and comment text or photo are required' });
       }
 
       const result = await socialPostPersistence.createComment(postId, {
@@ -182,6 +183,7 @@ function createSocialRoutes({
         userName: String(req.body.userName || '@socialera').trim() || '@socialera',
         avatar: String(req.body.avatar || 'SE').trim().slice(0, 2).toUpperCase() || 'SE',
         photoUrl: String(req.body.photoUrl || '').trim(),
+        mediaUrl,
         text,
         parentCommentId,
         createdAt: String(req.body.createdAt || new Date().toISOString()).trim() || new Date().toISOString()

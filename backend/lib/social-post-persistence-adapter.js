@@ -123,6 +123,7 @@ function normalizeCommentRow(row) {
     userName: String(row && (row.user_name || row.userName) || '@socialera').trim() || '@socialera',
     avatar: String(row && row.avatar || 'SE').trim().slice(0, 2).toUpperCase() || 'SE',
     photoUrl: String(row && (row.photo_url || row.photoUrl) || '').trim(),
+    mediaUrl: String(row && (row.media_url || row.mediaUrl) || '').trim(),
     text: String(row && (row.body || row.text) || '').trim(),
     createdAt: String(row && (row.created_at || row.createdAt) || new Date().toISOString()).trim(),
     likeActorIds: normalizeActorIds(row && (row.like_actor_ids || row.likeActorIds)),
@@ -139,7 +140,7 @@ function normalizeCommentRow(row) {
 function nestComments(rows) {
   const normalizedComments = (Array.isArray(rows) ? rows : [])
     .map((row) => normalizeCommentRow(row))
-    .filter((comment) => comment.id && comment.text)
+    .filter((comment) => comment.id && (comment.text || comment.mediaUrl))
     .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime());
   const commentMap = new Map();
   const roots = [];
@@ -490,6 +491,7 @@ function createSocialPostPersistenceAdapter(options = {}) {
       user_name: String(commentInput.userName || '@socialera').trim() || '@socialera',
       avatar: String(commentInput.avatar || 'SE').trim().slice(0, 2).toUpperCase() || 'SE',
       photo_url: String(commentInput.photoUrl || '').trim(),
+      media_url: String(commentInput.mediaUrl || '').trim(),
       body: String(commentInput.text || '').trim(),
       created_at: String(commentInput.createdAt || '').trim() || undefined
     };
