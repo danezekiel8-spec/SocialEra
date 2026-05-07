@@ -2679,7 +2679,6 @@ function renderPostDetailView() {
   const relatedPosts = state.posts
     .filter((entry) => entry.id !== post.id && entry.channel === post.channel)
     .slice(0, 4);
-  const tagLine = (post.tags || []).slice(0, 4).map((tag) => `#${tag}`).join('  ');
 
   return `
     <section class="post-detail-stage">
@@ -2735,7 +2734,6 @@ function renderPostDetailView() {
           <div class="post-detail-copy">
             <h2 class="post-detail-title">${escapeHtml(post.captionTitle)}</h2>
             <p class="post-detail-caption">${escapeHtml(post.captionText)}</p>
-            ${tagLine ? `<p class="post-detail-tags">${escapeHtml(tagLine)}</p>` : ''}
           </div>
 
           <div class="post-detail-actions">

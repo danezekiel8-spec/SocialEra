@@ -2997,13 +2997,6 @@ video {
   font-size: 0.93rem;
 }
 
-.post-detail-tags {
-  margin: 0;
-  color: var(--accent-dark);
-  font-size: 0.78rem;
-  letter-spacing: 0.04em;
-}
-
 .post-detail-actions {
   display: grid;
   gap: 0.85rem;
