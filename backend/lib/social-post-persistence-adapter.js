@@ -140,7 +140,7 @@ function normalizeCommentRow(row) {
 function nestComments(rows) {
   const normalizedComments = (Array.isArray(rows) ? rows : [])
     .map((row) => normalizeCommentRow(row))
-    .filter((comment) => comment.id && comment.text)
+    .filter((comment) => comment.id && (comment.text || comment.mediaUrl))
     .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime());
   const commentMap = new Map();
   const roots = [];
